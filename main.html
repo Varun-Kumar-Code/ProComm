@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Conference | ProMeet</title>
+    <script src="script.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            background-color: #1e293b;
+        }
+
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .participant-video {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .participant-name {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .control-btn {
+            transition: all 0.2s ease;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .control-btn.active {
+            background-color: #3b82f6 !important;
+            color: white !important;
+        }
+
+        .control-btn.danger {
+            background-color: #ef4444 !important;
+            color: white !important;
+        }
+
+        .control-btn.danger:hover {
+            background-color: #dc2626 !important;
+        }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Animation for raised hand */
+        @keyframes wave {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(10deg); }
+            75% { transform: rotate(-10deg); }
+        }
+
+        .raised-hand {
+            animation: wave 0.5s infinite;
+            color: #f59e0b;
+        }
+
+        /* Emoji picker styles */
+        .emoji-picker {
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            display: none;
+            z-index: 100;
+        }
+
+        .emoji-picker.active {
+            display: block;
+        }
+
+        .emoji-category {
+            margin-bottom: 10px;
+        }
+
+        .emoji-category h4 {
+            margin-bottom: 5px;
+            color: #4b5563;
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+        }
+
+        .emoji-btn {
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .emoji-btn:hover {
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white font-sans h-screen overflow-hidden">
+    <!-- Main Meeting Container -->
+    <div class="flex flex-col h-full">
+        <!-- Meeting Header -->
+        <header class="bg-gray-800 py-3 px-4 flex justify-between items-center border-b border-gray-700">
+            <div class="flex items-center">
+                <i class="fas fa-video mr-2 text-blue-400"></i>
+                <span class="font-bold">ProComm</span>
+                <span class="ml-4 text-sm text-gray-400 hidden md:inline">Meeting ID: abc-xyz-123</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="timerBtn" class="px-3 py-1 bg-gray-700 rounded-md text-sm">
+                    <i class="far fa-clock mr-1"></i> 00:12:34
+                </button>
+                <button id="recordBtn" class="px-3 py-1 bg-red-600 rounded-md text-sm hidden md:inline-flex items-center">
+                    <i class="fas fa-circle mr-1"></i> Recording
+                </button>
+                <button id="securityBtn" class="p-2 rounded-full hover:bg-gray-700">
+                    <i class="fas fa-shield-alt"></i>
+                </button>
+                <button id="fullscreenBtn" class="p-2 rounded-full hover:bg-gray-700">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Meeting Content -->
+        <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+            <!-- Video Grid Area -->
+            <div class="flex-1 p-2 md:p-4 overflow-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4" id="videoGrid">
+                    <!-- Local video -->
+                    <div class="participant-video">
+                        <div class="video-container">
+                            <video id="localVideo" autoplay muted></video>
+                        </div>
+                        <div class="participant-name flex items-center">
+                            <span>You (Host)</span>
+                            <span class="ml-2 text-xs bg-blue-600 px-1 rounded">Muted</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Remote participants will be added here -->
+                    <div class="participant-video">
+                        <div class="video-container">
+                            <video id="remoteVideo1" autoplay></video>
+                        </div>
+                        <div class="participant-name flex items-center">
+                            <span>Bala G</span>
+                            <i class="fas fa-microphone-slash ml-2 text-xs"></i>
+                            <i class="fas fa-hand-paper ml-2 text-yellow-500 raised-hand"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="participant-video">
+                        <div class="video-container">
+                            <video id="remoteVideo2" autoplay></video>
+                        </div>
+                        <div class="participant-name">Bill Gates</div>
+                    </div>
+                    
+                    <div class="participant-video">
+                        <div class="video-container">
+                            <div class="w-full h-full flex items-center justify-center">
+                                <div class="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center">
+                                    <i class="fas fa-user text-3xl text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="participant-name">Elon Musk</div>
+                    </div>
+                    
+                    <div class="participant-video">
+                        <div class="video-container">
+                            <video id="remoteVideo3" autoplay></video>
+                        </div>
+                        <div class="participant-name">Mukesh Ambani</div>
+                    </div>
+                    
+                    <div class="participant-video">
+                        <div class="video-container">
+                            <div class="w-full h-full flex items-center justify-center">
+                                <div class="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center">
+                                    <i class="fas fa-user text-3xl text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="participant-name">Jeff Bezos</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar (People/Chat) - Hidden on mobile by default -->
+            <div id="sidebar" class="hidden md:block w-full md:w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+                <!-- Sidebar Tabs -->
+                <div class="flex border-b border-gray-700">
+                    <button id="peopleTab" class="flex-1 py-3 font-medium border-b-2 border-blue-500">
+                        <i class="fas fa-users mr-2"></i> People (5)
+                    </button>
+                    <button id="chatTab" class="flex-1 py-3 font-medium text-gray-400 hover:text-white">
+                        <i class="fas fa-comment-dots mr-2"></i> Chat
+                    </button>
+                </div>
+
+                <!-- People Tab Content -->
+                <div id="peopleContent" class="flex-1 overflow-y-auto p-4">
+                    <div class="mb-6">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-2">HOST</h3>
+                        <div class="flex items-center p-2 rounded hover:bg-gray-700">
+                            <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">You</p>
+                                <p class="text-xs text-gray-400">Host</p>
+                            </div>
+                            <div class="ml-auto flex space-x-2">
+                                <button class="p-1 text-gray-400 hover:text-white">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-sm font-semibold text-gray-400 mb-2">PARTICIPANTS (4)</h3>
+                        
+                        <div class="flex items-center p-2 rounded hover:bg-gray-700">
+                            <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center mr-3">
+                                <span class="text-white">BG</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">Bala G</p>
+                                <p class="text-xs text-gray-400 flex items-center">
+                                    <i class="fas fa-microphone-slash mr-1 text-red-400"></i> Muted
+                                    <i class="fas fa-hand-paper ml-2 text-yellow-500 raised-hand"></i>
+                                </p>
+                            </div>
+                            <div class="ml-auto flex space-x-2">
+                                <button class="p-1 text-gray-400 hover:text-white">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-2 rounded hover:bg-gray-700">
+                            <div class="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center mr-3">
+                                <span class="text-white">BG</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">Bill Gates</p>
+                                <p class="text-xs text-gray-400">
+                                    <i class="fas fa-microphone mr-1 text-green-400"></i> Speaking
+                                </p>
+                            </div>
+                            <div class="ml-auto flex space-x-2">
+                                <button class="p-1 text-gray-400 hover:text-white">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-2 rounded hover:bg-gray-700">
+                            <div class="w-10 h-10 rounded-full bg-yellow-600 flex items-center justify-center mr-3">
+                                <span class="text-white">EM</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">Elon Musk</p>
+                                <p class="text-xs text-gray-400">
+                                    <i class="fas fa-video-slash mr-1 text-gray-400"></i> Camera off
+                                </p>
+                            </div>
+                            <div class="ml-auto flex space-x-2">
+                                <button class="p-1 text-gray-400 hover:text-white">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center p-2 rounded hover:bg-gray-700">
+                            <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center mr-3">
+                                <span class="text-white">MA</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">Mukesh Ambani</p>
+                                <p class="text-xs text-gray-400">
+                                    <i class="fas fa-video mr-1 text-green-400"></i> Camera on
+                                </p>
+                            </div>
+                            <div class="ml-auto flex space-x-2">
+                                <button class="p-1 text-gray-400 hover:text-white">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <button id="inviteBtn" class="w-full py-2 bg-blue-600 rounded-md hover:bg-blue-700 flex items-center justify-center">
+                            <i class="fas fa-user-plus mr-2"></i> Invite People
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Tab Content (Hidden by default) -->
+                <div id="chatContent" class="hidden flex-1 flex flex-col">
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Chat messages will appear here -->
+                        <div class="flex">
+                            <div class="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center mr-3">
+                                <span class="text-white">JD</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">John Doe</p>
+                                <p class="text-sm">Hello everyone! 👋</p>
+                                <p class="text-xs text-gray-400 mt-1">2:34 PM</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex">
+                            <div class="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center mr-3">
+                                <span class="text-white">JS</span>
+                            </div>
+                            <div>
+                                <p class="font-medium">Jane Smith</p>
+                                <p class="text-sm">Hi John! How's it going?</p>
+                                <p class="text-xs text-gray-400 mt-1">2:35 PM</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex">
+                            <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium">You</p>
+                                <p class="text-sm">Welcome everyone to the meeting! Let's get started.</p>
+                                <p class="text-xs text-gray-400 mt-1">2:36 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 border-t border-gray-700">
+                        <div class="relative">
+                            <div class="flex">
+                                <button id="emojiToggleBtn" class="px-3 py-2 text-gray-400 hover:text-white">
+                                    <i class="far fa-smile"></i>
+                                </button>
+                                <input type="text" id="chatInput" class="flex-1 px-3 py-2 bg-gray-700 rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Type a message...">
+                                <button id="sendChatBtn" class="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <!-- Emoji Picker -->
+                            <div id="emojiPicker" class="emoji-picker">
+                                <div class="emoji-category">
+                                    <h4 class="text-sm font-semibold">Smileys & People</h4>
+                                    <div class="emoji-grid">
+                                        <button class="emoji-btn">😀</button>
+                                        <button class="emoji-btn">😃</button>
+                                        <button class="emoji-btn">😄</button>
+                                        <button class="emoji-btn">😁</button>
+                                        <button class="emoji-btn">😆</button>
+                                        <button class="emoji-btn">😅</button>
+                                        <button class="emoji-btn">😂</button>
+                                        <button class="emoji-btn">🤣</button>
+                                        <button class="emoji-btn">😊</button>
+                                        <button class="emoji-btn">😇</button>
+                                        <button class="emoji-btn">🙂</button>
+                                        <button class="emoji-btn">🙃</button>
+                                        <button class="emoji-btn">😉</button>
+                                        <button class="emoji-btn">😌</button>
+                                        <button class="emoji-btn">😍</button>
+                                        <button class="emoji-btn">🥰</button>
+                                        <button class="emoji-btn">😘</button>
+                                        <button class="emoji-btn">😗</button>
+                                        <button class="emoji-btn">😙</button>
+                                        <button class="emoji-btn">😚</button>
+                                        <button class="emoji-btn">😋</button>
+                                        <button class="emoji-btn">😛</button>
+                                        <button class="emoji-btn">😝</button>
+                                        <button class="emoji-btn">😜</button>
+                                        <button class="emoji-btn">🤪</button>
+                                        <button class="emoji-btn">🤨</button>
+                                        <button class="emoji-btn">🧐</button>
+                                    </div>
+                                </div>
+                                <div class="emoji-category">
+                                    <h4 class="text-sm font-semibold">Hand Gestures</h4>
+                                    <div class="emoji-grid">
+                                        <button class="emoji-btn">👋</button>
+                                        <button class="emoji-btn">🤚</button>
+                                        <button class="emoji-btn">🖐️</button>
+                                        <button class="emoji-btn">✋</button>
+                                        <button class="emoji-btn">🖖</button>
+                                        <button class="emoji-btn">👌</button>
+                                        <button class="emoji-btn">🤏</button>
+                                        <button class="emoji-btn">✌️</button>
+                                        <button class="emoji-btn">🤞</button>
+                                        <button class="emoji-btn">🤟</button>
+                                        <button class="emoji-btn">🤘</button>
+                                        <button class="emoji-btn">🤙</button>
+                                        <button class="emoji-btn">👈</button>
+                                        <button class="emoji-btn">👉</button>
+                                        <button class="emoji-btn">👆</button>
+                                        <button class="emoji-btn">👇</button>
+                                        <button class="emoji-btn">☝️</button>
+                                        <button class="emoji-btn">👍</button>
+                                        <button class="emoji-btn">👎</button>
+                                        <button class="emoji-btn">✊</button>
+                                        <button class="emoji-btn">👊</button>
+                                        <button class="emoji-btn">🤛</button>
+                                        <button class="emoji-btn">🤜</button>
+                                        <button class="emoji-btn">👏</button>
+                                        <button class="emoji-btn">🙌</button>
+                                        <button class="emoji-btn">👐</button>
+                                        <button class="emoji-btn">🤲</button>
+                                        <button class="emoji-btn">🤝</button>
+                                        <button class="emoji-btn">🙏</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="bg-gray-800 py-3 px-4 flex justify-center space-x-2 md:space-x-4 border-t border-gray-700">
+            <!-- Mic Control -->
+            <button id="micControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600 active">
+                <i class="fas fa-microphone text-xl md:text-2xl"></i>
+            </button>
+            
+            <!-- Camera Control -->
+            <button id="cameraControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600 active">
+                <i class="fas fa-video text-xl md:text-2xl"></i>
+            </button>
+            
+            <!-- Screen Share -->
+            <button id="screenShareControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                <i class="fas fa-desktop text-xl md:text-2xl"></i>
+            </button>
+            
+            <!-- Raise Hand -->
+            <button id="raiseHandControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                <i class="fas fa-hand-paper text-xl md:text-2xl"></i>
+            </button>
+            
+            <!-- Participants -->
+            <button id="participantsControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600 md:hidden">
+                <i class="fas fa-users text-xl md:text-2xl"></i>
+            </button>
+            
+            <!-- Chat -->
+            <button id="chatControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600 md:hidden">
+                <i class="fas fa-comment-dots text-xl md:text-2xl"></i>
+            </button>
+            
+            <!-- Record -->
+            <button id="recordControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                <i class="fas fa-circle text-xl md:text-2xl"></i>
+            </button>
+            
+            <!-- More Options -->
+            <button id="moreOptionsControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                <i class="fas fa-ellipsis-h text-xl md:text-2xl"></i>
+            </button>
+            
+            <!-- End Call -->
+            <button id="endCallControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700">
+                <i class="fas fa-phone text-xl md:text-2xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // UI Elements
+            const sidebar = document.getElementById('sidebar');
+            const peopleTab = document.getElementById('peopleTab');
+            const chatTab = document.getElementById('chatTab');
+            const peopleContent = document.getElementById('peopleContent');
+            const chatContent = document.getElementById('chatContent');
+            const participantsControl = document.getElementById('participantsControl');
+            const chatControl = document.getElementById('chatControl');
+            const emojiToggleBtn = document.getElementById('emojiToggleBtn');
+            const emojiPicker = document.getElementById('emojiPicker');
+            const chatInput = document.getElementById('chatInput');
+            const sendChatBtn = document.getElementById('sendChatBtn');
+            const inviteBtn = document.getElementById('inviteBtn');
+            
+            // Control buttons
+            const micControl = document.getElementById('micControl');
+            const cameraControl = document.getElementById('cameraControl');
+            const screenShareControl = document.getElementById('screenShareControl');
+            const raiseHandControl = document.getElementById('raiseHandControl');
+            const recordControl = document.getElementById('recordControl');
+            const endCallControl = document.getElementById('endCallControl');
+            
+            // Video elements
+            const localVideo = document.getElementById('localVideo');
+            const remoteVideo1 = document.getElementById('remoteVideo1');
+            const remoteVideo2 = document.getElementById('remoteVideo2');
+            const remoteVideo3 = document.getElementById('remoteVideo3');
+            
+            // State variables
+            let isMicOn = true;
+            let isCameraOn = true;
+            let isScreenSharing = false;
+            let isHandRaised = false;
+            let isRecording = false;
+            let isSidebarOpen = false;
+            let isChatOpen = false;
+            let activeTab = 'people'; // 'people' or 'chat'
+            
+            // Initialize video streams (simulated)
+            function initVideoStreams() {
+                // In a real app, we would get the user's camera stream
+                // For demo purposes, we'll simulate this
+                console.log("Initializing video streams...");
+                
+                // Simulate local video stream
+                navigator.mediaDevices.getUserMedia = navigator.mediaDevices.getUserMedia || 
+                    navigator.mediaDevices.webkitGetUserMedia || 
+                    navigator.mediaDevices.mozGetUserMedia;
+                
+                if (navigator.mediaDevices.getUserMedia) {
+                    navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                        .then(function(stream) {
+                            localVideo.srcObject = stream;
+                        })
+                        .catch(function(error) {
+                            console.error("Error accessing media devices:", error);
+                        });
+                }
+                
+                // Simulate remote video streams (in a real app, these would come from WebRTC)
+                setTimeout(() => {
+                    // Simulate remote video 1
+                    fetch('https://placekitten.com/640/360')
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const videoURL = URL.createObjectURL(blob);
+                            remoteVideo1.src = videoURL;
+                        });
+                    
+                    // Simulate remote video 2
+                    fetch('https://placebear.com/640/360')
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const videoURL = URL.createObjectURL(blob);
+                            remoteVideo2.src = videoURL;
+                        });
+                    
+                    // Simulate remote video 3
+                    fetch('https://picsum.photos/640/360')
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const videoURL = URL.createObjectURL(blob);
+                            remoteVideo3.src = videoURL;
+                        });
+                }, 1000);
+            }
+            
+            // Toggle microphone
+            micControl.addEventListener('click', function() {
+                isMicOn = !isMicOn;
+                if (isMicOn) {
+                    micControl.classList.add('active');
+                    micControl.innerHTML = '<i class="fas fa-microphone text-xl md:text-2xl"></i>';
+                    console.log("Microphone turned ON");
+                } else {
+                    micControl.classList.remove('active');
+                    micControl.innerHTML = '<i class="fas fa-microphone-slash text-xl md:text-2xl"></i>';
+                    console.log("Microphone turned OFF");
+                }
+            });
+            
+            // Toggle camera
+            cameraControl.addEventListener('click', function() {
+                isCameraOn = !isCameraOn;
+                if (isCameraOn) {
+                    cameraControl.classList.add('active');
+                    cameraControl.innerHTML = '<i class="fas fa-video text-xl md:text-2xl"></i>';
+                    localVideo.style.display = 'block';
+                    console.log("Camera turned ON");
+                } else {
+                    cameraControl.classList.remove('active');
+                    cameraControl.innerHTML = '<i class="fas fa-video-slash text-xl md:text-2xl"></i>';
+                    localVideo.style.display = 'none';
+                    console.log("Camera turned OFF");
+                }
+            });
+            
+            // Toggle screen sharing
+            screenShareControl.addEventListener('click', function() {
+                isScreenSharing = !isScreenSharing;
+                if (isScreenSharing) {
+                    screenShareControl.classList.add('active');
+                    console.log("Screen sharing started");
+                    // In a real app, we would start screen sharing here
+                } else {
+                    screenShareControl.classList.remove('active');
+                    console.log("Screen sharing stopped");
+                    // In a real app, we would stop screen sharing here
+                }
+            });
+            
+            // Toggle raise hand
+            raiseHandControl.addEventListener('click', function() {
+                isHandRaised = !isHandRaised;
+                if (isHandRaised) {
+                    raiseHandControl.classList.add('raised-hand');
+                    console.log("Hand raised");
+                } else {
+                    raiseHandControl.classList.remove('raised-hand');
+                    console.log("Hand lowered");
+                }
+            });
+            
+            // Toggle recording
+            recordControl.addEventListener('click', function() {
+                isRecording = !isRecording;
+                if (isRecording) {
+                    recordControl.classList.add('danger');
+                    console.log("Recording started");
+                } else {
+                    recordControl.classList.remove('danger');
+                    console.log("Recording stopped");
+                }
+            });
+            
+            // End call
+            endCallControl.addEventListener('click', function() {
+                if (confirm("Are you sure you want to end the call for everyone?")) {
+                    console.log("Call ended");
+                    // In a real app, we would disconnect from the call here
+                    window.location.href = "index.html"; // Redirect to home page
+                }
+            });
+            
+            // Toggle sidebar (mobile)
+            participantsControl.addEventListener('click', function() {
+                if (!isSidebarOpen) {
+                    sidebar.classList.remove('hidden');
+                    activeTab = 'people';
+                    peopleTab.classList.add('border-blue-500', 'text-white');
+                    peopleTab.classList.remove('text-gray-400');
+                    chatTab.classList.add('text-gray-400');
+                    chatTab.classList.remove('border-blue-500', 'text-white');
+                    peopleContent.classList.remove('hidden');
+                    chatContent.classList.add('hidden');
+                    isSidebarOpen = true;
+                } else if (activeTab === 'people') {
+                    sidebar.classList.add('hidden');
+                    isSidebarOpen = false;
+                } else {
+                    activeTab = 'people';
+                    peopleTab.classList.add('border-blue-500', 'text-white');
+                    peopleTab.classList.remove('text-gray-400');
+                    chatTab.classList.add('text-gray-400');
+                    chatTab.classList.remove('border-blue-500', 'text-white');
+                    peopleContent.classList.remove('hidden');
+                    chatContent.classList.add('hidden');
+                }
+            });
+            
+            // Toggle chat (mobile)
+            chatControl.addEventListener('click', function() {
+                if (!isSidebarOpen) {
+                    sidebar.classList.remove('hidden');
+                    activeTab = 'chat';
+                    chatTab.classList.add('border-blue-500', 'text-white');
+                    chatTab.classList.remove('text-gray-400');
+                    peopleTab.classList.add('text-gray-400');
+                    peopleTab.classList.remove('border-blue-500', 'text-white');
+                    chatContent.classList.remove('hidden');
+                    peopleContent.classList.add('hidden');
+                    isSidebarOpen = true;
+                } else if (activeTab === 'chat') {
+                    sidebar.classList.add('hidden');
+                    isSidebarOpen = false;
+                } else {
+                    activeTab = 'chat';
+                    chatTab.classList.add('border-blue-500', 'text-white');
+                    chatTab.classList.remove('text-gray-400');
+                    peopleTab.classList.add('text-gray-400');
+                    peopleTab.classList.remove('border-blue-500', 'text-white');
+                    chatContent.classList.remove('hidden');
+                    peopleContent.classList.add('hidden');
+                }
+            });
+            
+            // Switch between people and chat tabs
+            peopleTab.addEventListener('click', function() {
+                activeTab = 'people';
+                peopleTab.classList.add('border-blue-500', 'text-white');
+                peopleTab.classList.remove('text-gray-400');
+                chatTab.classList.add('text-gray-400');
+                chatTab.classList.remove('border-blue-500', 'text-white');
+                peopleContent.classList.remove('hidden');
+                chatContent.classList.add('hidden');
+            });
+            
+            chatTab.addEventListener('click', function() {
+                activeTab = 'chat';
+                chatTab.classList.add('border-blue-500', 'text-white');
+                chatTab.classList.remove('text-gray-400');
+                peopleTab.classList.add('text-gray-400');
+                peopleTab.classList.remove('border-blue-500', 'text-white');
+                chatContent.classList.remove('hidden');
+                peopleContent.classList.add('hidden');
+            });
+            
+            // Toggle emoji picker
+            emojiToggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                emojiPicker.classList.toggle('active');
+            });
+            
+            // Close emoji picker when clicking outside
+            document.addEventListener('click', function() {
+                emojiPicker.classList.remove('active');
+            });
+            
+            // Prevent emoji picker from closing when clicking inside it
+            emojiPicker.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Add emoji to chat input
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    chatInput.value += this.textContent;
+                    emojiPicker.classList.remove('active');
+                    chatInput.focus();
+                });
+            });
+            
+            // Send chat message
+            function sendChatMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    console.log("Message sent:", message);
+                    // In a real app, we would send this message to other participants
+                    chatInput.value = '';
+                }
+            }
+            
+            sendChatBtn.addEventListener('click', sendChatMessage);
+            
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+            
+            // Invite more people
+            inviteBtn.addEventListener('click', function() {
+                const meetingLink = window.location.href;
+                navigator.clipboard.writeText(meetingLink)
+                    .then(() => {
+                        alert("Meeting link copied to clipboard!\n\nShare this link to invite others:\n" + meetingLink);
+                    })
+                    .catch(err => {
+                        console.error("Failed to copy meeting link:", err);
+                        prompt("Copy this meeting link to invite others:", meetingLink);
+                    });
+            });
+            
+            // Initialize the app
+            initVideoStreams();
+        });
+    </script>
+    
+</body>
+
+</html>

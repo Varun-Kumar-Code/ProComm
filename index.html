@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProComm | Video Conference App</title>
+    <script src="script.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+        }
+
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .participant-video {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #1e293b;
+        }
+
+        .participant-name {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .controls {
+            transition: all 0.3s ease;
+        }
+
+        .controls:hover {
+            transform: scale(1.1);
+        }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <!-- Navigation Bar -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center">
+                    <i class="fas fa-video mr-2 text-xl"></i>
+                    <span class="text-xl font-bold">ProComm</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="flex items-center space-x-4">
+                        <button id="newMeetingBtn"
+                            class="px-3 py-2 rounded-md text-sm font-medium bg-white text-blue-600 hover:bg-gray-100">New
+                            Meeting</button>
+                        <button id="joinMeetingBtn"
+                            class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Join Meeting</button>
+                        <div class="relative">
+                            <button id="userMenuBtn" class="flex items-center space-x-2 focus:outline-none">
+                                <div class="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <span id="userName">User</span>
+                            </button>
+                            <div id="userDropdown"
+                                class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                <a href="#" id="logoutBtn"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobileMenuBtn" class="text-white focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-blue-700 pb-3 px-2">
+            <button id="mobileNewMeetingBtn"
+                class="block w-full px-3 py-2 rounded-md text-base font-medium bg-white text-blue-600 mb-2">New
+                Meeting</button>
+            <button id="mobileJoinMeetingBtn"
+                class="block w-full px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-600 mb-2">Join
+                Meeting</button>
+            <div class="border-t border-blue-600 pt-2">
+                <a href="#"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-600">Profile</a>
+                <a href="#"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-600">Settings</a>
+                <a href="#" id="mobileLogoutBtn"
+                    class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-600">Sign out</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Dashboard View (Default) -->
+        <div id="dashboardView" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4">Upcoming Meetings</h2>
+                    <div class="space-y-4">
+                        <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-medium">Team Standup</h3>
+                                    <p class="text-sm text-gray-500">Today, 10:00 AM - 10:30 AM</p>
+                                </div>
+                                <button class="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-sm">Join</button>
+                            </div>
+                        </div>
+                        <div class="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-medium">Client Review</h3>
+                                    <p class="text-sm text-gray-500">Tomorrow, 2:00 PM - 3:00 PM</p>
+                                </div>
+                                <button class="px-3 py-1 bg-blue-100 text-blue-600 rounded-md text-sm">Join</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
+                    <button id="quickNewMeeting"
+                        class="w-full mb-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center">
+                        <i class="fas fa-plus mr-2"></i> New Meeting
+                    </button>
+                    <button id="quickJoinMeeting"
+                        class="w-full px-4 py-2 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 flex items-center justify-center">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Join Meeting
+                    </button>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold mb-4">Recent Meetings</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center text-sm">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                <i class="fas fa-video text-gray-500"></i>
+                            </div>
+                            <div>
+                                <p>Project Kickoff</p>
+                                <p class="text-gray-500">Yesterday, 11:00 AM</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                <i class="fas fa-video text-gray-500"></i>
+                            </div>
+                            <div>
+                                <p>Design Review</p>
+                                <p class="text-gray-500">Monday, 3:00 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Meeting Modal -->
+        <div id="newMeetingModal"
+            class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">New Meeting</h3>
+                        <button id="closeNewMeetingModal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Meeting Title</label>
+                        <input type="text" id="meetingTitle"
+                            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter meeting title">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Meeting Link</label>
+                        <div class="flex">
+                            <input type="text" id="meetingLink"
+                                class="flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value="meetnow.com/abc-xyz-123" readonly>
+                            <button id="copyLinkBtn"
+                                class="px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Participants</label>
+                        <div class="flex mb-2">
+                            <input type="email" id="participantEmail"
+                                class="flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Enter participant email">
+                            <button id="addParticipantBtn"
+                                class="px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                        <div id="participantsList"
+                            class="border rounded-md p-2 max-h-40 overflow-y-auto custom-scrollbar">
+                            <!-- Participants will be added here -->
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancelMeetingBtn"
+                            class="px-4 py-2 border rounded-md hover:bg-gray-50">Cancel</button>
+                        <button id="startMeetingBtn"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Start Meeting</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Join Meeting Modal -->
+        <div id="joinMeetingModal"
+            class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Join Meeting</h3>
+                        <button id="closeJoinMeetingModal" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Meeting Link or ID</label>
+                        <input type="text" id="meetingIdInput"
+                            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter meeting link or ID">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                        <input type="text" id="participantName"
+                            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter your name">
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button id="cancelJoinMeetingBtn"
+                            class="px-4 py-2 border rounded-md hover:bg-gray-50">Cancel</button>
+                        <button id="joinMeetingNowBtn"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Join</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meeting Room View (Hidden by default) -->
+        <div id="meetingRoomView" class="hidden">
+            <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                <!-- Video Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4" id="videoGrid">
+                    <!-- Local video -->
+                    <div class="participant-video">
+                        <div class="video-container">
+                            <video id="localVideo" autoplay muted></video>
+                        </div>
+                        <div class="participant-name">You</div>
+                    </div>
+                    <!-- Remote videos will be added here -->
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-gray-900 p-4 flex justify-center space-x-6">
+                    <button id="toggleMicBtn"
+                        class="controls w-12 h-12 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                        <i class="fas fa-microphone text-xl"></i>
+                    </button>
+                    <button id="toggleCameraBtn"
+                        class="controls w-12 h-12 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                        <i class="fas fa-video text-xl"></i>
+                    </button>
+                    <button id="screenShareBtn"
+                        class="controls w-12 h-12 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                        <i class="fas fa-desktop text-xl"></i>
+                    </button>
+                    <button id="leaveMeetingBtn"
+                        class="controls w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700">
+                        <i class="fas fa-phone-alt text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Participants Sidebar -->
+                <div id="participantsSidebar"
+                    class="hidden md:block absolute top-0 right-0 h-full w-64 bg-white shadow-lg">
+                    <div class="p-4 border-b">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-medium">Participants</h3>
+                            <button id="closeSidebarBtn" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="p-4 overflow-y-auto h-80 custom-scrollbar" id="sidebarParticipantsList">
+                        <!-- Participants list will be added here -->
+                    </div>
+                    <div class="p-4 border-t">
+                        <button id="inviteMoreBtn"
+                            class="w-full py-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200">
+                            <i class="fas fa-user-plus mr-2"></i> Invite more
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sidebar Toggle Button -->
+                <button id="sidebarToggleBtn"
+                    class="md:hidden absolute top-4 right-4 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center">
+                    <i class="fas fa-users"></i>
+                </button>
+            </div>
+
+            <!-- Chat Box (Hidden by default) -->
+            <div id="chatBox" class="hidden mt-4 bg-white rounded-lg shadow-md">
+                <div class="p-3 border-b flex justify-between items-center">
+                    <h3 class="font-medium">Chat</h3>
+                    <button id="closeChatBtn" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-3 h-64 overflow-y-auto custom-scrollbar" id="chatMessages">
+                    <!-- Chat messages will appear here -->
+                </div>
+                <div class="p-3 border-t">
+                    <div class="flex">
+                        <input type="text" id="chatInput"
+                            class="flex-1 px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Type a message...">
+                        <button id="sendChatBtn"
+                            class="px-3 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Toggle Button -->
+            <button id="chatToggleBtn"
+                class="fixed bottom-20 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center">
+                <i class="fas fa-comment-dots text-xl"></i>
+            </button>
+        </div>
+    </main>
+
+
+
+    <!-- Support Button and Modal -->
+    <button id="supportBtn" class="fixed bottom-6 right-6 w-12 h-12 bg-green-600 text-white rounded-full shadow-lg flex items-center justify-center z-40">
+        <i class="fas fa-question text-xl"></i>
+    </button>
+
+    <div id="supportModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold">Contact Support</h3>
+                    <button id="closeSupportModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <form id="supportForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                        <input type="text" id="supportName" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" id="supportEmail" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                        <textarea id="supportMessage" rows="4" class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancelSupportBtn" class="px-4 py-2 border rounded-md hover:bg-gray-50">Cancel</button>
+                        <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // UI Elements
+            const dashboardView = document.getElementById('dashboardView');
+            const meetingRoomView = document.getElementById('meetingRoomView');
+            const newMeetingModal = document.getElementById('newMeetingModal');
+            const joinMeetingModal = document.getElementById('joinMeetingModal');
+            const participantsSidebar = document.getElementById('participantsSidebar');
+            const chatBox = document.getElementById('chatBox');
+
+            // Buttons
+            const newMeetingBtn = document.getElementById('newMeetingBtn');
+            const joinMeetingBtn = document.getElementById('joinMeetingBtn');
+            const quickNewMeeting = document.getElementById('quickNewMeeting');
+            const quickJoinMeeting = document.getElementById('quickJoinMeeting');
+            const closeNewMeetingModal = document.getElementById('closeNewMeetingModal');
+            const closeJoinMeetingModal = document.getElementById('closeJoinMeetingModal');
+            const startMeetingBtn = document.getElementById('startMeetingBtn');
+            const cancelMeetingBtn = document.getElementById('cancelMeetingBtn');
+            const joinMeetingNowBtn = document.getElementById('joinMeetingNowBtn');
+            const cancelJoinMeetingBtn = document.getElementById('cancelJoinMeetingBtn');
+            const copyLinkBtn = document.getElementById('copyLinkBtn');
+            const addParticipantBtn = document.getElementById('addParticipantBtn');
+            const leaveMeetingBtn = document.getElementById('leaveMeetingBtn');
+            const toggleMicBtn = document.getElementById('toggleMicBtn');
+            const toggleCameraBtn = document.getElementById('toggleCameraBtn');
+            const screenShareBtn = document.getElementById('screenShareBtn');
+            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+            const chatToggleBtn = document.getElementById('chatToggleBtn');
+            const closeChatBtn = document.getElementById('closeChatBtn');
+            const sendChatBtn = document.getElementById('sendChatBtn');
+            const inviteMoreBtn = document.getElementById('inviteMoreBtn');
+            const userMenuBtn = document.getElementById('userMenuBtn');
+            const userDropdown = document.getElementById('userDropdown');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            const mobileNewMeetingBtn = document.getElementById('mobileNewMeetingBtn');
+            const mobileJoinMeetingBtn = document.getElementById('mobileJoinMeetingBtn');
+            const mobileLogoutBtn = document.getElementById('mobileLogoutBtn');
+
+            // Inputs
+            const participantEmail = document.getElementById('participantEmail');
+            const participantsList = document.getElementById('participantsList');
+            const meetingTitle = document.getElementById('meetingTitle');
+            const meetingLink = document.getElementById('meetingLink');
+            const meetingIdInput = document.getElementById('meetingIdInput');
+            const participantName = document.getElementById('participantName');
+            const chatInput = document.getElementById('chatInput');
+
+            // Video elements
+            const localVideo = document.getElementById('localVideo');
+            const videoGrid = document.getElementById('videoGrid');
+
+            // State variables
+            let isMicOn = true;
+            let isCameraOn = true;
+            let isScreenSharing = false;
+            let localStream = null;
+            let participants = [];
+            let chatMessages = [];
+
+            // Generate a random meeting ID
+            function generateMeetingId() {
+                const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+                let result = '';
+                for (let i = 0; i < 9; i++) {
+                    if (i > 0 && i % 3 === 0) result += '-';
+                    result += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return result;
+            }
+
+            // Initialize with a random meeting link
+            meetingLink.value = `meetnow.com/${generateMeetingId()}`;
+
+            // Toggle mobile menu
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // User dropdown menu
+            userMenuBtn.addEventListener('click', () => {
+                userDropdown.classList.toggle('hidden');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.add('hidden');
+                }
+            });
+
+
+            // Support form submission
+            supportForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('supportName').value;
+                const email = document.getElementById('supportEmail').value;
+                const message = document.getElementById('supportMessage').value;
+                
+                // Here you would typically send this data to your backend
+                console.log('Support request submitted:', { name, email, message });
+                
+                alert('Thank you for contacting support! We will get back to you soon.');
+                supportForm.reset();
+                supportModal.classList.add('hidden');
+            });
+
+
+            // Logout functionality
+            logoutBtn.addEventListener('click', () => {
+                // Backend: Firebase logout would go here
+                alert('Logging out...');
+                // Redirect to login page
+                // window.location.href = 'login.html';
+            });
+
+            mobileLogoutBtn.addEventListener('click', () => {
+                // Same as above
+                alert('Logging out...');
+                // window.location.href = 'login.html';
+            });
+
+            // New meeting button handlers
+            newMeetingBtn.addEventListener('click', () => {
+                newMeetingModal.classList.remove('hidden');
+            });
+
+            quickNewMeeting.addEventListener('click', () => {
+                newMeetingModal.classList.remove('hidden');
+            });
+
+            mobileNewMeetingBtn.addEventListener('click', () => {
+                newMeetingModal.classList.remove('hidden');
+                mobileMenu.classList.add('hidden');
+            });
+
+            closeNewMeetingModal.addEventListener('click', () => {
+                newMeetingModal.classList.add('hidden');
+            });
+
+            cancelMeetingBtn.addEventListener('click', () => {
+                newMeetingModal.classList.add('hidden');
+            });
+
+            // Join meeting button handlers
+            joinMeetingBtn.addEventListener('click', () => {
+                joinMeetingModal.classList.remove('hidden');
+            });
+
+            quickJoinMeeting.addEventListener('click', () => {
+                joinMeetingModal.classList.remove('hidden');
+            });
+
+            mobileJoinMeetingBtn.addEventListener('click', () => {
+                joinMeetingModal.classList.remove('hidden');
+                mobileMenu.classList.add('hidden');
+            });
+
+            closeJoinMeetingModal.addEventListener('click', () => {
+                joinMeetingModal.classList.add('hidden');
+            });
+
+            cancelJoinMeetingBtn.addEventListener('click', () => {
+                joinMeetingModal.classList.add('hidden');
+            });
+
+            // Copy meeting link
+            copyLinkBtn.addEventListener('click', () => {
+                meetingLink.select();
+                document.execCommand('copy');
+                alert('Meeting link copied to clipboard!');
+            });
+
+            // Add participant to list
+            addParticipantBtn.addEventListener('click', () => {
+                const email = participantEmail.value.trim();
+                if (email && isValidEmail(email)) {
+                    // Backend: Here we would verify the email exists in our system
+                    // For now, we'll just add it to the UI
+                    
+                    const participantItem = document.createElement('div');
+                    participantItem.className = 'flex justify-between items-center p-2 bg-gray-50 rounded mb-1';
+                    participantItem.innerHTML = `
+                        <span>${email}</span>
+                        <button class="text-red-500 hover:text-red-700 remove-participant">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    
+                    // Add to participants list
+                    participantsList.appendChild(participantItem);
+                    participantEmail.value = '';
+                    
+                    // Add remove functionality
+                    participantItem.querySelector('.remove-participant').addEventListener('click', () => {
+                        participantsList.removeChild(participantItem);
+                    });
+                } else {
+                    alert('Please enter a valid email address');
+                }
+            });
+
+            // Email validation helper
+            function isValidEmail(email) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            }
+        });
+    </script>
+
+    <script>
+        document.getElementById("joinMeetingBtn").addEventListener("click", function () {
+            window.location.href = "main.html";
+        });
+    </script>
+
+</body>
+
+</html>
