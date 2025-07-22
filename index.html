@@ -578,8 +578,13 @@
                 joinMeetingModal.classList.remove('hidden');
             });
 
-            mobileJoinMeetingBtn.addEventListener('click', () => {
-                window.location.href = 'main.html';
+            mobileJoinMeetingBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    window.location.href = 'main.html';
+                } catch (err) {
+                    alert('Camera and microphone permissions are required to join the meeting. Please allow access.');
+                }
             });
 
             closeJoinMeetingModal.addEventListener('click', () => {
