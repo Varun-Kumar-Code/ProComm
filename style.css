@@ -1,0 +1,194 @@
+/* Profile Page Styles */
+.profile-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    padding: 32px 24px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.profile-header {
+    display: flex;
+    gap: 40px;
+    align-items: flex-start;
+    margin-bottom: 32px;
+}
+
+.profile-picture-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-picture {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #0078d7;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+#update-picture-btn {
+    background: #0078d7;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 18px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+#update-picture-btn:hover {
+    background: #005fa3;
+}
+
+.profile-bio-section {
+    flex: 1;
+}
+.profile-bio-section h2 {
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+    color: #333;
+}
+#user-bio {
+    width: 100%;
+    min-height: 80px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    resize: vertical;
+}
+#save-bio-btn {
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 16px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+#save-bio-btn:hover {
+    background: #1e7e34;
+}
+
+.call-history-section {
+    margin-top: 32px;
+}
+.call-history-section h2 {
+    margin-bottom: 12px;
+    color: #333;
+}
+#call-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fafbfc;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+#call-history-table th, #call-history-table td {
+    padding: 12px 10px;
+    text-align: left;
+    border-bottom: 1px solid #eaeaea;
+}
+#call-history-table th {
+    background: #f3f6fa;
+    font-weight: 600;
+}
+#call-history-table tr:last-child td {
+    border-bottom: none;
+}
+.sort-btn {
+    background: none;
+    border: none;
+    color: #0078d7;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0;
+    transition: color 0.2s;
+}
+.sort-btn:hover {
+    color: #005fa3;
+}
+
+/* Body background and font for consistency with index.html */
+body {
+    background-color: #f3f4f6; /* Tailwind's bg-gray-100 */
+    font-family: 'Segoe UI', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Navbar styles */
+nav.bg-blue-600 {
+    background-color: #2563eb !important; /* Tailwind's blue-600 */
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: relative;
+    z-index: 10;
+}
+nav .text-blue-600 {
+    color: #2563eb !important;
+}
+nav .bg-white {
+    background: #fff !important;
+}
+nav .hover\:bg-gray-100:hover {
+    background: #f3f4f6 !important;
+}
+nav .hover\:bg-blue-700:hover {
+    background: #1d4ed8 !important;
+}
+nav .bg-blue-400 {
+    background: #60a5fa !important;
+}
+nav .shadow-lg {
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important;
+}
+nav .rounded-md {
+    border-radius: 0.375rem !important;
+}
+nav .font-bold {
+    font-weight: 700 !important;
+}
+nav .font-medium {
+    font-weight: 500 !important;
+}
+nav .focus\:outline-none:focus {
+    outline: none !important;
+}
+nav .hidden {
+    display: none !important;
+}
+nav .block {
+    display: block !important;
+}
+nav .md\:hidden {
+    display: none !important;
+}
+@media (max-width: 768px) {
+    nav .md\:hidden {
+        display: block !important;
+    }
+    nav .md\:block {
+        display: none !important;
+    }
+}
+
+@media (max-width: 700px) {
+    .profile-header {
+        flex-direction: column;
+        gap: 24px;
+    }
+    .profile-container {
+        padding: 18px 6px;
+    }
+}
