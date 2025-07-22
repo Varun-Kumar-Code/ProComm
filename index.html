@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -92,14 +91,14 @@
                             class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Join Meeting</button>
                         <div class="relative">
                             <button id="userMenuBtn" class="flex items-center space-x-2 focus:outline-none">
-                                <div class="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center">
+                                <div class="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center profile-navbar-icon">
                                     <i class="fas fa-user"></i>
                                 </div>
                                 <span id="userName">User</span>
                             </button>
                             <div id="userDropdown"
                                 class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="profile.html" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
                                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
                                 <a href="#" id="logoutBtn"
                                     class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</a>
@@ -123,7 +122,7 @@
                 class="block w-full px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-600 mb-2">Join
                 Meeting</button>
             <div class="border-t border-blue-600 pt-2">
-                <a href="#"
+                <a href="profile.html"
                     class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-600">Profile</a>
                 <a href="#"
                     class="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-blue-600">Settings</a>
@@ -537,16 +536,15 @@
 
             // Logout functionality
             logoutBtn.addEventListener('click', () => {
-                // Backend: Firebase logout would go here
-                alert('Logging out...');
+                // Remove user from localStorage (simulate logout)
+                localStorage.removeItem('user');
                 // Redirect to login page
-                // window.location.href = 'login.html';
+                window.location.href = 'login.html';
             });
 
             mobileLogoutBtn.addEventListener('click', () => {
-                // Same as above
-                alert('Logging out...');
-                // window.location.href = 'login.html';
+                localStorage.removeItem('user');
+                window.location.href = 'login.html';
             });
 
             // New meeting button handlers
@@ -641,6 +639,31 @@
             window.location.href = "main.html";
         });
     </script>
+
+    <script>
+        // Load profile picture from localStorage for navbar
+        (function() {
+            const savedPic = localStorage.getItem('profilePicture');
+            if (savedPic) {
+                const navbarUserIcons = document.querySelectorAll('.profile-navbar-icon');
+                navbarUserIcons.forEach(icon => {
+                    icon.style.backgroundImage = `url('${savedPic}')`;
+                    icon.style.backgroundSize = 'cover';
+                    icon.innerHTML = '';
+                });
+            }
+        })();
+    </script>
+
+    <script>
+// --- Authentication Redirect Logic ---
+(function() {
+    // Placeholder: check if user is logged in (simulate with localStorage)
+    if (!localStorage.getItem('user')) {
+        window.location.href = 'login.html';
+    }
+})();
+</script>
 
 </body>
 
