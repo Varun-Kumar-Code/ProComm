@@ -490,11 +490,6 @@
                 <i class="fas fa-desktop text-xl md:text-2xl"></i>
             </button>
             
-            <!-- Raise Hand -->
-            <button id="raiseHandControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
-                <i class="fas fa-hand-paper text-xl md:text-2xl"></i>
-            </button>
-            
             <!-- Participants -->
             <button id="participantsControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600 md:hidden">
                 <i class="fas fa-users text-xl md:text-2xl"></i>
@@ -505,15 +500,20 @@
                 <i class="fas fa-comment-dots text-xl md:text-2xl"></i>
             </button>
             
-            <!-- Record -->
-            <button id="recordControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
-                <i class="fas fa-circle text-xl md:text-2xl"></i>
-            </button>
-            
             <!-- More Options -->
-            <button id="moreOptionsControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
-                <i class="fas fa-ellipsis-h text-xl md:text-2xl"></i>
-            </button>
+            <div class="relative inline-block">
+                <button id="moreOptionsControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600">
+                    <i class="fas fa-ellipsis-h text-xl md:text-2xl"></i>
+                </button>
+                <div id="moreOptionsDropdown" class="hidden absolute bottom-16 right-0 w-40 bg-white text-gray-800 rounded-lg shadow-lg z-50 py-2">
+                    <button id="raiseHandControl" class="w-full flex items-center px-4 py-2 hover:bg-gray-100">
+                        <i class="fas fa-hand-paper mr-2"></i> Raise Hand
+                    </button>
+                    <button id="recordControl" class="w-full flex items-center px-4 py-2 hover:bg-gray-100">
+                        <i class="fas fa-circle mr-2"></i> Record
+                    </button>
+                </div>
+            </div>
             
             <!-- End Call -->
             <button id="endCallControl" class="control-btn w-12 h-12 md:w-14 md:h-14 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700">
@@ -542,6 +542,8 @@
             const micControl = document.getElementById('micControl');
             const cameraControl = document.getElementById('cameraControl');
             const screenShareControl = document.getElementById('screenShareControl');
+            const moreOptionsControl = document.getElementById('moreOptionsControl');
+            const moreOptionsDropdown = document.getElementById('moreOptionsDropdown');
             const raiseHandControl = document.getElementById('raiseHandControl');
             const recordControl = document.getElementById('recordControl');
             const endCallControl = document.getElementById('endCallControl');
@@ -655,7 +657,20 @@
                 }
             });
             
-            // Toggle raise hand
+            // Dropdown toggle for more options
+            moreOptionsControl.addEventListener('click', function(e) {
+                e.stopPropagation();
+                moreOptionsDropdown.classList.toggle('hidden');
+            });
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function() {
+                moreOptionsDropdown.classList.add('hidden');
+            });
+            moreOptionsDropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Toggle raise hand (now in dropdown)
             raiseHandControl.addEventListener('click', function() {
                 isHandRaised = !isHandRaised;
                 if (isHandRaised) {
@@ -665,9 +680,10 @@
                     raiseHandControl.classList.remove('raised-hand');
                     console.log("Hand lowered");
                 }
+                moreOptionsDropdown.classList.add('hidden');
             });
             
-            // Toggle recording
+            // Toggle recording (now in dropdown)
             recordControl.addEventListener('click', function() {
                 isRecording = !isRecording;
                 if (isRecording) {
@@ -677,6 +693,7 @@
                     recordControl.classList.remove('danger');
                     console.log("Recording stopped");
                 }
+                moreOptionsDropdown.classList.add('hidden');
             });
             
             // End call
