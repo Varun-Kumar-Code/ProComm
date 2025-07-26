@@ -1,6 +1,6 @@
 # ProComm
 
-<img src="">
+<img src="assets/imgs/LandingPage.png">
 
 We are currently developing a powerful and secure Video Conference Call Web Application designed to deliver seamless virtual communication experiences. Built with a robust backend infrastructure and an intuitive, beautifully crafted user interface, our platform ensures smooth and high-quality video meetings for both personal and professional use.
 
