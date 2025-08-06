@@ -6,5 +6,8 @@ We are currently developing a powerful and secure Video Conference Call Web Appl
 
 > Our top priority is data privacy and security — every meeting and user interaction is protected by advanced encryption and authentication measures. The application is engineered to prevent interruptions, so you can create or join meetings without friction, from anywhere, at any time.
 
+## 👥 Contributing
+Feel free to fork the repository and submit pull requests for any improvements or features!
+
 ## 📜 License
 This project is licensed under the MIT License. See the LICENSE file for details.
