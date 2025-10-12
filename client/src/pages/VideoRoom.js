@@ -380,12 +380,20 @@ const VideoRoom = () => {
 
       // Poll event listeners
       socketRef.current.on('poll-created', (pollData) => {
-        setPolls(prev => [...prev, pollData.poll]);
+        const pollWithDate = {
+          ...pollData.poll,
+          createdAt: new Date(pollData.poll.createdAt)
+        };
+        setPolls(prev => [...prev, pollWithDate]);
       });
 
       socketRef.current.on('poll-vote', (pollData) => {
+        const pollWithDate = {
+          ...pollData.poll,
+          createdAt: new Date(pollData.poll.createdAt)
+        };
         setPolls(prev => prev.map(poll => 
-          poll.id === pollData.poll.id ? pollData.poll : poll
+          poll.id === pollData.poll.id ? pollWithDate : poll
         ));
       });
 
@@ -962,7 +970,7 @@ const VideoRoom = () => {
 
         {/* Enhanced Meeting Sidebar */}
         {showChat && (
-          <div className="w-full lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col">
+          <div className="w-full lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col h-full max-h-[calc(100vh-200px)]">
             {/* Tab Navigation */}
             <div className="border-b border-white/10">
               <div className="flex">
@@ -1059,7 +1067,7 @@ const VideoRoom = () => {
                     </button>
                   </div>
                   
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                  <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
                     {showCreatePoll && (
                       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
                         <h4 className="text-sm font-medium text-white mb-3">Create New Poll</h4>
@@ -1165,7 +1173,7 @@ const VideoRoom = () => {
                             })}
                           </div>
                           <div className="text-xs text-gray-400 mt-3">
-                            Created by {poll.createdBy} • {poll.createdAt.toLocaleTimeString()}
+                            Created by {poll.createdBy} • {new Date(poll.createdAt).toLocaleTimeString()}
                           </div>
                         </div>
                       ))
