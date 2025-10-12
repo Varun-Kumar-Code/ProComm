@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Light Theme Colors */
+  --bg-main: #F9FAFB;
+  --bg-card: #FFFFFF;
+  --bg-hover: #F1F5F9;
+  --text-primary: #1A1A1A;
+  --text-secondary: #333333;
+  --text-body: #444444;
+  --text-muted: #666666;
+  --text-lighter: rgba(0, 0, 0, 0.6);
+  --accent-blue: #2563EB;
+  --accent-blue-hover: #1D4ED8;
+  --accent-blue-light: #60A5FA;
+  --border-color: #E5E7EB;
+  --border-light: #F3F4F6;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --success-green: #16A34A;
+  --success-green-hover: #15803D;
+  --warning-amber: #F59E0B;
+  --danger-red: #DC2626;
+  
+  /* Brand Colors */
+  --primary-blue: #2563eb;
+  --primary-blue-hover: #1d4ed8;
+  --primary-blue-light: #60a5fa;
+  --success-green-legacy: #28a745;
+  --success-green-hover-legacy: #1e7e34;
+  --gray-100: #f3f4f6;
+  --gray-900: #111827;
+  --white: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  transition: all 0.3s ease;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.dark {
+  /* Dark Theme Colors */
+  --bg-main: #0F172A;
+  --bg-card: #1E293B;
+  --bg-hover: #334155;
+  --text-primary: #F8FAFC;
+  --text-secondary: #E2E8F0;
+  --text-body: #CBD5E1;
+  --text-muted: #94A3B8;
+  --text-lighter: rgba(248, 250, 252, 0.8);
+  --accent-blue: #3B82F6;
+  --accent-blue-hover: #2563EB;
+  --accent-blue-light: #60A5FA;
+  --border-color: #475569;
+  --border-light: #334155;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --success-green: #10B981;
+  --success-green-hover: #059669;
+  --warning-amber: #F59E0B;
+  --danger-red: #EF4444;
+  
+  /* Legacy overrides for dark theme */
+  --primary-blue: #3b82f6;
+  --primary-blue-hover: #2563eb;
+  --primary-blue-light: #60a5fa;
+  --success-green-legacy: #10b981;
+  --success-green-hover-legacy: #059669;
+  --gray-100: #1f2937;
+  --gray-900: #f9fafb;
+  --white: #374151;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Custom button styles */
+.btn-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+.btn-success {
+  @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 transition-colors duration-300;
+}
+
+/* Chatbot styles */
+.chatbot-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.chatbot-minimized {
+  width: 60px;
+  height: 60px;
+}
+
+.chatbot-expanded {
+  width: 350px;
+  height: 500px;
+}
+
+@media (max-width: 640px) {
+  .chatbot-expanded {
+    width: calc(100vw - 40px);
+    right: 20px;
+    left: 20px;
+  }
+}
