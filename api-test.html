@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProComm API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #007bff; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+    </style>
+</head>
+<body>
+    <h1>ProComm API Test Page</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: API Health Check</h3>
+        <button onclick="testHealthCheck()">Test /api/test</button>
+        <div id="health-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: Create Meeting</h3>
+        <button onclick="testCreateMeeting()">Test /api/meetings/create</button>
+        <div id="create-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: Validate Participant</h3>
+        <input type="text" id="meetingId" placeholder="Meeting ID (optional)" style="padding: 8px; margin: 5px;">
+        <button onclick="testValidateParticipant()">Test /api/meetings/{id}/validate-participant</button>
+        <div id="validate-result" class="result"></div>
+    </div>
+
+    <script>
+        async function testHealthCheck() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch('/api/test');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<strong>✅ Success!</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>❌ Failed!</strong><br>Status: ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error!</strong><br>${error.message}`;
+            }
+        }
+
+        async function testCreateMeeting() {
+            const resultDiv = document.getElementById('create-result');
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch('/api/meetings/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Meeting',
+                        description: 'API Test Meeting',
+                        createdBy: 'Test User'
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<strong>✅ Success!</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    
+                    // Store meeting ID for next test
+                    if (data.meeting && data.meeting.id) {
+                        document.getElementById('meetingId').value = data.meeting.id;
+                    }
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>❌ Failed!</strong><br>Status: ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error!</strong><br>${error.message}`;
+            }
+        }
+
+        async function testValidateParticipant() {
+            const resultDiv = document.getElementById('validate-result');
+            const meetingId = document.getElementById('meetingId').value || 'test-meeting-123';
+            resultDiv.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch(`/api/meetings/${meetingId}/validate-participant`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        participantId: 'test-participant-456',
+                        name: 'Test Participant'
+                    })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `<strong>✅ Success!</strong><br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `<strong>❌ Failed!</strong><br>Status: ${response.status}<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ Error!</strong><br>${error.message}`;
+            }
+        }
+
+        // Auto-run health check on page load
+        window.onload = function() {
+            testHealthCheck();
+        }
+    </script>
+</body>
+</html>
