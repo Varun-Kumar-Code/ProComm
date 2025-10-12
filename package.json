@@ -24,7 +24,8 @@
   "author": "Varun Kumar",
   "license": "MIT",
   "dependencies": {
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

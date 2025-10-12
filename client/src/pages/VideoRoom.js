@@ -314,11 +314,18 @@ const VideoRoom = () => {
       const serverUrl = process.env.REACT_APP_SERVER_URL || 
         (process.env.NODE_ENV === 'production' ? window.location.origin : 'http://localhost:3002');
       
-      socketRef.current = io(serverUrl, { 
+      const socketOptions = process.env.NODE_ENV === 'production' ? {
+        path: '/api/socket',
         transports: ['websocket', 'polling'],
         timeout: 20000,
         forceNew: true
-      });
+      } : {
+        transports: ['websocket', 'polling'],
+        timeout: 20000,
+        forceNew: true
+      };
+      
+      socketRef.current = io(serverUrl, socketOptions);
       
       // Initialize PeerJS (production/development aware)
       const isProduction = process.env.NODE_ENV === 'production';

@@ -10,13 +10,28 @@
     },
     {
       "src": "pages/api/**/*.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "runtime": "nodejs18.x"
+      }
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/pages/api/$1"
+      "src": "/api/socket",
+      "dest": "/pages/api/socket.js"
+    },
+    {
+      "src": "/api/test",
+      "dest": "/pages/api/test.js"
+    },
+    {
+      "src": "/api/meetings/create",
+      "dest": "/pages/api/meetings/create.js"
+    },
+    {
+      "src": "/api/meetings/([^/]+)/validate-participant",
+      "dest": "/pages/api/meetings/[meetingId]/validate-participant.js?meetingId=$1"
     },
     {
       "handle": "filesystem"
@@ -24,6 +39,25 @@
     {
       "src": "/(.*)",
       "dest": "/client/build/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        }
+      ]
     }
   ]
 }
