@@ -314,34 +314,42 @@ const VideoRoom = () => {
       // Start video attachment with slight delay to ensure DOM is ready
       setTimeout(() => attachVideo(), 50);
 
-      // Initialize socket connection (production/development aware)
-      const serverUrl = process.env.REACT_APP_SERVER_URL || 
-        (process.env.NODE_ENV === 'production' ? 'https://procomm-server-murex.vercel.app' : 'http://localhost:3002');
+      // Initialize socket connection (only in development or if server URL is explicitly set)
+      const hasSocketServer = process.env.REACT_APP_SERVER_URL && 
+        process.env.REACT_APP_SERVER_URL !== window.location.origin;
       
-      const socketOptions = {
-        transports: ['websocket', 'polling'],
-        timeout: 20000,
-        forceNew: true,
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 5
-      };
-      
-      console.log('🔌 Connecting to Socket.IO server:', serverUrl);
-      socketRef.current = io(serverUrl, socketOptions);
-      
-      // Socket connection events
-      socketRef.current.on('connect', () => {
-        console.log('✅ Socket.IO connected successfully!');
-      });
-      
-      socketRef.current.on('connect_error', (error) => {
-        console.error('❌ Socket.IO connection error:', error);
-      });
-      
-      socketRef.current.on('disconnect', (reason) => {
-        console.warn('⚠️ Socket.IO disconnected:', reason);
-      });
+      if (hasSocketServer || process.env.NODE_ENV === 'development') {
+        const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3002';
+        
+        const socketOptions = {
+          transports: ['websocket', 'polling'],
+          timeout: 20000,
+          forceNew: true,
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionAttempts: 5
+        };
+        
+        console.log('🔌 Connecting to Socket.IO server:', serverUrl);
+        socketRef.current = io(serverUrl, socketOptions);
+        
+        // Socket connection events
+        socketRef.current.on('connect', () => {
+          console.log('✅ Socket.IO connected successfully!');
+        });
+        
+        socketRef.current.on('connect_error', (error) => {
+          console.error('❌ Socket.IO connection error:', error);
+          console.warn('⚠️ Falling back to localStorage peer discovery');
+        });
+        
+        socketRef.current.on('disconnect', (reason) => {
+          console.warn('⚠️ Socket.IO disconnected:', reason);
+        });
+      } else {
+        console.log('📡 Running without Socket.IO server - using localStorage peer discovery');
+        socketRef.current = null;
+      }
       
       // Initialize PeerJS (production/development aware)
       const isProduction = process.env.NODE_ENV === 'production';
@@ -438,99 +446,101 @@ const VideoRoom = () => {
         });
       });
 
-      // Socket event listeners
-      socketRef.current.on('user-joined', ({ userId, userName: joinedUserName, socketId }) => {
-        console.log('👤 User joined:', joinedUserName, 'with userId:', userId);
-        // Call the new user
-        const call = peer.call(userId, stream, {
-          metadata: { userName }
-        });
-        
-        if (call) {
-          console.log('📞 Calling new user:', joinedUserName);
-          call.on('stream', (remoteStream) => {
-            console.log('📹 Received stream from new user:', joinedUserName);
-            addPeer(userId, remoteStream, joinedUserName);
-          });
-          
-          call.on('error', (err) => {
-            console.error('❌ Call error with new user', joinedUserName, err);
-          });
-        }
-      });
-
-      socketRef.current.on('user-left', ({ userId, userName: leftUserName }) => {
-        console.log('User left:', leftUserName);
-        removePeer(userId);
-      });
-
-      socketRef.current.on('chat-message', (messageData) => {
-        setMessages(prev => [...prev, messageData]);
-      });
-
-      socketRef.current.on('existing-participants', (participantList) => {
-        console.log('📋 Existing participants:', participantList);
-        setParticipants(participantList);
-        
-        // Call each existing participant
-        participantList.forEach(participant => {
-          console.log('📞 Calling existing participant:', participant.userName);
-          const call = peer.call(participant.userId, stream, {
+      // Socket event listeners (only if Socket.IO is available)
+      if (socketRef.current) {
+        socketRef.current.on('user-joined', ({ userId, userName: joinedUserName, socketId }) => {
+          console.log('👤 User joined:', joinedUserName, 'with userId:', userId);
+          // Call the new user
+          const call = peer.call(userId, stream, {
             metadata: { userName }
           });
           
           if (call) {
+            console.log('📞 Calling new user:', joinedUserName);
             call.on('stream', (remoteStream) => {
-              console.log('📹 Received stream from:', participant.userName);
-              addPeer(participant.userId, remoteStream, participant.userName);
+              console.log('📹 Received stream from new user:', joinedUserName);
+              addPeer(userId, remoteStream, joinedUserName);
             });
             
             call.on('error', (err) => {
-              console.error('❌ Call error with', participant.userName, err);
+              console.error('❌ Call error with new user', joinedUserName, err);
             });
           }
         });
-      });
 
-      // Poll event listeners
-      socketRef.current.on('poll-created', (pollData) => {
-        const pollWithDate = {
-          ...pollData.poll,
-          createdAt: new Date(pollData.poll.createdAt)
-        };
-        setPolls(prev => [...prev, pollWithDate]);
-      });
-
-      socketRef.current.on('poll-vote', (pollData) => {
-        const pollWithDate = {
-          ...pollData.poll,
-          createdAt: new Date(pollData.poll.createdAt)
-        };
-        setPolls(prev => prev.map(poll => 
-          poll.id === pollData.poll.id ? pollWithDate : poll
-        ));
-      });
-
-      // Hand raise event listeners
-      socketRef.current.on('hand-raised', ({ userName: handUserName, isRaised }) => {
-        setHandsRaised(prev => {
-          const newSet = new Set(prev);
-          if (isRaised) {
-            newSet.add(handUserName);
-          } else {
-            newSet.delete(handUserName);
-          }
-          return newSet;
+        socketRef.current.on('user-left', ({ userId, userName: leftUserName }) => {
+          console.log('User left:', leftUserName);
+          removePeer(userId);
         });
-      });
 
-      // Reaction event listeners
-      socketRef.current.on('reaction', ({ reaction }) => {
-        setReactions(prev => [...prev, reaction]);
-        setTimeout(() => {
-          setReactions(prev => prev.filter(r => r.id !== reaction.id));
-        }, 3000);
-      });
+        socketRef.current.on('chat-message', (messageData) => {
+          setMessages(prev => [...prev, messageData]);
+        });
+
+        socketRef.current.on('existing-participants', (participantList) => {
+          console.log('📋 Existing participants:', participantList);
+          setParticipants(participantList);
+          
+          // Call each existing participant
+          participantList.forEach(participant => {
+            console.log('📞 Calling existing participant:', participant.userName);
+            const call = peer.call(participant.userId, stream, {
+              metadata: { userName }
+            });
+            
+            if (call) {
+              call.on('stream', (remoteStream) => {
+                console.log('📹 Received stream from:', participant.userName);
+                addPeer(participant.userId, remoteStream, participant.userName);
+              });
+              
+              call.on('error', (err) => {
+                console.error('❌ Call error with', participant.userName, err);
+              });
+            }
+          });
+        });
+
+        // Poll event listeners
+        socketRef.current.on('poll-created', (pollData) => {
+          const pollWithDate = {
+            ...pollData.poll,
+            createdAt: new Date(pollData.poll.createdAt)
+          };
+          setPolls(prev => [...prev, pollWithDate]);
+        });
+
+        socketRef.current.on('poll-vote', (pollData) => {
+          const pollWithDate = {
+            ...pollData.poll,
+            createdAt: new Date(pollData.poll.createdAt)
+          };
+          setPolls(prev => prev.map(poll => 
+            poll.id === pollData.poll.id ? pollWithDate : poll
+          ));
+        });
+        
+        // Hand raise event listeners
+        socketRef.current.on('hand-raised', ({ userName: handUserName, isRaised }) => {
+          setHandsRaised(prev => {
+            const newSet = new Set(prev);
+            if (isRaised) {
+              newSet.add(handUserName);
+            } else {
+              newSet.delete(handUserName);
+            }
+            return newSet;
+          });
+        });
+
+        // Reaction event listeners
+        socketRef.current.on('reaction', ({ reaction }) => {
+          setReactions(prev => [...prev, reaction]);
+          setTimeout(() => {
+            setReactions(prev => prev.filter(r => r.id !== reaction.id));
+          }, 3000);
+        });
+      }
 
       // Mark initialization as complete - let LoadingScreen animation finish
       setIsInitializing(false);
