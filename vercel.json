@@ -1,63 +1,10 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/build",
+  "rewrites": [
     {
-      "src": "client/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
-    },
-    {
-      "src": "pages/api/**/*.js",
-      "use": "@vercel/node",
-      "config": {
-        "runtime": "nodejs18.x"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/socket",
-      "dest": "/pages/api/socket.js"
-    },
-    {
-      "src": "/api/test",
-      "dest": "/pages/api/test.js"
-    },
-    {
-      "src": "/api/meetings/create",
-      "dest": "/pages/api/meetings/create.js"
-    },
-    {
-      "src": "/api/meetings/([^/]+)/validate-participant",
-      "dest": "/pages/api/meetings/[meetingId]/validate-participant.js?meetingId=$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/client/build/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "*"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
