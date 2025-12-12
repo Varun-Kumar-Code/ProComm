@@ -23,7 +23,9 @@ import {
   Circle,
   Download,
   Clock,
-  Timer
+  Timer,
+  Pin,
+  PinOff
 } from 'lucide-react';
 import io from 'socket.io-client';
 import Peer from 'peerjs';
@@ -75,6 +77,9 @@ const VideoRoom = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [notes, setNotes] = useState('');
   
+  // Pin state
+  const [pinnedParticipant, setPinnedParticipant] = useState(null); // stores peerId or 'local'
+  
   // Timer states
   const [meetingStartTime] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -94,56 +99,91 @@ const VideoRoom = () => {
 
   const messagesEndRef = useRef(null);
 
+  // Sort participants by priority (active first - camera/mic on)
+  const getSortedParticipants = useCallback(() => {
+    const participantsList = Array.from(peers.entries());
+    
+    return participantsList.sort(([idA, dataA], [idB, dataB]) => {
+      // Pinned participant always first
+      if (pinnedParticipant && pinnedParticipant !== 'local') {
+        if (idA === pinnedParticipant) return -1;
+        if (idB === pinnedParticipant) return 1;
+      }
+      
+      // Active participants (with stream) come first
+      const aHasStream = !!dataA.stream;
+      const bHasStream = !!dataB.stream;
+      
+      if (aHasStream && !bHasStream) return -1;
+      if (!aHasStream && bHasStream) return 1;
+      
+      return 0;
+    });
+  }, [peers, pinnedParticipant]);
+
   // Calculate dynamic grid layout based on participant count (Google Meet style)
   const getGridLayout = () => {
     const totalParticipants = participants.length + 1; // +1 for local user
+    const hasPinned = !!pinnedParticipant;
     
     let gridClass = '';
     let containerClass = '';
+    let pinnedClass = '';
+    let gridVideoClass = '';
+    
+    if (hasPinned) {
+      // Pinned layout: Large pinned video + small thumbnails
+      containerClass = 'w-full h-full flex flex-col gap-2 p-2 md:p-4';
+      pinnedClass = 'w-full aspect-video flex-shrink-0';
+      gridClass = 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 overflow-x-auto';
+      gridVideoClass = 'aspect-video';
+      return { gridClass, containerClass, singleVideoClass: null, pinnedClass, gridVideoClass, hasPinned };
+    }
     
     if (totalParticipants === 1) {
       // Solo: Large centered video
       gridClass = '';
-      containerClass = 'flex items-center justify-center w-full h-full p-4';
+      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-4';
       return { 
         gridClass, 
         containerClass, 
-        singleVideoClass: 'w-full max-w-3xl aspect-video' 
+        singleVideoClass: 'w-full max-w-4xl aspect-video',
+        hasPinned
       };
     } else if (totalParticipants === 2) {
       // 2 people: Stack on mobile, side-by-side on desktop
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 w-full h-full content-center';
-      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-4';
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full content-start';
+      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
     } else if (totalParticipants === 3) {
-      // 3 people: 2 on top, 1 centered below
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 w-full auto-rows-max content-center';
-      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-4';
+      // 3 people: Stack on mobile, row on desktop
+      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 w-full content-start';
+      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
     } else if (totalParticipants === 4) {
-      // 4 people: Perfect 2x2 grid
-      gridClass = 'grid grid-cols-2 gap-2 md:gap-3 w-full auto-rows-max content-center';
-      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-4';
+      // 4 people: 2x2 grid
+      gridClass = 'grid grid-cols-2 gap-2 md:gap-3 w-full content-start';
+      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
     } else if (totalParticipants <= 6) {
       // 5-6 people: 2 cols mobile, 3 cols desktop
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 w-full auto-rows-max content-start';
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 w-full content-start';
       containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
     } else if (totalParticipants <= 9) {
       // 7-9 people: 3 cols grid
-      gridClass = 'grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 w-full auto-rows-max content-start';
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 w-full content-start';
       containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
     } else if (totalParticipants <= 12) {
       // 10-12 people: Dense grid
-      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 w-full auto-rows-max content-start';
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 w-full content-start';
       containerClass = 'w-full h-full p-2 md:p-3 overflow-y-auto';
     } else {
       // 13+ people: Very dense grid
-      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 md:gap-2 w-full auto-rows-max content-start';
+      gridClass = 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 md:gap-2 w-full content-start';
       containerClass = 'w-full h-full p-2 md:p-3 overflow-y-auto';
     }
     
-    return { gridClass, containerClass, singleVideoClass: null };
+    return { gridClass, containerClass, singleVideoClass: null, hasPinned };
   };
 
-  const { gridClass, containerClass, singleVideoClass } = getGridLayout();
+  const { gridClass, containerClass, singleVideoClass, pinnedClass, gridVideoClass, hasPinned } = getGridLayout();
 
   // Callback ref for local video - fires when element mounts
   const localVideoCallbackRef = useCallback((videoElement) => {
@@ -1370,17 +1410,159 @@ const VideoRoom = () => {
         
         {/* Video Grid Container - Responsive & Centered */}
         <div className={containerClass}>
-          <div className={gridClass}>
-            
-            {/* Local Video */}
-            <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 ${singleVideoClass || 'aspect-video'}`}>
-              <video
-                ref={localVideoCallbackRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover bg-black"
-              />
+          {hasPinned ? (
+            <>
+              {/* Pinned Video - Large */}
+              {pinnedParticipant === 'local' ? (
+                <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-blue-500/70 group transition-all duration-300 ${pinnedClass}`}>
+                  <video
+                    ref={localVideoCallbackRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-full object-cover bg-black"
+                  />
+                  {!localStream && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+                      <div className="text-center">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <VideoIcon className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="text-white/70 text-sm font-medium">Connecting...</div>
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                  {isHandRaised && (
+                    <div className="absolute top-3 left-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
+                      <Hand className="w-4 h-4 text-white animate-bounce" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-white/10 shadow-xl">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+                      <span className="text-sm font-semibold text-white">You (Pinned)</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setPinnedParticipant(null)}
+                    className="absolute top-3 right-3 bg-blue-500/90 hover:bg-blue-600 backdrop-blur-sm p-2 rounded-lg shadow-lg transition-colors"
+                    title="Unpin"
+                  >
+                    <PinOff className="w-4 h-4 text-white" />
+                  </button>
+                  <div className="absolute top-3 right-14 flex space-x-1.5">
+                    {!isMicOn && (
+                      <div className="bg-red-500/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg shadow-red-500/30 border border-red-400/20">
+                        <MicOff className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+                    {!isCameraOn && (
+                      <div className="bg-red-500/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg shadow-red-500/30 border border-red-400/20">
+                        <VideoOff className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                getSortedParticipants().map(([peerId, peerData]) => {
+                  if (peerId === pinnedParticipant) {
+                    return (
+                      <div key={peerId} className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-blue-500/70 group transition-all duration-300 ${pinnedClass}`}>
+                        <video
+                          ref={(el) => {
+                            if (el && peerData.stream) el.srcObject = peerData.stream;
+                          }}
+                          autoPlay
+                          playsInline
+                          className="w-full h-full object-cover bg-black"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                        {handsRaised.has(peerData.userName) && (
+                          <div className="absolute top-3 right-14 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
+                            <Hand className="w-4 h-4 text-white animate-bounce" />
+                          </div>
+                        )}
+                        <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-white/10 shadow-xl">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+                            <span className="text-sm font-semibold text-white">{peerData.userName} (Pinned)</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setPinnedParticipant(null)}
+                          className="absolute top-3 right-3 bg-blue-500/90 hover:bg-blue-600 backdrop-blur-sm p-2 rounded-lg shadow-lg transition-colors"
+                          title="Unpin"
+                        >
+                          <PinOff className="w-4 h-4 text-white" />
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                }).filter(Boolean)
+              )}
+              
+              {/* Thumbnail Grid */}
+              <div className={gridClass}>
+                {pinnedParticipant !== 'local' && (
+                  <div className={`relative bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 ${gridVideoClass}`}>
+                    <video
+                      ref={localVideoCallbackRef}
+                      autoPlay
+                      muted
+                      playsInline
+                      className="w-full h-full object-cover bg-black"
+                    />
+                    {!localStream && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                          <VideoIcon className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-xl px-1.5 py-0.5 rounded text-xs font-semibold text-white">You</div>
+                    <button
+                      onClick={() => setPinnedParticipant('local')}
+                      className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Pin"
+                    >
+                      <Pin className="w-3 h-3 text-white" />
+                    </button>
+                    {!isMicOn && (
+                      <div className="absolute top-1.5 left-1.5 bg-red-500/90 p-0.5 rounded">
+                        <MicOff className="w-2.5 h-2.5 text-white" />
+                      </div>
+                    )}
+                  </div>
+                )}
+                {getSortedParticipants().map(([peerId, peerData]) => {
+                  if (peerId === pinnedParticipant) return null;
+                  return (
+                    <RemoteVideo
+                      key={peerId}
+                      stream={peerData.stream}
+                      userName={peerData.userName}
+                      handsRaised={handsRaised}
+                      isPinned={false}
+                      isThumbnail={true}
+                      onPin={() => setPinnedParticipant(peerId)}
+                    />
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className={gridClass}>
+              {/* Local Video */}
+              <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 ${singleVideoClass || 'aspect-video'}`}>
+                <video
+                  ref={localVideoCallbackRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover bg-black"
+                />
               {!localStream && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
                   <div className="text-center">
@@ -1411,6 +1593,15 @@ const VideoRoom = () => {
                 </div>
               </div>
               
+              {/* Pin Button - Shows on Hover */}
+              <button
+                onClick={() => setPinnedParticipant('local')}
+                className="absolute top-2 md:top-3 right-14 md:right-20 bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1 md:p-1.5 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                title="Pin your video"
+              >
+                <Pin className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
+              </button>
+              
               {/* Status Indicators - Top Right */}
               <div className="absolute top-2 md:top-3 right-2 md:right-3 flex space-x-1 md:space-x-1.5">
                 {!isMicOn && (
@@ -1431,16 +1622,20 @@ const VideoRoom = () => {
               </div>
             </div>
 
-            {/* Remote Videos */}
-            {Array.from(peers.entries()).map(([peerId, peerData]) => (
-              <RemoteVideo 
-                key={peerId} 
-                stream={peerData.stream} 
-                userName={peerData.userName} 
-                handsRaised={handsRaised}
-              />
-            ))}
-          </div>
+              {/* Remote Videos */}
+              {getSortedParticipants().map(([peerId, peerData]) => (
+                <RemoteVideo 
+                  key={peerId} 
+                  stream={peerData.stream} 
+                  userName={peerData.userName} 
+                  handsRaised={handsRaised}
+                  isPinned={false}
+                  isThumbnail={false}
+                  onPin={() => setPinnedParticipant(peerId)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Floating Reactions */}
@@ -1958,7 +2153,7 @@ const VideoRoom = () => {
   );
 };
 
-const RemoteVideo = ({ stream, userName, handsRaised = new Set() }) => {
+const RemoteVideo = ({ stream, userName, handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin }) => {
   const videoRef = useRef(null);
   const isHandRaised = handsRaised.has(userName);
 
@@ -1967,6 +2162,35 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set() }) => {
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
+
+  if (isThumbnail) {
+    // Thumbnail mode in pinned layout
+    return (
+      <div className="relative bg-gray-900 rounded-lg overflow-hidden shadow-lg border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-cover bg-black"
+        />
+        <div className="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-xl px-1.5 py-0.5 rounded text-xs font-semibold text-white truncate max-w-[calc(100%-3rem)]">
+          {userName}
+        </div>
+        <button
+          onClick={onPin}
+          className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Pin"
+        >
+          <Pin className="w-3 h-3 text-white" />
+        </button>
+        {isHandRaised && (
+          <div className="absolute top-1.5 left-1.5 bg-gradient-to-br from-yellow-400 to-orange-500 p-0.5 rounded">
+            <Hand className="w-2.5 h-2.5 text-white" />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
@@ -1980,9 +2204,18 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set() }) => {
       {/* Premium Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       
+      {/* Pin Button - Shows on Hover */}
+      <button
+        onClick={onPin}
+        className="absolute top-2 md:top-3 right-2 md:right-3 bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1.5 md:p-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+        title="Pin participant"
+      >
+        <Pin className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+      </button>
+      
       {/* Hand Raised Indicator */}
       {isHandRaised && (
-        <div className="absolute top-2 md:top-3 right-2 md:right-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-1.5 md:p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
+        <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-1.5 md:p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
           <Hand className="w-3.5 h-3.5 md:w-4 md:h-4 text-white animate-bounce" />
         </div>
       )}
