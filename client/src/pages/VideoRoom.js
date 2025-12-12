@@ -350,23 +350,37 @@ const VideoRoom = () => {
 
       // Handle incoming calls
       peer.on('call', (call) => {
+        console.log('📞 Incoming call from:', call.peer, 'metadata:', call.metadata);
         call.answer(stream);
         call.on('stream', (remoteStream) => {
+          console.log('📹 Received stream from incoming call:', call.peer);
           addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown');
+        });
+        
+        call.on('error', (err) => {
+          console.error('❌ Incoming call error:', err);
         });
       });
 
       // Socket event listeners
       socketRef.current.on('user-joined', ({ userId, userName: joinedUserName, socketId }) => {
-        console.log('User joined:', joinedUserName);
+        console.log('👤 User joined:', joinedUserName, 'with userId:', userId);
         // Call the new user
         const call = peer.call(userId, stream, {
           metadata: { userName }
         });
         
-        call.on('stream', (remoteStream) => {
-          addPeer(userId, remoteStream, joinedUserName);
-        });
+        if (call) {
+          console.log('📞 Calling new user:', joinedUserName);
+          call.on('stream', (remoteStream) => {
+            console.log('📹 Received stream from new user:', joinedUserName);
+            addPeer(userId, remoteStream, joinedUserName);
+          });
+          
+          call.on('error', (err) => {
+            console.error('❌ Call error with new user', joinedUserName, err);
+          });
+        }
       });
 
       socketRef.current.on('user-left', ({ userId, userName: leftUserName }) => {
@@ -379,7 +393,27 @@ const VideoRoom = () => {
       });
 
       socketRef.current.on('existing-participants', (participantList) => {
+        console.log('📋 Existing participants:', participantList);
         setParticipants(participantList);
+        
+        // Call each existing participant
+        participantList.forEach(participant => {
+          console.log('📞 Calling existing participant:', participant.userName);
+          const call = peer.call(participant.userId, stream, {
+            metadata: { userName }
+          });
+          
+          if (call) {
+            call.on('stream', (remoteStream) => {
+              console.log('📹 Received stream from:', participant.userName);
+              addPeer(participant.userId, remoteStream, participant.userName);
+            });
+            
+            call.on('error', (err) => {
+              console.error('❌ Call error with', participant.userName, err);
+            });
+          }
+        });
       });
 
       // Poll event listeners
