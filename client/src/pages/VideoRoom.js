@@ -93,6 +93,27 @@ const VideoRoom = () => {
 
   const messagesEndRef = useRef(null);
 
+  // Attach local video stream to video element when stream is available
+  useEffect(() => {
+    if (localStream && localVideoRef.current) {
+      console.log('🎥 Attaching local stream to video element');
+      localVideoRef.current.srcObject = localStream;
+      
+      localVideoRef.current.onloadedmetadata = () => {
+        console.log('🎥 Video metadata loaded');
+        const playPromise = localVideoRef.current.play?.();
+        if (playPromise && typeof playPromise.then === 'function') {
+          playPromise
+            .then(() => console.log('✅ Local video playback started'))
+            .catch(err => {
+              console.warn('⚠️ Video autoplay blocked:', err?.message);
+              setTimeout(() => localVideoRef.current?.play?.(), 500);
+            });
+        }
+      };
+    }
+  }, [localStream]);
+
   useEffect(() => {
     initializeVideoCall();
     return () => {
@@ -295,51 +316,6 @@ const VideoRoom = () => {
       setIsMicOn(audioTrack ? audioTrack.enabled : false);
       
       setLocalStream(stream);
-      
-      // Multiple attempts to set video stream with different timings
-      const attachVideo = (attempt = 0) => {
-        const videoEl = localVideoRef.current;
-        if (videoEl) {
-          console.log(`🎥 Attempting to attach video stream (attempt ${attempt + 1})`);
-          videoEl.srcObject = stream;
-          
-          // Force video to load and play
-          videoEl.onloadedmetadata = () => {
-            console.log('🎥 Video metadata loaded');
-            const playPromise = videoEl.play?.();
-            if (playPromise && typeof playPromise.then === 'function') {
-              playPromise
-                .then(() => {
-                  console.log('🎥 Video playback started successfully');
-                })
-                .catch(err => {
-                  console.warn('⚠️ Video autoplay blocked:', err?.message);
-                  // Try to enable video manually if autoplay fails
-                  setTimeout(() => {
-                    videoEl.play?.();
-                  }, 1000);
-                });
-            }
-          };
-          
-          videoEl.onerror = (err) => {
-            console.error('❌ Video element error:', err);
-            if (attempt < 2) {
-              setTimeout(() => attachVideo(attempt + 1), 500);
-            }
-          };
-          
-          console.log('🎥 Local video stream attached to element');
-        } else if (attempt < 3) {
-          console.warn(`⚠️ Local video element not found, retrying... (attempt ${attempt + 1})`);
-          setTimeout(() => attachVideo(attempt + 1), 200);
-        } else {
-          console.error('❌ Failed to find video element after multiple attempts');
-        }
-      };
-      
-      // Start video attachment with slight delay to ensure DOM is ready
-      setTimeout(() => attachVideo(), 50);
 
       // Initialize socket connection (only in development or if server URL is explicitly set)
       const hasSocketServer = process.env.REACT_APP_SERVER_URL && 
