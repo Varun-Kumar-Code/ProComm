@@ -96,42 +96,46 @@ const VideoRoom = () => {
 
   // Attach local video stream to video element when stream is available
   useEffect(() => {
-    if (localStream && localVideoRef.current) {
+    const videoElement = localVideoRef.current;
+    if (localStream && videoElement) {
       console.log('🎥 Attaching local stream to video element');
       console.log('📹 Stream tracks:', localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
       
-      localVideoRef.current.srcObject = localStream;
+      videoElement.srcObject = localStream;
+      videoElement.muted = true; // Ensure muted for autoplay
       
-      // Force play immediately
+      // Force play immediately and retry on failure
       const attemptPlay = async () => {
         try {
-          await localVideoRef.current.play();
+          videoElement.play();
           console.log('✅ Local video playing successfully');
         } catch (err) {
           console.warn('⚠️ Autoplay failed, retrying:', err.message);
-          // Retry after a short delay
-          setTimeout(async () => {
-            try {
-              await localVideoRef.current.play();
-              console.log('✅ Local video playing on retry');
-            } catch (retryErr) {
-              console.error('❌ Video play failed:', retryErr);
-            }
-          }, 500);
+          setTimeout(() => {
+            videoElement.play().catch(e => console.error('❌ Retry failed:', e));
+          }, 300);
         }
       };
       
-      localVideoRef.current.onloadedmetadata = () => {
+      // Play on metadata loaded
+      videoElement.onloadedmetadata = () => {
         console.log('🎥 Video metadata loaded');
         attemptPlay();
       };
       
-      // Also try to play if metadata already loaded
-      if (localVideoRef.current.readyState >= 2) {
-        console.log('🎥 Video already has metadata, playing now');
+      // Try immediate play if metadata already exists
+      if (videoElement.readyState >= 1) {
+        console.log('🎥 Video ready, playing immediately');
         attemptPlay();
       }
     }
+    
+    return () => {
+      // Cleanup
+      if (videoElement) {
+        videoElement.srcObject = null;
+      }
+    };
   }, [localStream]);
 
   useEffect(() => {
@@ -283,18 +287,19 @@ const VideoRoom = () => {
       console.log('🎥 Requesting camera and microphone access...');
       let stream;
       try {
-        // Request high-quality video and audio (using ideal, not min for compatibility)
+        // Request high-quality video and audio (1080p ideal, flexible fallback)
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
+            width: { ideal: 1920, max: 1920 },
+            height: { ideal: 1080, max: 1080 },
             frameRate: { ideal: 30 },
             facingMode: 'user'
           },
           audio: {
             echoCancellation: true,
             noiseSuppression: true,
-            autoGainControl: true
+            autoGainControl: true,
+            sampleRate: { ideal: 48000 }
           }
         });
       } catch (errBoth) {
@@ -303,8 +308,8 @@ const VideoRoom = () => {
         try {
           stream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
+              width: { ideal: 1920, max: 1920 },
+              height: { ideal: 1080, max: 1080 },
               frameRate: { ideal: 30 }
             }, 
             audio: false 
