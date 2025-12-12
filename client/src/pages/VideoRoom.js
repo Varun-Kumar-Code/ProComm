@@ -221,21 +221,48 @@ const VideoRoom = () => {
       console.log('🎥 Requesting camera and microphone access...');
       let stream;
       try {
+        // Request high-quality video and audio for better streaming
         stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true
+          video: {
+            width: { ideal: 1920, min: 1280 },
+            height: { ideal: 1080, min: 720 },
+            frameRate: { ideal: 30, min: 24 },
+            facingMode: 'user'
+          },
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 48000,
+            channelCount: 2
+          }
         });
       } catch (errBoth) {
         console.warn('⚠️ getUserMedia(video+audio) failed:', errBoth);
-        // Try video-only
+        // Try video-only with quality settings
         try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              frameRate: { ideal: 30, min: 24 }
+            }, 
+            audio: false 
+          });
           setError('Microphone access failed. You can join with camera only, or check mic permissions.');
         } catch (errVideo) {
           console.warn('⚠️ getUserMedia(video-only) failed:', errVideo);
-          // Try audio-only
+          // Try audio-only with quality settings
           try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+            stream = await navigator.mediaDevices.getUserMedia({ 
+              video: false, 
+              audio: {
+                echoCancellation: true,
+                noiseSuppression: true,
+                autoGainControl: true,
+                sampleRate: 48000
+              }
+            });
             setError('Camera access failed. You can join with audio only, or check camera permissions.');
           } catch (errAudio) {
             console.error('❌ All media attempts failed:', errAudio);
@@ -358,7 +385,20 @@ const VideoRoom = () => {
         port: isProduction ? 443 : 3003,
         path: isProduction ? '/' : '/',
         secure: isProduction,
-        debug: isProduction ? 0 : 1
+        debug: isProduction ? 0 : 1,
+        config: {
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
+          ],
+          sdpSemantics: 'unified-plan',
+          iceTransportPolicy: 'all',
+          bundlePolicy: 'max-bundle',
+          rtcpMuxPolicy: 'require'
+        }
       });
       
       peerRef.current = peer;
