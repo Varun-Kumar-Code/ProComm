@@ -98,20 +98,39 @@ const VideoRoom = () => {
   useEffect(() => {
     if (localStream && localVideoRef.current) {
       console.log('🎥 Attaching local stream to video element');
+      console.log('📹 Stream tracks:', localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+      
       localVideoRef.current.srcObject = localStream;
+      
+      // Force play immediately
+      const attemptPlay = async () => {
+        try {
+          await localVideoRef.current.play();
+          console.log('✅ Local video playing successfully');
+        } catch (err) {
+          console.warn('⚠️ Autoplay failed, retrying:', err.message);
+          // Retry after a short delay
+          setTimeout(async () => {
+            try {
+              await localVideoRef.current.play();
+              console.log('✅ Local video playing on retry');
+            } catch (retryErr) {
+              console.error('❌ Video play failed:', retryErr);
+            }
+          }, 500);
+        }
+      };
       
       localVideoRef.current.onloadedmetadata = () => {
         console.log('🎥 Video metadata loaded');
-        const playPromise = localVideoRef.current.play?.();
-        if (playPromise && typeof playPromise.then === 'function') {
-          playPromise
-            .then(() => console.log('✅ Local video playback started'))
-            .catch(err => {
-              console.warn('⚠️ Video autoplay blocked:', err?.message);
-              setTimeout(() => localVideoRef.current?.play?.(), 500);
-            });
-        }
+        attemptPlay();
       };
+      
+      // Also try to play if metadata already loaded
+      if (localVideoRef.current.readyState >= 2) {
+        console.log('🎥 Video already has metadata, playing now');
+        attemptPlay();
+      }
     }
   }, [localStream]);
 
@@ -493,6 +512,16 @@ const VideoRoom = () => {
           
           // Store interval ID for cleanup
           window.peerPollInterval = pollInterval;
+        }
+      });
+
+      // Handle PeerJS errors
+      peer.on('error', (err) => {
+        console.error('❌ PeerJS error:', err);
+        if (err.type === 'network' || err.type === 'server-error') {
+          setError('Unable to connect to video server. Please check your internet connection and try again.');
+        } else if (err.type === 'peer-unavailable') {
+          console.warn('⚠️ Peer unavailable, they may have disconnected');
         }
       });
 
@@ -987,7 +1016,7 @@ const VideoRoom = () => {
     }
     
     // Clean up peer data from API
-    if (roomId && peerRef.current) {
+    if (roomId && peerRef.current && peerRef.current.id) {
       try {
         fetch(`/api/peer-discovery?meetingId=${roomId}&userId=${peerRef.current.id}`, {
           method: 'DELETE'
@@ -1139,13 +1168,14 @@ const VideoRoom = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 h-full">
             
             {/* Local Video */}
-            <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-500">
+            <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-500 min-h-[240px]">
               <video
                 ref={localVideoRef}
                 autoPlay
                 muted
                 playsInline
                 className="w-full h-full object-cover"
+                style={{ minHeight: '240px' }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               
