@@ -132,11 +132,11 @@ const VideoRoom = () => {
     let gridVideoClass = '';
     
     if (hasPinned) {
-      // Pinned layout: Large pinned video + small thumbnails
+      // Pinned layout: Large pinned video + small thumbnails (70% + 30%)
       containerClass = 'w-full h-full flex flex-col gap-2 p-2 md:p-4';
-      pinnedClass = 'w-full aspect-video flex-shrink-0';
-      gridClass = 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 overflow-x-auto';
-      gridVideoClass = 'aspect-video';
+      pinnedClass = 'w-full flex-1 min-h-0'; // Takes 70% of space, maintains aspect ratio
+      gridClass = 'flex flex-wrap gap-2 h-24 md:h-32 overflow-x-auto flex-shrink-0'; // Fixed height thumbnails
+      gridVideoClass = 'h-full aspect-video flex-shrink-0';
       return { gridClass, containerClass, singleVideoClass: null, pinnedClass, gridVideoClass, hasPinned };
     }
     
@@ -147,36 +147,28 @@ const VideoRoom = () => {
       return { 
         gridClass, 
         containerClass, 
-        singleVideoClass: 'w-full max-w-4xl aspect-video',
+        singleVideoClass: 'w-full h-full max-w-6xl max-h-full',
         hasPinned
       };
     } else if (totalParticipants === 2) {
-      // 2 people: Stack on mobile, side-by-side on desktop
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 w-full content-start';
-      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
+      // 2 people: Fill height, side by side
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 h-full w-full';
+      containerClass = 'w-full h-full p-2 md:p-4';
     } else if (totalParticipants === 3) {
-      // 3 people: Stack on mobile, row on desktop
-      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 w-full content-start';
-      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
+      // 3 people: Fill height
+      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 h-full w-full auto-rows-fr';
+      containerClass = 'w-full h-full p-2 md:p-4';
     } else if (totalParticipants === 4) {
-      // 4 people: 2x2 grid
-      gridClass = 'grid grid-cols-2 gap-2 md:gap-3 w-full content-start';
-      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
+      // 4 people: Perfect 2x2 fill screen
+      gridClass = 'grid grid-cols-2 gap-2 md:gap-3 h-full w-full auto-rows-fr';
+      containerClass = 'w-full h-full p-2 md:p-4';
     } else if (totalParticipants <= 6) {
-      // 5-6 people: 2 cols mobile, 3 cols desktop
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 w-full content-start';
-      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
-    } else if (totalParticipants <= 9) {
-      // 7-9 people: 3 cols grid
-      gridClass = 'grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 w-full content-start';
-      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
-    } else if (totalParticipants <= 12) {
-      // 10-12 people: Dense grid
-      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 w-full content-start';
-      containerClass = 'w-full h-full p-2 md:p-3 overflow-y-auto';
+      // 5-6 people: Fill height with 2x3 or 3x2 grid
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 h-full w-full auto-rows-fr';
+      containerClass = 'w-full h-full p-2 md:p-4';
     } else {
-      // 13+ people: Very dense grid
-      gridClass = 'grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5 md:gap-2 w-full content-start';
+      // 7+ people: Scrollable grid
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 w-full auto-rows-max content-start';
       containerClass = 'w-full h-full p-2 md:p-3 overflow-y-auto';
     }
     
@@ -1412,7 +1404,7 @@ const VideoRoom = () => {
         <div className={containerClass}>
           {hasPinned ? (
             <>
-              {/* Pinned Video - Large */}
+              {/* Pinned Video - Large (70% of screen) */}
               {pinnedParticipant === 'local' ? (
                 <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-blue-500/70 group transition-all duration-300 ${pinnedClass}`}>
                   <video
@@ -1420,7 +1412,7 @@ const VideoRoom = () => {
                     autoPlay
                     muted
                     playsInline
-                    className="w-full h-full object-cover bg-black"
+                    className="w-full h-full object-contain bg-black"
                   />
                   {!localStream && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
@@ -1475,7 +1467,7 @@ const VideoRoom = () => {
                           }}
                           autoPlay
                           playsInline
-                          className="w-full h-full object-cover bg-black"
+                          className="w-full h-full object-contain bg-black"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                         {handsRaised.has(peerData.userName) && (
@@ -1555,13 +1547,13 @@ const VideoRoom = () => {
           ) : (
             <div className={gridClass}>
               {/* Local Video */}
-              <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 ${singleVideoClass || 'aspect-video'}`}>
+              <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 ${singleVideoClass || ''}`}>
                 <video
                   ref={localVideoCallbackRef}
                   autoPlay
                   muted
                   playsInline
-                  className="w-full h-full object-cover bg-black"
+                  className="w-full h-full object-contain bg-black"
                 />
               {!localStream && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
@@ -2193,12 +2185,12 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set(), isPinned = fal
   }
 
   return (
-    <div className="relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
+    <div className="relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 w-full h-full">
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        className="w-full h-full object-cover bg-black"
+        className="w-full h-full object-contain bg-black"
       />
       
       {/* Premium Gradient Overlay */}
