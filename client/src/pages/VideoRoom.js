@@ -316,20 +316,32 @@ const VideoRoom = () => {
 
       // Initialize socket connection (production/development aware)
       const serverUrl = process.env.REACT_APP_SERVER_URL || 
-        (process.env.NODE_ENV === 'production' ? window.location.origin : 'http://localhost:3002');
+        (process.env.NODE_ENV === 'production' ? 'https://procomm-server-murex.vercel.app' : 'http://localhost:3002');
       
-      const socketOptions = process.env.NODE_ENV === 'production' ? {
-        path: '/api/socket',
+      const socketOptions = {
         transports: ['websocket', 'polling'],
         timeout: 20000,
-        forceNew: true
-      } : {
-        transports: ['websocket', 'polling'],
-        timeout: 20000,
-        forceNew: true
+        forceNew: true,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
       };
       
+      console.log('🔌 Connecting to Socket.IO server:', serverUrl);
       socketRef.current = io(serverUrl, socketOptions);
+      
+      // Socket connection events
+      socketRef.current.on('connect', () => {
+        console.log('✅ Socket.IO connected successfully!');
+      });
+      
+      socketRef.current.on('connect_error', (error) => {
+        console.error('❌ Socket.IO connection error:', error);
+      });
+      
+      socketRef.current.on('disconnect', (reason) => {
+        console.warn('⚠️ Socket.IO disconnected:', reason);
+      });
       
       // Initialize PeerJS (production/development aware)
       const isProduction = process.env.NODE_ENV === 'production';
@@ -344,8 +356,72 @@ const VideoRoom = () => {
       peerRef.current = peer;
 
       peer.on('open', (userId) => {
-        // Join the meeting room
-        socketRef.current.emit('join-meeting', roomId, userId, userName, userEmail);
+        console.log('✅ PeerJS connected with ID:', userId);
+        
+        // Try to join via Socket.IO if available
+        if (socketRef.current && socketRef.current.connected) {
+          console.log('🔌 Joining meeting via Socket.IO');
+          socketRef.current.emit('join-meeting', roomId, userId, userName, userEmail);
+        } else {
+          console.warn('⚠️ Socket.IO not available, using alternative discovery');
+          
+          // Store connection in localStorage for peer discovery
+          const roomData = JSON.parse(localStorage.getItem(`meeting-${roomId}`) || '{"peers": []}');
+          const peerInfo = {
+            userId,
+            userName,
+            userEmail,
+            joinedAt: new Date().toISOString()
+          };
+          
+          // Add this peer to the room
+          const existingPeers = roomData.peers.filter(p => p.userId !== userId);
+          roomData.peers = [...existingPeers, peerInfo];
+          localStorage.setItem(`meeting-${roomId}`, JSON.stringify(roomData));
+          
+          // Call existing peers in the room
+          existingPeers.forEach(peerData => {
+            console.log('📞 Calling peer from localStorage:', peerData.userName);
+            setTimeout(() => {
+              const call = peer.call(peerData.userId, stream, {
+                metadata: { userName, userEmail }
+              });
+              
+              if (call) {
+                call.on('stream', (remoteStream) => {
+                  console.log('📹 Received stream from:', peerData.userName);
+                  addPeer(peerData.userId, remoteStream, peerData.userName);
+                });
+                call.on('error', (err) => {
+                  console.error('❌ Call error:', err);
+                });
+              }
+            }, 1000);
+          });
+          
+          // Listen for storage changes (other tabs/windows joining)
+          window.addEventListener('storage', (e) => {
+            if (e.key === `meeting-${roomId}` && e.newValue) {
+              const updatedRoom = JSON.parse(e.newValue);
+              const newPeers = updatedRoom.peers.filter(p => 
+                p.userId !== userId && !Array.from(peers.keys()).includes(p.userId)
+              );
+              
+              newPeers.forEach(peerData => {
+                console.log('📞 New peer detected, calling:', peerData.userName);
+                const call = peer.call(peerData.userId, stream, {
+                  metadata: { userName, userEmail }
+                });
+                
+                if (call) {
+                  call.on('stream', (remoteStream) => {
+                    addPeer(peerData.userId, remoteStream, peerData.userName);
+                  });
+                }
+              });
+            }
+          });
+        }
       });
 
       // Handle incoming calls
@@ -784,6 +860,17 @@ const VideoRoom = () => {
   const cleanup = () => {
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
+    }
+    
+    // Clean up localStorage peer data
+    if (roomId && peerRef.current) {
+      try {
+        const roomData = JSON.parse(localStorage.getItem(`meeting-${roomId}`) || '{"peers": []}');
+        roomData.peers = roomData.peers.filter(p => p.userId !== peerRef.current.id);
+        localStorage.setItem(`meeting-${roomId}`, JSON.stringify(roomData));
+      } catch (e) {
+        console.error('Error cleaning up peer data:', e);
+      }
     }
     
     if (socketRef.current) {
