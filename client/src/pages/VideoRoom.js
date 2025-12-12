@@ -143,32 +143,32 @@ const VideoRoom = () => {
     if (totalParticipants === 1) {
       // Solo: Large centered video
       gridClass = '';
-      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-4';
+      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-6';
       return { 
         gridClass, 
         containerClass, 
-        singleVideoClass: 'w-full h-full max-w-6xl max-h-full',
+        singleVideoClass: 'w-full max-w-4xl aspect-video',
         hasPinned
       };
     } else if (totalParticipants === 2) {
-      // 2 people: Fill height, side by side
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 h-full w-full';
-      containerClass = 'w-full h-full p-2 md:p-4';
+      // 2 people: Side by side, centered
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4';
+      containerClass = 'w-full h-full p-3 md:p-6 flex items-center justify-center';
     } else if (totalParticipants === 3) {
-      // 3 people: Fill height
-      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 h-full w-full auto-rows-fr';
-      containerClass = 'w-full h-full p-2 md:p-4';
+      // 3 people: Responsive grid, centered
+      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4';
+      containerClass = 'w-full h-full p-3 md:p-6 flex items-center justify-center';
     } else if (totalParticipants === 4) {
-      // 4 people: Perfect 2x2 fill screen
-      gridClass = 'grid grid-cols-2 gap-2 md:gap-3 h-full w-full auto-rows-fr';
-      containerClass = 'w-full h-full p-2 md:p-4';
+      // 4 people: Perfect 2x2, centered
+      gridClass = 'grid grid-cols-2 gap-3 md:gap-4';
+      containerClass = 'w-full h-full p-3 md:p-6 flex items-center justify-center';
     } else if (totalParticipants <= 6) {
-      // 5-6 people: Fill height with 2x3 or 3x2 grid
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 h-full w-full auto-rows-fr';
-      containerClass = 'w-full h-full p-2 md:p-4';
+      // 5-6 people: 2x3 or 3x2 grid, centered
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4';
+      containerClass = 'w-full h-full p-3 md:p-6 flex items-center justify-center';
     } else {
       // 7+ people: Scrollable grid
-      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 w-full auto-rows-max content-start';
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3 w-full auto-rows-max content-start';
       containerClass = 'w-full h-full p-2 md:p-3 overflow-y-auto';
     }
     
@@ -1547,13 +1547,13 @@ const VideoRoom = () => {
           ) : (
             <div className={gridClass}>
               {/* Local Video */}
-              <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 ${singleVideoClass || ''}`}>
+              <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video ${singleVideoClass || ''}`}>
                 <video
                   ref={localVideoCallbackRef}
                   autoPlay
                   muted
                   playsInline
-                  className="w-full h-full object-contain bg-black"
+                  className="w-full h-full object-cover bg-black"
                 />
               {!localStream && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
@@ -2185,12 +2185,12 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set(), isPinned = fal
   }
 
   return (
-    <div className="relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 w-full h-full">
+    <div className="relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        className="w-full h-full object-contain bg-black"
+        className="w-full h-full object-cover bg-black"
       />
       
       {/* Premium Gradient Overlay */}
