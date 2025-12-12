@@ -132,10 +132,10 @@ const VideoRoom = () => {
     let gridVideoClass = '';
     
     if (hasPinned) {
-      // Pinned layout: Large pinned video + small thumbnails (70% + 30%)
-      containerClass = 'w-full h-full flex flex-col gap-2 p-2 md:p-4';
-      pinnedClass = 'w-full flex-1 min-h-0'; // Takes 70% of space, maintains aspect ratio
-      gridClass = 'flex flex-wrap gap-2 h-24 md:h-32 overflow-x-auto flex-shrink-0'; // Fixed height thumbnails
+      // Pinned layout: Large pinned video (90%) + small thumbnails (10%)
+      containerClass = 'w-full h-full flex flex-col gap-1 md:gap-2 p-1 md:p-2';
+      pinnedClass = 'w-full flex-1 min-h-0'; // Takes ~90% of space
+      gridClass = 'flex flex-wrap gap-1 md:gap-2 h-16 md:h-20 overflow-x-auto flex-shrink-0'; // Smaller thumbnails
       gridVideoClass = 'h-full aspect-video flex-shrink-0';
       return { gridClass, containerClass, singleVideoClass: null, pinnedClass, gridVideoClass, hasPinned };
     }
