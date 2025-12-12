@@ -100,49 +100,41 @@ const VideoRoom = () => {
     
     let gridClass = '';
     let containerClass = '';
-    let videoCardClass = '';
     
     if (totalParticipants === 1) {
-      // Solo: Centered large video
+      // Solo: Centered, max width for premium look
       gridClass = 'flex items-center justify-center';
-      containerClass = 'w-full max-w-5xl mx-auto';
-      videoCardClass = 'w-full aspect-video';
+      containerClass = 'w-full max-w-4xl mx-auto aspect-video';
     } else if (totalParticipants === 2) {
-      // 2 people: Side by side on desktop, stacked on mobile
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 auto-rows-fr';
-      containerClass = 'w-full h-full';
-      videoCardClass = 'w-full h-full min-h-[250px] md:min-h-[400px]';
+      // 2 people: Side by side, equal size
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4';
+      containerClass = 'w-full max-h-full';
     } else if (totalParticipants <= 4) {
       // 3-4 people: 2x2 grid
-      gridClass = 'grid grid-cols-2 gap-2 md:gap-4 auto-rows-fr';
-      containerClass = 'w-full h-full';
-      videoCardClass = 'w-full h-full min-h-[200px] md:min-h-[300px]';
+      gridClass = 'grid grid-cols-2 gap-2 md:gap-3';
+      containerClass = 'w-full max-h-full';
     } else if (totalParticipants <= 6) {
-      // 5-6 people: 2 cols mobile, 3 cols desktop
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 auto-rows-fr';
-      containerClass = 'w-full h-full';
-      videoCardClass = 'w-full h-full min-h-[180px] md:min-h-[250px]';
+      // 5-6 people: 2x3 or 3x2 grid
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3';
+      containerClass = 'w-full max-h-full';
     } else if (totalParticipants <= 9) {
       // 7-9 people: 3x3 grid
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 auto-rows-fr';
-      containerClass = 'w-full h-full';
-      videoCardClass = 'w-full h-full min-h-[160px] md:min-h-[220px]';
+      gridClass = 'grid grid-cols-3 gap-2';
+      containerClass = 'w-full max-h-full';
     } else if (totalParticipants <= 12) {
-      // 10-12 people: 4 cols on large screens
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3 auto-rows-fr';
-      containerClass = 'w-full h-full';
-      videoCardClass = 'w-full h-full min-h-[140px] md:min-h-[200px]';
+      // 10-12 people: 3x4 or 4x3 grid
+      gridClass = 'grid grid-cols-3 md:grid-cols-4 gap-2';
+      containerClass = 'w-full max-h-full';
     } else {
-      // 13+ people: 5 cols on xl screens
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 auto-rows-fr';
-      containerClass = 'w-full h-full';
-      videoCardClass = 'w-full h-full min-h-[120px] md:min-h-[180px]';
+      // 13+ people: Dense grid
+      gridClass = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2';
+      containerClass = 'w-full max-h-full';
     }
     
-    return { gridClass, containerClass, videoCardClass };
+    return { gridClass, containerClass };
   };
 
-  const { gridClass, containerClass, videoCardClass } = getGridLayout();
+  const { gridClass, containerClass } = getGridLayout();
 
   // Callback ref for local video - fires when element mounts
   const localVideoCallbackRef = useCallback((videoElement) => {
@@ -1364,15 +1356,15 @@ const VideoRoom = () => {
         </div>
       </div>
 
-      {/* Main Content - Mobile Responsive Layout */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      {/* Main Content - Premium Video Grid */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
         
-        {/* Video Grid - Dynamic Google Meet Style Layout */}
-        <div className="flex-1 p-2 sm:p-4 md:p-6 overflow-y-auto bg-gray-900">
+        {/* Video Grid Container - Google Meet Style */}
+        <div className="flex-1 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
           <div className={`${containerClass} ${gridClass}`}>
             
             {/* Local Video */}
-            <div className={`relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-300 ${videoCardClass}`}>
+            <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
               <video
                 ref={localVideoCallbackRef}
                 autoPlay
@@ -1381,43 +1373,49 @@ const VideoRoom = () => {
                 className="w-full h-full object-cover bg-black"
               />
               {!localStream && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-white/50 text-xs sm:text-sm">Initializing camera...</div>
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                      <VideoIcon className="w-8 h-8 text-white" />
+                    </div>
+                    <div className="text-white/70 text-sm font-medium">Connecting...</div>
+                  </div>
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              {/* Premium Gradient Overlay on Hover */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
               
               {/* Hand Raised Indicator */}
               {isHandRaised && (
-                <div className="absolute top-2 sm:top-3 left-2 sm:left-3 bg-yellow-500/90 backdrop-blur-sm p-1 sm:p-1.5 rounded-md sm:rounded-lg border border-yellow-400/30 animate-pulse">
-                  <Hand className="w-3 h-3 sm:w-4 sm:h-4 text-white animate-bounce" />
+                <div className="absolute top-3 left-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
+                  <Hand className="w-4 h-4 text-white animate-bounce" />
                 </div>
               )}
 
-              {/* User Info */}
-              <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 bg-black/70 backdrop-blur-md px-1.5 sm:px-2.5 py-0.5 sm:py-1.5 rounded-md sm:rounded-lg border border-white/20 flex items-center space-x-1">
-                <span className="text-xs sm:text-sm font-medium text-white truncate max-w-[80px] sm:max-w-[120px]">You ({userName})</span>
-                {isHandRaised && (
-                  <div className="text-yellow-400 text-xs">
-                    ✋
-                  </div>
-                )}
+              {/* User Info - Premium Badge */}
+              <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-white/10 shadow-xl">
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+                  <span className="text-sm font-semibold text-white truncate max-w-[120px]">You</span>
+                  {isHandRaised && <span className="text-yellow-400 text-sm">✋</span>}
+                </div>
               </div>
               
-              {/* Status Indicators */}
-              <div className="absolute top-2 sm:top-3 right-2 sm:right-3 flex space-x-1">
+              {/* Status Indicators - Top Right */}
+              <div className="absolute top-3 right-3 flex space-x-1.5">
                 {!isMicOn && (
-                  <div className="bg-red-500/90 backdrop-blur-sm p-1 sm:p-1.5 rounded-md sm:rounded-lg border border-red-400/30 animate-pulse">
-                    <MicOff className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <div className="bg-red-500/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg shadow-red-500/30 border border-red-400/20">
+                    <MicOff className="w-3.5 h-3.5 text-white" />
                   </div>
                 )}
                 {!isCameraOn && (
-                  <div className="bg-red-500/90 backdrop-blur-sm p-1 sm:p-1.5 rounded-md sm:rounded-lg border border-red-400/30 animate-pulse">
-                    <VideoOff className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <div className="bg-red-500/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg shadow-red-500/30 border border-red-400/20">
+                    <VideoOff className="w-3.5 h-3.5 text-white" />
                   </div>
                 )}
                 {isScreenSharing && (
-                  <div className="bg-green-500/90 backdrop-blur-sm p-1 sm:p-1.5 rounded-md sm:rounded-lg border border-green-400/30 animate-pulse">
+                  <div className="bg-blue-500/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg shadow-blue-500/30 border border-blue-400/20">
                     <Monitor className="w-4 h-4" />
                   </div>
                 )}
@@ -1431,7 +1429,6 @@ const VideoRoom = () => {
                 stream={peerData.stream} 
                 userName={peerData.userName} 
                 handsRaised={handsRaised}
-                videoCardClass={videoCardClass}
               />
             ))}
           </div>
@@ -1952,7 +1949,7 @@ const VideoRoom = () => {
   );
 };
 
-const RemoteVideo = ({ stream, userName, handsRaised = new Set(), videoCardClass = '' }) => {
+const RemoteVideo = ({ stream, userName, handsRaised = new Set() }) => {
   const videoRef = useRef(null);
   const isHandRaised = handsRaised.has(userName);
 
@@ -1963,34 +1960,32 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set(), videoCardClass
   }, [stream]);
 
   return (
-    <div className={`relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-300 ${videoCardClass}`}>
+    <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover bg-black"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      
+      {/* Premium Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
       
       {/* Hand Raised Indicator */}
       {isHandRaised && (
-        <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-yellow-500/90 backdrop-blur-sm p-1 sm:p-1.5 rounded-md sm:rounded-lg border border-yellow-400/30 animate-pulse">
-          <Hand className="w-3 h-3 sm:w-4 sm:h-4 text-white animate-bounce" />
+        <div className="absolute top-3 right-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
+          <Hand className="w-4 h-4 text-white animate-bounce" />
         </div>
       )}
       
-      {/* User Info */}
-      <div className="absolute bottom-2 sm:bottom-3 left-2 sm:left-3 bg-black/70 backdrop-blur-md px-1.5 sm:px-2.5 py-0.5 sm:py-1.5 rounded-md sm:rounded-lg border border-white/20 flex items-center space-x-1">
-        <span className="text-xs sm:text-sm font-medium text-white truncate max-w-[80px] sm:max-w-[120px]">{userName}</span>
-        {isHandRaised && (
-          <div className="text-yellow-400 text-xs">
-            ✋
-          </div>
-        )}
+      {/* User Name Badge - Premium Design */}
+      <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-white/10 shadow-xl">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+          <span className="text-sm font-semibold text-white truncate max-w-[120px]">{userName}</span>
+          {isHandRaised && <span className="text-yellow-400 text-sm">✋</span>}
+        </div>
       </div>
-      
-      {/* Connection Status */}
-      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
     </div>
   );
 };
