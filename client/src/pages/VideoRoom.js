@@ -395,35 +395,66 @@ const VideoRoom = () => {
       // Initialize PeerJS (production/development aware)
       const isProduction = process.env.NODE_ENV === 'production';
       
-      // Double-check RTCPeerConnection before creating Peer
+      // Detailed WebRTC availability check
+      console.log('🔍 Checking WebRTC support...');
+      console.log('  - RTCPeerConnection:', typeof window.RTCPeerConnection);
+      console.log('  - webkitRTCPeerConnection:', typeof window.webkitRTCPeerConnection);
+      console.log('  - mozRTCPeerConnection:', typeof window.mozRTCPeerConnection);
+      console.log('  - getUserMedia:', typeof navigator.mediaDevices?.getUserMedia);
+      console.log('  - Browser:', navigator.userAgent);
+      console.log('  - Protocol:', window.location.protocol);
+      console.log('  - isSecureContext:', window.isSecureContext);
+      
       if (!window.RTCPeerConnection && !window.webkitRTCPeerConnection && !window.mozRTCPeerConnection) {
-        throw new Error('WebRTC is not available in this browser. Please use the latest version of Chrome, Firefox, Safari, or Edge.');
+        throw new Error(
+          'WebRTC is not available in this browser.\n\n' +
+          'Please use one of these browsers (latest version):\n' +
+          '• Google Chrome\n' +
+          '• Microsoft Edge\n' +
+          '• Mozilla Firefox\n' +
+          '• Safari\n\n' +
+          'Current browser: ' + navigator.userAgent.substring(0, 100)
+        );
       }
       
       console.log('🔗 Creating PeerJS connection...');
       console.log('🌍 Environment:', isProduction ? 'Production' : 'Development');
       console.log('🖥️ PeerJS server:', isProduction ? '0.peerjs.com:443 (secure)' : 'localhost:3003');
       
-      const peer = new Peer({
-        host: isProduction ? '0.peerjs.com' : 'localhost',
-        port: isProduction ? 443 : 3003,
-        path: isProduction ? '/' : '/',
-        secure: isProduction,
-        debug: isProduction ? 0 : 1,
-        config: {
-          iceServers: [
-            { urls: 'stun:stun.l.google.com:19302' },
-            { urls: 'stun:stun1.l.google.com:19302' },
-            { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' }
-          ],
-          sdpSemantics: 'unified-plan',
-          iceTransportPolicy: 'all',
-          bundlePolicy: 'max-bundle',
-          rtcpMuxPolicy: 'require'
-        }
-      });
+      let peer;
+      try {
+        peer = new Peer({
+          host: isProduction ? '0.peerjs.com' : 'localhost',
+          port: isProduction ? 443 : 3003,
+          path: isProduction ? '/' : '/',
+          secure: isProduction,
+          debug: isProduction ? 0 : 1,
+          config: {
+            iceServers: [
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun2.l.google.com:19302' },
+              { urls: 'stun:stun3.l.google.com:19302' },
+              { urls: 'stun:stun4.l.google.com:19302' }
+            ],
+            sdpSemantics: 'unified-plan',
+            iceTransportPolicy: 'all',
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require'
+          }
+        });
+        console.log('✅ PeerJS instance created successfully');
+      } catch (peerCreateError) {
+        console.error('❌ Failed to create PeerJS instance:', peerCreateError);
+        throw new Error(
+          'Failed to initialize video connection.\n\n' +
+          'This could be due to:\n' +
+          '• Browser extensions blocking WebRTC\n' +
+          '• VPN or firewall blocking peer connections\n' +
+          '• Browser privacy settings blocking WebRTC\n\n' +
+          'Error: ' + peerCreateError.message
+        );
+      }
       
       peerRef.current = peer;
 
