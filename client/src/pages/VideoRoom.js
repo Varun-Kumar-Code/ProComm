@@ -90,6 +90,7 @@ const VideoRoom = () => {
   const localVideoRef = useRef(null);
   const socketRef = useRef(null);
   const peerRef = useRef(null);
+  const activeCallsRef = useRef(new Map()); // Track active calls for cleanup
 
   const messagesEndRef = useRef(null);
 
@@ -406,6 +407,12 @@ const VideoRoom = () => {
                 
                 // Call each existing peer
                 result.peers.forEach(peerData => {
+                  // Prevent duplicate calls
+                  if (activeCallsRef.current.has(peerData.userId)) {
+                    console.log('⏭️ Skipping duplicate call to:', peerData.userName);
+                    return;
+                  }
+                  
                   console.log('📞 Calling existing peer via API:', peerData.userName);
                   setTimeout(() => {
                     const call = peer.call(peerData.userId, stream, {
@@ -413,12 +420,22 @@ const VideoRoom = () => {
                     });
                     
                     if (call) {
+                      activeCallsRef.current.set(peerData.userId, call);
+                      
                       call.on('stream', (remoteStream) => {
                         console.log('📹 Received stream from:', peerData.userName);
                         addPeer(peerData.userId, remoteStream, peerData.userName);
                       });
+                      
+                      call.on('close', () => {
+                        console.log('📞 Call closed:', peerData.userName);
+                        activeCallsRef.current.delete(peerData.userId);
+                        removePeer(peerData.userId);
+                      });
+                      
                       call.on('error', (err) => {
                         console.error('❌ Call error:', err);
+                        activeCallsRef.current.delete(peerData.userId);
                       });
                     }
                   }, 1000);
@@ -444,15 +461,32 @@ const VideoRoom = () => {
                 );
                 
                 newPeers.forEach(peerData => {
+                  // Prevent duplicate calls
+                  if (activeCallsRef.current.has(peerData.userId)) {
+                    return;
+                  }
+                  
                   console.log('📞 New peer detected via polling:', peerData.userName);
                   const call = peer.call(peerData.userId, stream, {
                     metadata: { userName, userEmail }
                   });
                   
                   if (call) {
+                    activeCallsRef.current.set(peerData.userId, call);
+                    
                     call.on('stream', (remoteStream) => {
                       console.log('📹 Received stream from new peer:', peerData.userName);
                       addPeer(peerData.userId, remoteStream, peerData.userName);
+                    });
+                    
+                    call.on('close', () => {
+                      activeCallsRef.current.delete(peerData.userId);
+                      removePeer(peerData.userId);
+                    });
+                    
+                    call.on('error', (err) => {
+                      console.error('❌ Call error:', err);
+                      activeCallsRef.current.delete(peerData.userId);
                     });
                   }
                 });
@@ -471,13 +505,22 @@ const VideoRoom = () => {
       peer.on('call', (call) => {
         console.log('📞 Incoming call from:', call.peer, 'metadata:', call.metadata);
         call.answer(stream);
+        activeCallsRef.current.set(call.peer, call);
+        
         call.on('stream', (remoteStream) => {
           console.log('📹 Received stream from incoming call:', call.peer);
           addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown');
         });
         
+        call.on('close', () => {
+          console.log('📞 Incoming call closed:', call.peer);
+          activeCallsRef.current.delete(call.peer);
+          removePeer(call.peer);
+        });
+        
         call.on('error', (err) => {
           console.error('❌ Incoming call error:', err);
+          activeCallsRef.current.delete(call.peer);
         });
       });
 
@@ -613,8 +656,23 @@ const VideoRoom = () => {
   };
 
   const removePeer = (userId) => {
+    // Close the call connection
+    const call = activeCallsRef.current.get(userId);
+    if (call) {
+      try {
+        call.close();
+      } catch (err) {
+        console.warn('⚠️ Error closing call:', err);
+      }
+      activeCallsRef.current.delete(userId);
+    }
+    
     setPeers(prevPeers => {
       const newPeers = new Map(prevPeers);
+      const peerData = newPeers.get(userId);
+      if (peerData?.stream) {
+        peerData.stream.getTracks().forEach(track => track.stop());
+      }
       newPeers.delete(userId);
       return newPeers;
     });
@@ -903,6 +961,27 @@ const VideoRoom = () => {
   };
 
   const cleanup = () => {
+    console.log('🧹 Cleaning up connections...');
+    
+    // Close all active calls first
+    activeCallsRef.current.forEach((call, userId) => {
+      try {
+        call.close();
+        console.log('📞 Closed call to:', userId);
+      } catch (err) {
+        console.warn('⚠️ Error closing call:', err);
+      }
+    });
+    activeCallsRef.current.clear();
+    
+    // Stop all peer streams
+    peers.forEach((peerData) => {
+      if (peerData.stream) {
+        peerData.stream.getTracks().forEach(track => track.stop());
+      }
+    });
+    
+    // Stop local stream
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
     }
@@ -931,6 +1010,8 @@ const VideoRoom = () => {
     if (peerRef.current) {
       peerRef.current.destroy();
     }
+    
+    console.log('✅ Cleanup complete');
   };
 
   if (isLoading) {
