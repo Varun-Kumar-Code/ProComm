@@ -96,8 +96,11 @@ const VideoRoom = () => {
 
   // Attach local video stream to video element when stream is available
   useEffect(() => {
+    console.log('🔄 useEffect triggered - localStream:', !!localStream, 'videoRef:', !!localVideoRef.current);
+    
     // Wait for both stream and video element to be ready
     if (!localStream || !localVideoRef.current) {
+      console.log('⏸️ Waiting for stream or video element...');
       return;
     }
     
@@ -390,28 +393,7 @@ const VideoRoom = () => {
       setIsMicOn(audioTrack ? audioTrack.enabled : false);
       
       setLocalStream(stream);
-      
-      // Wait for next render cycle before attaching stream
-      console.log('🎥 Waiting for video element to render...');
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (localVideoRef.current) {
-            console.log('🎥 Attaching stream to video element');
-            localVideoRef.current.srcObject = stream;
-            console.log('✅ Stream attached successfully');
-            
-            // Try to play
-            const playPromise = localVideoRef.current.play();
-            if (playPromise) {
-              playPromise
-                .then(() => console.log('✅ Local video playing'))
-                .catch(err => console.warn('⚠️ Play failed:', err.message));
-            }
-          } else {
-            console.error('❌ Video element still not available after render');
-          }
-        });
-      });
+      console.log('🎥 Local stream state updated, useEffect will attach to video element');
 
       // Initialize socket connection (only in development or if server URL is explicitly set)
       const hasSocketServer = process.env.REACT_APP_SERVER_URL && 
