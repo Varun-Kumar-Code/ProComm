@@ -102,39 +102,48 @@ const VideoRoom = () => {
     let containerClass = '';
     
     if (totalParticipants === 1) {
-      // Solo: Centered, max width for premium look
-      gridClass = 'flex items-center justify-center';
-      containerClass = 'w-full max-w-4xl mx-auto aspect-video';
+      // Solo: Large centered video
+      gridClass = '';
+      containerClass = 'flex items-center justify-center w-full h-full p-4';
+      return { 
+        gridClass, 
+        containerClass, 
+        singleVideoClass: 'w-full max-w-3xl aspect-video' 
+      };
     } else if (totalParticipants === 2) {
-      // 2 people: Side by side, equal size
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4';
-      containerClass = 'w-full max-h-full';
-    } else if (totalParticipants <= 4) {
-      // 3-4 people: 2x2 grid
-      gridClass = 'grid grid-cols-2 gap-2 md:gap-3';
-      containerClass = 'w-full max-h-full';
+      // 2 people: Stack on mobile, side-by-side on desktop
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 w-full h-full content-center';
+      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-4';
+    } else if (totalParticipants === 3) {
+      // 3 people: 2 on top, 1 centered below
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 w-full auto-rows-max content-center';
+      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-4';
+    } else if (totalParticipants === 4) {
+      // 4 people: Perfect 2x2 grid
+      gridClass = 'grid grid-cols-2 gap-2 md:gap-3 w-full auto-rows-max content-center';
+      containerClass = 'flex items-center justify-center w-full h-full p-2 md:p-4';
     } else if (totalParticipants <= 6) {
-      // 5-6 people: 2x3 or 3x2 grid
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3';
-      containerClass = 'w-full max-h-full';
+      // 5-6 people: 2 cols mobile, 3 cols desktop
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 w-full auto-rows-max content-start';
+      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
     } else if (totalParticipants <= 9) {
-      // 7-9 people: 3x3 grid
-      gridClass = 'grid grid-cols-3 gap-2';
-      containerClass = 'w-full max-h-full';
+      // 7-9 people: 3 cols grid
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 gap-2 md:gap-3 w-full auto-rows-max content-start';
+      containerClass = 'w-full h-full p-2 md:p-4 overflow-y-auto';
     } else if (totalParticipants <= 12) {
-      // 10-12 people: 3x4 or 4x3 grid
-      gridClass = 'grid grid-cols-3 md:grid-cols-4 gap-2';
-      containerClass = 'w-full max-h-full';
+      // 10-12 people: Dense grid
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 w-full auto-rows-max content-start';
+      containerClass = 'w-full h-full p-2 md:p-3 overflow-y-auto';
     } else {
-      // 13+ people: Dense grid
-      gridClass = 'grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2';
-      containerClass = 'w-full max-h-full';
+      // 13+ people: Very dense grid
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 md:gap-2 w-full auto-rows-max content-start';
+      containerClass = 'w-full h-full p-2 md:p-3 overflow-y-auto';
     }
     
-    return { gridClass, containerClass };
+    return { gridClass, containerClass, singleVideoClass: null };
   };
 
-  const { gridClass, containerClass } = getGridLayout();
+  const { gridClass, containerClass, singleVideoClass } = getGridLayout();
 
   // Callback ref for local video - fires when element mounts
   const localVideoCallbackRef = useCallback((videoElement) => {
@@ -1356,15 +1365,15 @@ const VideoRoom = () => {
         </div>
       </div>
 
-      {/* Main Content - Premium Video Grid */}
+      {/* Main Content - Premium Responsive Video Grid */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
         
-        {/* Video Grid Container - Google Meet Style */}
-        <div className="flex-1 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-hidden">
-          <div className={`${containerClass} ${gridClass}`}>
+        {/* Video Grid Container - Responsive & Centered */}
+        <div className={containerClass}>
+          <div className={gridClass}>
             
             {/* Local Video */}
-            <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
+            <div className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 ${singleVideoClass || 'aspect-video'}`}>
               <video
                 ref={localVideoCallbackRef}
                 autoPlay
@@ -1388,34 +1397,34 @@ const VideoRoom = () => {
               
               {/* Hand Raised Indicator */}
               {isHandRaised && (
-                <div className="absolute top-3 left-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
-                  <Hand className="w-4 h-4 text-white animate-bounce" />
+                <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-1.5 md:p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
+                  <Hand className="w-3.5 h-3.5 md:w-4 md:h-4 text-white animate-bounce" />
                 </div>
               )}
 
               {/* User Info - Premium Badge */}
-              <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-white/10 shadow-xl">
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
-                  <span className="text-sm font-semibold text-white truncate max-w-[120px]">You</span>
-                  {isHandRaised && <span className="text-yellow-400 text-sm">✋</span>}
+              <div className="absolute bottom-2 md:bottom-3 left-2 md:left-3 bg-black/80 backdrop-blur-xl px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-white/10 shadow-xl">
+                <div className="flex items-center space-x-1.5 md:space-x-2">
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+                  <span className="text-xs md:text-sm font-semibold text-white truncate max-w-[80px] md:max-w-[120px]">You</span>
+                  {isHandRaised && <span className="text-yellow-400 text-xs md:text-sm">✋</span>}
                 </div>
               </div>
               
               {/* Status Indicators - Top Right */}
-              <div className="absolute top-3 right-3 flex space-x-1.5">
+              <div className="absolute top-2 md:top-3 right-2 md:right-3 flex space-x-1 md:space-x-1.5">
                 {!isMicOn && (
-                  <div className="bg-red-500/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg shadow-red-500/30 border border-red-400/20">
-                    <MicOff className="w-3.5 h-3.5 text-white" />
+                  <div className="bg-red-500/95 backdrop-blur-sm p-1 md:p-1.5 rounded-lg shadow-lg shadow-red-500/30 border border-red-400/20">
+                    <MicOff className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
                   </div>
                 )}
                 {!isCameraOn && (
-                  <div className="bg-red-500/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg shadow-red-500/30 border border-red-400/20">
-                    <VideoOff className="w-3.5 h-3.5 text-white" />
+                  <div className="bg-red-500/95 backdrop-blur-sm p-1 md:p-1.5 rounded-lg shadow-lg shadow-red-500/30 border border-red-400/20">
+                    <VideoOff className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
                   </div>
                 )}
                 {isScreenSharing && (
-                  <div className="bg-blue-500/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg shadow-blue-500/30 border border-blue-400/20">
+                  <div className="bg-blue-500/95 backdrop-blur-sm p-1 md:p-1.5 rounded-lg shadow-lg shadow-blue-500/30 border border-blue-400/20">
                     <Monitor className="w-4 h-4" />
                   </div>
                 )}
@@ -1960,7 +1969,7 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set() }) => {
   }, [stream]);
 
   return (
-    <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
+    <div className="relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-gray-700/50 group hover:border-blue-500/50 transition-all duration-300 aspect-video">
       <video
         ref={videoRef}
         autoPlay
@@ -1973,17 +1982,17 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set() }) => {
       
       {/* Hand Raised Indicator */}
       {isHandRaised && (
-        <div className="absolute top-3 right-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
-          <Hand className="w-4 h-4 text-white animate-bounce" />
+        <div className="absolute top-2 md:top-3 right-2 md:right-3 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-1.5 md:p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
+          <Hand className="w-3.5 h-3.5 md:w-4 md:h-4 text-white animate-bounce" />
         </div>
       )}
       
       {/* User Name Badge - Premium Design */}
-      <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-white/10 shadow-xl">
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
-          <span className="text-sm font-semibold text-white truncate max-w-[120px]">{userName}</span>
-          {isHandRaised && <span className="text-yellow-400 text-sm">✋</span>}
+      <div className="absolute bottom-2 md:bottom-3 left-2 md:left-3 bg-black/80 backdrop-blur-xl px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-white/10 shadow-xl">
+        <div className="flex items-center space-x-1.5 md:space-x-2">
+          <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+          <span className="text-xs md:text-sm font-semibold text-white truncate max-w-[80px] md:max-w-[120px]">{userName}</span>
+          {isHandRaised && <span className="text-yellow-400 text-xs md:text-sm">✋</span>}
         </div>
       </div>
     </div>
