@@ -94,6 +94,57 @@ const VideoRoom = () => {
 
   const messagesEndRef = useRef(null);
 
+  // Calculate dynamic grid layout based on participant count
+  const getGridLayout = () => {
+    const totalParticipants = participants.length + 1; // +1 for local user
+    
+    // Mobile (default)
+    let gridClass = 'grid-cols-1';
+    let minHeight = 'min-h-[280px]';
+    let aspectRatio = 'aspect-video';
+    
+    if (totalParticipants === 1) {
+      // Solo: Full screen on all devices
+      gridClass = 'grid-cols-1';
+      minHeight = 'min-h-[400px] md:min-h-[600px]';
+      aspectRatio = 'aspect-video';
+    } else if (totalParticipants === 2) {
+      // 2 people: Side by side on tablet+, stacked on mobile
+      gridClass = 'grid-cols-1 md:grid-cols-2';
+      minHeight = 'min-h-[300px] md:min-h-[500px]';
+      aspectRatio = 'aspect-video';
+    } else if (totalParticipants <= 4) {
+      // 3-4 people: 2x2 grid
+      gridClass = 'grid-cols-2 lg:grid-cols-2';
+      minHeight = 'min-h-[200px] md:min-h-[350px]';
+      aspectRatio = 'aspect-video';
+    } else if (totalParticipants <= 6) {
+      // 5-6 people: 2x3 grid on mobile, 3x2 on desktop
+      gridClass = 'grid-cols-2 lg:grid-cols-3';
+      minHeight = 'min-h-[180px] md:min-h-[280px]';
+      aspectRatio = 'aspect-video';
+    } else if (totalParticipants <= 9) {
+      // 7-9 people: 3x3 grid
+      gridClass = 'grid-cols-2 md:grid-cols-3';
+      minHeight = 'min-h-[160px] md:min-h-[240px]';
+      aspectRatio = 'aspect-video';
+    } else if (totalParticipants <= 12) {
+      // 10-12 people: 3x4 grid
+      gridClass = 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+      minHeight = 'min-h-[140px] md:min-h-[200px]';
+      aspectRatio = 'aspect-video';
+    } else {
+      // 13+ people: 4x4+ grid, smaller cards
+      gridClass = 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
+      minHeight = 'min-h-[120px] md:min-h-[180px]';
+      aspectRatio = 'aspect-video';
+    }
+    
+    return { gridClass, minHeight, aspectRatio };
+  };
+
+  const { gridClass, minHeight, aspectRatio } = getGridLayout();
+
   // Callback ref for local video - fires when element mounts
   const localVideoCallbackRef = useCallback((videoElement) => {
     localVideoRef.current = videoElement;
@@ -1317,19 +1368,18 @@ const VideoRoom = () => {
       {/* Main Content - Mobile Responsive Layout */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         
-        {/* Video Grid */}
+        {/* Video Grid - Dynamic Layout */}
         <div className="flex-1 p-3 sm:p-6 overflow-y-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 h-full">
+          <div className={`grid ${gridClass} gap-2 sm:gap-3 md:gap-4 h-full content-start`}>
             
             {/* Local Video */}
-            <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-500 min-h-[240px]">
+            <div className={`relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl md:rounded-2xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-300 ${minHeight} ${aspectRatio}`}>
               <video
                 ref={localVideoCallbackRef}
                 autoPlay
                 muted
                 playsInline
                 className="w-full h-full object-cover bg-black"
-                style={{ minHeight: '240px', display: 'block' }}
               />
               {!localStream && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -1340,16 +1390,16 @@ const VideoRoom = () => {
               
               {/* Hand Raised Indicator */}
               {isHandRaised && (
-                <div className="absolute top-4 left-4 bg-yellow-500/90 backdrop-blur-sm p-2 rounded-xl border border-yellow-400/30 animate-pulse">
-                  <Hand className="w-5 h-5 text-white animate-bounce" />
+                <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-yellow-500/90 backdrop-blur-sm p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-yellow-400/30 animate-pulse">
+                  <Hand className="w-4 h-4 sm:w-5 sm:h-5 text-white animate-bounce" />
                 </div>
               )}
 
               {/* User Info */}
-              <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-black/70 backdrop-blur-md px-2 sm:px-3 py-1 sm:py-2 rounded-xl border border-white/20 flex items-center space-x-1 sm:space-x-2">
-                <span className="text-xs sm:text-sm font-medium text-white">You ({userName})</span>
+              <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-black/70 backdrop-blur-md px-2 sm:px-3 py-1 sm:py-2 rounded-lg sm:rounded-xl border border-white/20 flex items-center space-x-1 sm:space-x-2">
+                <span className="text-xs sm:text-sm font-medium text-white truncate max-w-[100px] sm:max-w-none">You ({userName})</span>
                 {isHandRaised && (
-                  <div className="text-yellow-400">
+                  <div className="text-yellow-400 text-xs sm:text-base">
                     ✋
                   </div>
                 )}
@@ -1913,7 +1963,7 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set() }) => {
   }, [stream]);
 
   return (
-    <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-500">
+    <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl md:rounded-2xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-300 aspect-video">
       <video
         ref={videoRef}
         autoPlay
@@ -1924,23 +1974,23 @@ const RemoteVideo = ({ stream, userName, handsRaised = new Set() }) => {
       
       {/* Hand Raised Indicator */}
       {isHandRaised && (
-        <div className="absolute top-4 right-4 bg-yellow-500/90 backdrop-blur-sm p-2 rounded-xl border border-yellow-400/30 animate-pulse">
-          <Hand className="w-5 h-5 text-white animate-bounce" />
+        <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-yellow-500/90 backdrop-blur-sm p-1.5 sm:p-2 rounded-lg sm:rounded-xl border border-yellow-400/30 animate-pulse">
+          <Hand className="w-4 h-4 sm:w-5 sm:h-5 text-white animate-bounce" />
         </div>
       )}
       
       {/* User Info */}
-      <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20 flex items-center space-x-2">
-        <span className="text-sm font-medium text-white">{userName}</span>
+      <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 bg-black/70 backdrop-blur-md px-2 sm:px-3 py-1 sm:py-2 rounded-lg sm:rounded-xl border border-white/20 flex items-center space-x-1 sm:space-x-2">
+        <span className="text-xs sm:text-sm font-medium text-white truncate max-w-[100px] sm:max-w-none">{userName}</span>
         {isHandRaised && (
-          <div className="text-yellow-400">
+          <div className="text-yellow-400 text-xs sm:text-base">
             ✋
           </div>
         )}
       </div>
       
       {/* Connection Status */}
-      <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+      <div className="absolute top-2 sm:top-4 left-2 sm:left-4 w-2 h-2 sm:w-3 sm:h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
     </div>
   );
 };
