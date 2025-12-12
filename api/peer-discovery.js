@@ -42,10 +42,11 @@ export default function handler(req, res) {
         lastSeen: Date.now()
       });
 
-      // Clean up old peers (older than 5 minutes)
-      const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+      // Clean up old peers (older than 30 seconds - more aggressive cleanup)
+      const thirtySecondsAgo = Date.now() - (30 * 1000);
       for (const [peerId, peerData] of meetingPeers.entries()) {
-        if (peerData.lastSeen < fiveMinutesAgo) {
+        if (peerData.lastSeen < thirtySecondsAgo) {
+          console.log('Removing stale peer:', peerId);
           meetingPeers.delete(peerId);
         }
       }

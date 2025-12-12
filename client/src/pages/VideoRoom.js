@@ -622,8 +622,22 @@ const VideoRoom = () => {
             }
           }, 5000);
           
-          // Store interval ID for cleanup
+          // Heartbeat to keep this peer alive in the API (every 10 seconds)
+          const heartbeatInterval = setInterval(async () => {
+            try {
+              await fetch(`/api/peer-discovery?meetingId=${roomId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: peerId, userName, userEmail })
+              });
+            } catch (error) {
+              console.error('❌ Heartbeat error:', error);
+            }
+          }, 10000);
+          
+          // Store interval IDs for cleanup
           window.peerPollInterval = pollInterval;
+          window.peerHeartbeatInterval = heartbeatInterval;
         }
       });
 
@@ -1141,6 +1155,11 @@ const VideoRoom = () => {
     // Clean up peer polling interval
     if (window.peerPollInterval) {
       clearInterval(window.peerPollInterval);
+    }
+    
+    // Clean up heartbeat interval
+    if (window.peerHeartbeatInterval) {
+      clearInterval(window.peerHeartbeatInterval);
     }
     
     // Clean up peer data from API
