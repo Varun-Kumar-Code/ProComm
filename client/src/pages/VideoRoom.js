@@ -448,12 +448,6 @@ const VideoRoom = () => {
           
           // Store interval ID for cleanup
           window.peerPollInterval = pollInterval;
-                    addPeer(peerData.userId, remoteStream, peerData.userName);
-                  });
-                }
-              });
-            }
-          });
         }
       });
 
