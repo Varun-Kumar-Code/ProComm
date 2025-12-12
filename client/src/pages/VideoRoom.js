@@ -380,13 +380,13 @@ const VideoRoom = () => {
       
       peerRef.current = peer;
 
-      peer.on('open', (userId) => {
-        console.log('✅ PeerJS connected with ID:', userId);
+      peer.on('open', (peerId) => {
+        console.log('✅ PeerJS connected with ID:', peerId);
         
         // Try to join via Socket.IO if available
         if (socketRef.current && socketRef.current.connected) {
           console.log('🔌 Joining meeting via Socket.IO');
-          socketRef.current.emit('join-meeting', roomId, userId, userName, userEmail);
+          socketRef.current.emit('join-meeting', roomId, peerId, userName, userEmail);
         } else {
           console.warn('⚠️ Socket.IO not available, using API-based peer discovery');
           
@@ -396,7 +396,7 @@ const VideoRoom = () => {
               const response = await fetch(`/api/peer-discovery?meetingId=${roomId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, userName, userEmail })
+                body: JSON.stringify({ userId: peerId, userName, userEmail })
               });
               
               const result = await response.json();
@@ -455,17 +455,12 @@ const VideoRoom = () => {
               const result = await response.json();
               
               if (result.success && result.peers) {
-                const currentPeerIds = Array.from(peers.keys());
+                // Filter out ourselves and peers we're already connected to
                 const newPeers = result.peers.filter(p => 
-                  p.userId !== userId && !currentPeerIds.includes(p.userId)
+                  p.userId !== peerId && !activeCallsRef.current.has(p.userId)
                 );
                 
                 newPeers.forEach(peerData => {
-                  // Prevent duplicate calls
-                  if (activeCallsRef.current.has(peerData.userId)) {
-                    return;
-                  }
-                  
                   console.log('📞 New peer detected via polling:', peerData.userName);
                   const call = peer.call(peerData.userId, stream, {
                     metadata: { userName, userEmail }
