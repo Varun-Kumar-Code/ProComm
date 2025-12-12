@@ -371,58 +371,83 @@ const VideoRoom = () => {
           console.log('🔌 Joining meeting via Socket.IO');
           socketRef.current.emit('join-meeting', roomId, userId, userName, userEmail);
         } else {
-          console.warn('⚠️ Socket.IO not available, using alternative discovery');
+          console.warn('⚠️ Socket.IO not available, using API-based peer discovery');
           
-          // Store connection in localStorage for peer discovery
-          const roomData = JSON.parse(localStorage.getItem(`meeting-${roomId}`) || '{"peers": []}');
-          const peerInfo = {
-            userId,
-            userName,
-            userEmail,
-            joinedAt: new Date().toISOString()
-          };
-          
-          // Add this peer to the room
-          const existingPeers = roomData.peers.filter(p => p.userId !== userId);
-          roomData.peers = [...existingPeers, peerInfo];
-          localStorage.setItem(`meeting-${roomId}`, JSON.stringify(roomData));
-          
-          // Call existing peers in the room
-          existingPeers.forEach(peerData => {
-            console.log('📞 Calling peer from localStorage:', peerData.userName);
-            setTimeout(() => {
-              const call = peer.call(peerData.userId, stream, {
-                metadata: { userName, userEmail }
+          // Register this peer and get list of existing peers via API
+          const registerPeer = async () => {
+            try {
+              const response = await fetch(`/api/peer-discovery?meetingId=${roomId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, userName, userEmail })
               });
               
-              if (call) {
-                call.on('stream', (remoteStream) => {
-                  console.log('📹 Received stream from:', peerData.userName);
-                  addPeer(peerData.userId, remoteStream, peerData.userName);
-                });
-                call.on('error', (err) => {
-                  console.error('❌ Call error:', err);
+              const result = await response.json();
+              console.log('📡 Peer discovery response:', result);
+              
+              if (result.success && result.peers) {
+                console.log(`📋 Found ${result.peers.length} existing peer(s)`);
+                
+                // Call each existing peer
+                result.peers.forEach(peerData => {
+                  console.log('📞 Calling existing peer via API:', peerData.userName);
+                  setTimeout(() => {
+                    const call = peer.call(peerData.userId, stream, {
+                      metadata: { userName, userEmail }
+                    });
+                    
+                    if (call) {
+                      call.on('stream', (remoteStream) => {
+                        console.log('📹 Received stream from:', peerData.userName);
+                        addPeer(peerData.userId, remoteStream, peerData.userName);
+                      });
+                      call.on('error', (err) => {
+                        console.error('❌ Call error:', err);
+                      });
+                    }
+                  }, 1000);
                 });
               }
-            }, 1000);
-          });
+            } catch (error) {
+              console.error('❌ Error registering peer:', error);
+            }
+          };
           
-          // Listen for storage changes (other tabs/windows joining)
-          window.addEventListener('storage', (e) => {
-            if (e.key === `meeting-${roomId}` && e.newValue) {
-              const updatedRoom = JSON.parse(e.newValue);
-              const newPeers = updatedRoom.peers.filter(p => 
-                p.userId !== userId && !Array.from(peers.keys()).includes(p.userId)
-              );
+          registerPeer();
+          
+          // Poll for new peers every 5 seconds
+          const pollInterval = setInterval(async () => {
+            try {
+              const response = await fetch(`/api/peer-discovery?meetingId=${roomId}`);
+              const result = await response.json();
               
-              newPeers.forEach(peerData => {
-                console.log('📞 New peer detected, calling:', peerData.userName);
-                const call = peer.call(peerData.userId, stream, {
-                  metadata: { userName, userEmail }
-                });
+              if (result.success && result.peers) {
+                const currentPeerIds = Array.from(peers.keys());
+                const newPeers = result.peers.filter(p => 
+                  p.userId !== userId && !currentPeerIds.includes(p.userId)
+                );
                 
-                if (call) {
-                  call.on('stream', (remoteStream) => {
+                newPeers.forEach(peerData => {
+                  console.log('📞 New peer detected via polling:', peerData.userName);
+                  const call = peer.call(peerData.userId, stream, {
+                    metadata: { userName, userEmail }
+                  });
+                  
+                  if (call) {
+                    call.on('stream', (remoteStream) => {
+                      console.log('📹 Received stream from new peer:', peerData.userName);
+                      addPeer(peerData.userId, remoteStream, peerData.userName);
+                    });
+                  }
+                });
+              }
+            } catch (error) {
+              console.error('❌ Error polling for peers:', error);
+            }
+          }, 5000);
+          
+          // Store interval ID for cleanup
+          window.peerPollInterval = pollInterval;
                     addPeer(peerData.userId, remoteStream, peerData.userName);
                   });
                 }
@@ -872,12 +897,17 @@ const VideoRoom = () => {
       localStream.getTracks().forEach(track => track.stop());
     }
     
-    // Clean up localStorage peer data
+    // Clean up peer polling interval
+    if (window.peerPollInterval) {
+      clearInterval(window.peerPollInterval);
+    }
+    
+    // Clean up peer data from API
     if (roomId && peerRef.current) {
       try {
-        const roomData = JSON.parse(localStorage.getItem(`meeting-${roomId}`) || '{"peers": []}');
-        roomData.peers = roomData.peers.filter(p => p.userId !== peerRef.current.id);
-        localStorage.setItem(`meeting-${roomId}`, JSON.stringify(roomData));
+        fetch(`/api/peer-discovery?meetingId=${roomId}&userId=${peerRef.current.id}`, {
+          method: 'DELETE'
+        }).catch(err => console.error('Error removing peer from API:', err));
       } catch (e) {
         console.error('Error cleaning up peer data:', e);
       }
