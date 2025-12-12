@@ -223,6 +223,27 @@ const VideoRoom = () => {
       setError(''); // Clear any previous errors
       setIsInitializing(true);
       
+      // Check WebRTC support
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Your browser does not support WebRTC. Please use Chrome, Firefox, Safari, or Edge (latest versions).');
+      }
+      
+      // Check RTCPeerConnection support
+      const RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+      if (!RTCPeerConnection) {
+        throw new Error('Your browser does not support WebRTC peer connections. Please update your browser to the latest version.');
+      }
+      
+      // Check for secure context (HTTPS or localhost)
+      if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        console.warn('⚠️ WebRTC requires HTTPS in production');
+        throw new Error('Video calls require a secure connection (HTTPS). Please access this page via HTTPS.');
+      }
+      
+      console.log('✅ WebRTC is supported');
+      console.log('🌐 Browser:', navigator.userAgent);
+      console.log('🔒 Protocol:', window.location.protocol);
+      
       // Validate participant access (isolate network errors from media errors)
       if (userEmail) {
         try {
@@ -376,6 +397,16 @@ const VideoRoom = () => {
       
       // Initialize PeerJS (production/development aware)
       const isProduction = process.env.NODE_ENV === 'production';
+      
+      // Double-check RTCPeerConnection before creating Peer
+      if (!window.RTCPeerConnection && !window.webkitRTCPeerConnection && !window.mozRTCPeerConnection) {
+        throw new Error('WebRTC is not available in this browser. Please use the latest version of Chrome, Firefox, Safari, or Edge.');
+      }
+      
+      console.log('🔗 Creating PeerJS connection...');
+      console.log('🌍 Environment:', isProduction ? 'Production' : 'Development');
+      console.log('🖥️ PeerJS server:', isProduction ? '0.peerjs.com:443 (secure)' : 'localhost:3003');
+      
       const peer = new Peer({
         host: isProduction ? '0.peerjs.com' : 'localhost',
         port: isProduction ? 443 : 3003,
@@ -518,10 +549,26 @@ const VideoRoom = () => {
       // Handle PeerJS errors
       peer.on('error', (err) => {
         console.error('❌ PeerJS error:', err);
-        if (err.type === 'network' || err.type === 'server-error') {
+        console.error('❌ Error type:', err.type);
+        console.error('❌ Error message:', err.message);
+        
+        if (err.type === 'browser-incompatible' || err.message?.includes('WebRTC')) {
+          setError(
+            `Your browser does not support video calls. Please use:\n` +
+            `• Google Chrome (latest version)\n` +
+            `• Mozilla Firefox (latest version)\n` +
+            `• Microsoft Edge (latest version)\n` +
+            `• Safari (latest version)\n\n` +
+            `Current browser: ${navigator.userAgent}`
+          );
+        } else if (err.type === 'network' || err.type === 'server-error') {
           setError('Unable to connect to video server. Please check your internet connection and try again.');
         } else if (err.type === 'peer-unavailable') {
           console.warn('⚠️ Peer unavailable, they may have disconnected');
+        } else if (err.type === 'ssl-unavailable') {
+          setError('Secure connection (HTTPS) is required for video calls. Please ensure you are accessing this page via HTTPS.');
+        } else {
+          setError(`Connection error: ${err.message}. Please refresh the page and try again.`);
         }
       });
 
@@ -1055,10 +1102,10 @@ const VideoRoom = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="text-center bg-red-600/20 border border-red-600 rounded-lg p-8 max-w-md w-full">
+        <div className="text-center bg-red-600/20 border border-red-600 rounded-lg p-8 max-w-2xl w-full">
           <X className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h3 className="text-white text-lg font-semibold mb-2">Unable to Join Meeting</h3>
-          <p className="text-red-200 mb-6 leading-relaxed">{error}</p>
+          <p className="text-red-200 mb-6 leading-relaxed whitespace-pre-line text-left">{error}</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => {
