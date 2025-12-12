@@ -96,67 +96,74 @@ const VideoRoom = () => {
 
   // Attach local video stream to video element when stream is available
   useEffect(() => {
+    // Wait for both stream and video element to be ready
+    if (!localStream || !localVideoRef.current) {
+      return;
+    }
+    
     const videoElement = localVideoRef.current;
-    
-    if (!localStream) {
-      console.warn('⚠️ localStream is null');
-      return;
-    }
-    
-    if (!videoElement) {
-      console.warn('⚠️ videoElement is null');
-      return;
-    }
     
     console.log('🎥 Attaching local stream to video element');
     console.log('📹 Stream tracks:', localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
-    console.log('📹 Video element:', videoElement);
-    console.log('📹 Video element ready state:', videoElement.readyState);
     
     // Set srcObject
     videoElement.srcObject = localStream;
-    console.log('📹 srcObject set:', videoElement.srcObject);
+    console.log('✅ srcObject set successfully');
     
-    // Simple play with error handling
+    // Function to play video
     const playVideo = () => {
-      console.log('🎬 Attempting to play local video...');
-      videoElement.play()
-        .then(() => {
-          console.log('✅ Local video playing');
-          console.log('📹 Video playing state:', !videoElement.paused);
-        })
-        .catch(err => {
-          console.error('❌ Play error:', err);
-          console.log('💡 Click on your video to manually start playback');
-        });
-    };
-    
-    // Try to play after a small delay to ensure DOM is ready
-    const playTimer = setTimeout(playVideo, 200);
-    
-    // Also try when metadata loads
-    const metadataHandler = () => {
-      console.log('📹 Metadata loaded, playing...');
-      playVideo();
-    };
-    videoElement.addEventListener('loadedmetadata', metadataHandler);
-    
-    // Add click handler for manual play
-    const clickHandler = () => {
-      console.log('👆 Video clicked, attempting play...');
-      playVideo();
-    };
-    videoElement.addEventListener('click', clickHandler);
-    
-    return () => {
-      clearTimeout(playTimer);
-      videoElement.removeEventListener('loadedmetadata', metadataHandler);
-      videoElement.removeEventListener('click', clickHandler);
-      if (videoElement.srcObject) {
-        videoElement.srcObject = null;
+      console.log('🎬 Playing local video...');
+      const playPromise = videoElement.play();
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('✅ Local video is now playing');
+          })
+          .catch(err => {
+            console.error('❌ Video play failed:', err);
+            console.log('💡 Try clicking on your video box');
+          });
       }
     };
-  }, [localStream]);
+    
+    // Set up event handlers
+    const handleLoadedMetadata = () => {
+      console.log('📹 Video metadata loaded');
+      playVideo();
+    };
+    
+    const handleCanPlay = () => {
+      console.log('📹 Video can play');
+      playVideo();
+    };
+    
+    const handleClick = () => {
+      console.log('👆 Video clicked');
+      playVideo();
+    };
+    
+    // Add event listeners
+    videoElement.addEventListener('loadedmetadata', handleLoadedMetadata);
+    videoElement.addEventListener('canplay', handleCanPlay);
+    videoElement.addEventListener('click', handleClick);
+    
+    // Try to play immediately
+    if (videoElement.readyState >= 2) {
+      console.log('📹 Video already has metadata');
+      playVideo();
+    } else {
+      // Small delay to ensure everything is ready
+      setTimeout(playVideo, 300);
+    }
+    
+    // Cleanup
+    return () => {
+      videoElement.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      videoElement.removeEventListener('canplay', handleCanPlay);
+      videoElement.removeEventListener('click', handleClick);
+    };
+  }, [localStream]); // Only depend on localStream
 
   useEffect(() => {
     initializeVideoCall();
