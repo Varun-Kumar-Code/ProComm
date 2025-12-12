@@ -101,41 +101,27 @@ const VideoRoom = () => {
       console.log('🎥 Attaching local stream to video element');
       console.log('📹 Stream tracks:', localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
       
+      // Set srcObject
       videoElement.srcObject = localStream;
-      videoElement.muted = true; // Ensure muted for autoplay
       
-      // Force play immediately and retry on failure
-      const attemptPlay = async () => {
-        try {
-          videoElement.play();
-          console.log('✅ Local video playing successfully');
-        } catch (err) {
-          console.warn('⚠️ Autoplay failed, retrying:', err.message);
-          setTimeout(() => {
-            videoElement.play().catch(e => console.error('❌ Retry failed:', e));
-          }, 300);
-        }
+      // Simple play with error handling
+      const playVideo = () => {
+        videoElement.play()
+          .then(() => console.log('✅ Local video playing'))
+          .catch(err => console.error('❌ Play error:', err));
       };
       
-      // Play on metadata loaded
-      videoElement.onloadedmetadata = () => {
-        console.log('🎥 Video metadata loaded');
-        attemptPlay();
-      };
+      // Try to play immediately
+      playVideo();
       
-      // Try immediate play if metadata already exists
-      if (videoElement.readyState >= 1) {
-        console.log('🎥 Video ready, playing immediately');
-        attemptPlay();
-      }
-    }
-    
-    return () => {
-      // Cleanup
-      if (videoElement) {
+      // Also try when metadata loads
+      videoElement.addEventListener('loadedmetadata', playVideo);
+      
+      return () => {
+        videoElement.removeEventListener('loadedmetadata', playVideo);
         videoElement.srcObject = null;
-      }
-    };
+      };
+    }
   }, [localStream]);
 
   useEffect(() => {
@@ -338,17 +324,21 @@ const VideoRoom = () => {
       console.log('✅ Media access granted:', stream);
       console.log('📹 Video tracks:', stream.getVideoTracks().length, '🎤 Audio tracks:', stream.getAudioTracks().length);
       
-      // Log track settings for debugging
+      // Log track settings for debugging quality
       const videoTrack = stream.getVideoTracks()[0];
       const audioTrack = stream.getAudioTracks()[0];
       if (videoTrack) {
-        console.log('📷 Video track settings:', videoTrack.getSettings());
+        const settings = videoTrack.getSettings();
+        console.log('📷 Video track settings:', settings);
+        console.log('📷 Actual resolution:', settings.width + 'x' + settings.height, '@', settings.frameRate + 'fps');
         console.log('📷 Video track enabled:', videoTrack.enabled);
         // Ensure video track is enabled by default
         videoTrack.enabled = true;
       }
       if (audioTrack) {
-        console.log('🎤 Audio track settings:', audioTrack.getSettings());
+        const settings = audioTrack.getSettings();
+        console.log('🎤 Audio track settings:', settings);
+        console.log('🎤 Sample rate:', settings.sampleRate, 'Hz');
         console.log('🎤 Audio track enabled:', audioTrack.enabled);
         // Ensure audio track is enabled by default
         audioTrack.enabled = true;
@@ -1254,9 +1244,14 @@ const VideoRoom = () => {
                 autoPlay
                 muted
                 playsInline
-                className="w-full h-full object-cover"
-                style={{ minHeight: '240px' }}
+                className="w-full h-full object-cover bg-black"
+                style={{ minHeight: '240px', display: 'block' }}
               />
+              {!localStream && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-white/50 text-sm">Initializing camera...</div>
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               
               {/* Hand Raised Indicator */}
