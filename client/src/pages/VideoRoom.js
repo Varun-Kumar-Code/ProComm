@@ -391,22 +391,27 @@ const VideoRoom = () => {
       
       setLocalStream(stream);
       
-      // Immediately attach stream to video element (don't wait for useEffect)
-      console.log('🎥 Directly attaching stream to video element');
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-        console.log('✅ Stream attached directly');
-        
-        // Try to play
-        const playPromise = localVideoRef.current.play();
-        if (playPromise) {
-          playPromise
-            .then(() => console.log('✅ Local video playing directly'))
-            .catch(err => console.warn('⚠️ Direct play failed:', err.message));
-        }
-      } else {
-        console.warn('⚠️ Video element not available for direct attachment');
-      }
+      // Wait for next render cycle before attaching stream
+      console.log('🎥 Waiting for video element to render...');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (localVideoRef.current) {
+            console.log('🎥 Attaching stream to video element');
+            localVideoRef.current.srcObject = stream;
+            console.log('✅ Stream attached successfully');
+            
+            // Try to play
+            const playPromise = localVideoRef.current.play();
+            if (playPromise) {
+              playPromise
+                .then(() => console.log('✅ Local video playing'))
+                .catch(err => console.warn('⚠️ Play failed:', err.message));
+            }
+          } else {
+            console.error('❌ Video element still not available after render');
+          }
+        });
+      });
 
       // Initialize socket connection (only in development or if server URL is explicitly set)
       const hasSocketServer = process.env.REACT_APP_SERVER_URL && 
