@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Mic, 
@@ -93,6 +93,26 @@ const VideoRoom = () => {
   const activeCallsRef = useRef(new Map()); // Track active calls for cleanup
 
   const messagesEndRef = useRef(null);
+
+  // Callback ref for local video - fires when element mounts
+  const localVideoCallbackRef = useCallback((videoElement) => {
+    localVideoRef.current = videoElement;
+    
+    if (!videoElement || !localStream) {
+      console.log('📹 Video callback - element:', !!videoElement, 'stream:', !!localStream);
+      return;
+    }
+    
+    console.log('🎥 Video element mounted! Attaching stream...');
+    videoElement.srcObject = localStream;
+    
+    const playPromise = videoElement.play();
+    if (playPromise) {
+      playPromise
+        .then(() => console.log('✅ Local video playing'))
+        .catch(err => console.warn('⚠️ Play failed:', err.message));
+    }
+  }, [localStream]);
 
   // Attach local video stream to video element when stream is available
   useEffect(() => {
@@ -1304,7 +1324,7 @@ const VideoRoom = () => {
             {/* Local Video */}
             <div className="relative bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group hover:border-blue-500/30 transition-all duration-500 min-h-[240px]">
               <video
-                ref={localVideoRef}
+                ref={localVideoCallbackRef}
                 autoPlay
                 muted
                 playsInline
