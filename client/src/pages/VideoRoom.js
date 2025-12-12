@@ -186,10 +186,14 @@ const VideoRoom = () => {
       if (userEmail) {
         try {
           console.log('📧 Validating participant access for:', userEmail);
-          const response = await fetch(`/api/meetings/${roomId}/validate-participant`, {
+          const response = await fetch(`/api/validate-participant`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: userEmail })
+            body: JSON.stringify({ 
+              meetingId: roomId,
+              email: userEmail,
+              name: userName
+            })
           });
 
           if (!response.ok) {

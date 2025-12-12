@@ -40,12 +40,16 @@ const JoinMeetingModal = ({ isOpen, onClose }) => {
       }
       
       // Validate with server
-      const response = await fetch(`/api/meetings/${cleanMeetingId}/validate-participant`, {
+      const response = await fetch(`/api/validate-participant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: userEmail.trim() }),
+        body: JSON.stringify({ 
+          meetingId: cleanMeetingId,
+          email: userEmail.trim(),
+          name: userName.trim()
+        }),
       });
       
       const result = await response.json();
