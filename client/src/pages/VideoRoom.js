@@ -97,52 +97,65 @@ const VideoRoom = () => {
   // Attach local video stream to video element when stream is available
   useEffect(() => {
     const videoElement = localVideoRef.current;
-    if (localStream && videoElement) {
-      console.log('🎥 Attaching local stream to video element');
-      console.log('📹 Stream tracks:', localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
-      console.log('📹 Video element:', videoElement);
-      console.log('📹 Video element ready state:', videoElement.readyState);
-      
-      // Set srcObject
-      videoElement.srcObject = localStream;
-      console.log('📹 srcObject set:', videoElement.srcObject);
-      
-      // Simple play with error handling
-      const playVideo = () => {
-        console.log('🎬 Attempting to play local video...');
-        videoElement.play()
-          .then(() => console.log('✅ Local video playing'))
-          .catch(err => {
-            console.error('❌ Play error:', err);
-            console.log('💡 Click on your video to manually start playback');
-          });
-      };
-      
-      // Try to play immediately
-      setTimeout(playVideo, 100);
-      
-      // Also try when metadata loads
-      videoElement.addEventListener('loadedmetadata', () => {
-        console.log('📹 Metadata loaded, playing...');
-        playVideo();
-      });
-      
-      // Add click handler for manual play
-      const clickHandler = () => {
-        console.log('👆 Video clicked, attempting play...');
-        playVideo();
-      };
-      videoElement.addEventListener('click', clickHandler);
-      
-      return () => {
-        videoElement.removeEventListener('loadedmetadata', playVideo);
-        videoElement.removeEventListener('click', clickHandler);
-        videoElement.srcObject = null;
-      };
-    } else {
-      if (!localStream) console.warn('⚠️ localStream is null');
-      if (!videoElement) console.warn('⚠️ videoElement is null');
+    
+    if (!localStream) {
+      console.warn('⚠️ localStream is null');
+      return;
     }
+    
+    if (!videoElement) {
+      console.warn('⚠️ videoElement is null');
+      return;
+    }
+    
+    console.log('🎥 Attaching local stream to video element');
+    console.log('📹 Stream tracks:', localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
+    console.log('📹 Video element:', videoElement);
+    console.log('📹 Video element ready state:', videoElement.readyState);
+    
+    // Set srcObject
+    videoElement.srcObject = localStream;
+    console.log('📹 srcObject set:', videoElement.srcObject);
+    
+    // Simple play with error handling
+    const playVideo = () => {
+      console.log('🎬 Attempting to play local video...');
+      videoElement.play()
+        .then(() => {
+          console.log('✅ Local video playing');
+          console.log('📹 Video playing state:', !videoElement.paused);
+        })
+        .catch(err => {
+          console.error('❌ Play error:', err);
+          console.log('💡 Click on your video to manually start playback');
+        });
+    };
+    
+    // Try to play after a small delay to ensure DOM is ready
+    const playTimer = setTimeout(playVideo, 200);
+    
+    // Also try when metadata loads
+    const metadataHandler = () => {
+      console.log('📹 Metadata loaded, playing...');
+      playVideo();
+    };
+    videoElement.addEventListener('loadedmetadata', metadataHandler);
+    
+    // Add click handler for manual play
+    const clickHandler = () => {
+      console.log('👆 Video clicked, attempting play...');
+      playVideo();
+    };
+    videoElement.addEventListener('click', clickHandler);
+    
+    return () => {
+      clearTimeout(playTimer);
+      videoElement.removeEventListener('loadedmetadata', metadataHandler);
+      videoElement.removeEventListener('click', clickHandler);
+      if (videoElement.srcObject) {
+        videoElement.srcObject = null;
+      }
+    };
   }, [localStream]);
 
   useEffect(() => {
