@@ -61,7 +61,8 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
   };
 
   const handleCopyLink = () => {
-    const meetingLink = `${window.location.origin}/room/${createdMeeting.id}`;
+    const title = encodeURIComponent(createdMeeting.title || 'Untitled Meeting');
+    const meetingLink = `${window.location.origin}/room/${createdMeeting.id}?title=${title}`;
     navigator.clipboard.writeText(meetingLink);
     setCopiedToClipboard(true);
     setTimeout(() => setCopiedToClipboard(false), 2000);
@@ -149,7 +150,10 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
 
             <div className="text-center">
               <button
-                onClick={() => window.open(`/room/${createdMeeting.id}`, '_blank')}
+                onClick={() => {
+                  const title = encodeURIComponent(createdMeeting.title || 'Untitled Meeting');
+                  window.open(`/room/${createdMeeting.id}?title=${title}`, '_blank');
+                }}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
               >
                 Start Meeting Now

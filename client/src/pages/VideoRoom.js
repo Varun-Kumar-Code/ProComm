@@ -79,6 +79,9 @@ const VideoRoom = () => {
   // Pin state
   const [pinnedParticipant, setPinnedParticipant] = useState(null); // stores peerId or 'local'
   
+  // Meeting title state
+  const [meetingTitle, setMeetingTitle] = useState('');
+  
   // Timer states
   const [meetingStartTime] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -316,6 +319,17 @@ const VideoRoom = () => {
 
     return () => clearInterval(timer);
   }, [meetingStartTime]);
+
+  // Get meeting title from URL params or localStorage
+  useEffect(() => {
+    const title = searchParams.get('title') || localStorage.getItem(`meeting_title_${roomId}`) || 'Untitled Meeting';
+    setMeetingTitle(title);
+    
+    // Save to localStorage for future reference
+    if (searchParams.get('title')) {
+      localStorage.setItem(`meeting_title_${roomId}`, title);
+    }
+  }, [searchParams, roomId]);
 
   // Hide loading screen when initialization is complete and no errors
   useEffect(() => {
@@ -1365,7 +1379,7 @@ const VideoRoom = () => {
           <div className="absolute left-1/2 transform -translate-x-1/2 hidden lg:flex items-center gap-2 px-4 py-2 bg-[#2a2a2a] rounded-lg border border-gray-700">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-sm font-semibold text-white">Meeting: {roomId}</span>
+              <span className="text-sm font-semibold text-white">{meetingTitle}</span>
             </div>
           </div>
         
