@@ -383,14 +383,10 @@ const VideoRoom = () => {
           const handsData = await handsResponse.json();
           
           if (handsData.handsRaised) {
-            const newHandsRaised = new Set(handsData.handsRaised);
+            // Filter out current user - they have their own isHandRaised state
+            const othersHandsRaised = handsData.handsRaised.filter(name => name !== userName);
+            const newHandsRaised = new Set(othersHandsRaised);
             setHandsRaised(newHandsRaised);
-            
-            if (newHandsRaised.size > 0) {
-              console.log('✋ [POLL] Hands raised by:', Array.from(newHandsRaised).join(', '));
-              console.log('✋ [POLL] My userName:', userName);
-              console.log('✋ [POLL] Participants:', Array.from(peers.entries()).map(([id, p]) => p.userName).join(', '));
-            }
           }
         }
       } catch (error) {
