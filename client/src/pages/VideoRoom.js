@@ -68,7 +68,7 @@ const VideoRoom = () => {
   });
   
   // Meeting features states
-  const [handsRaised] = useState(new Set());
+  const [handsRaised, setHandsRaised] = useState(new Set());
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [reactions, setReactions] = useState([]);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
@@ -331,22 +331,23 @@ const VideoRoom = () => {
     }
   }, [searchParams, roomId]);
 
-  // Poll for reactions from other participants (every 1 second)
+  // Poll for reactions and hand raises from other participants (every 1 second)
   useEffect(() => {
     if (!roomId) return;
     
     const seenReactionIds = new Set();
     
-    const pollReactions = async () => {
+    const pollReactionsAndHands = async () => {
       try {
         const serverUrl = process.env.NODE_ENV === 'production' 
           ? window.location.origin 
           : 'http://localhost:3000';
         
-        const response = await fetch(`${serverUrl}/api/socket?roomId=${roomId}`);
+        // Poll reactions
+        const reactionsResponse = await fetch(`${serverUrl}/api/socket?roomId=${roomId}`);
         
-        if (response.ok) {
-          const data = await response.json();
+        if (reactionsResponse.ok) {
+          const data = await reactionsResponse.json();
           
           // Only add reactions we haven't seen before
           if (data.reactions && data.reactions.length > 0) {
@@ -374,13 +375,29 @@ const VideoRoom = () => {
             }
           }
         }
+        
+        // Poll hand raises
+        const handsResponse = await fetch(`${serverUrl}/api/socket?roomId=${roomId}&type=hands`);
+        
+        if (handsResponse.ok) {
+          const handsData = await handsResponse.json();
+          
+          if (handsData.handsRaised) {
+            const newHandsRaised = new Set(handsData.handsRaised);
+            setHandsRaised(newHandsRaised);
+            
+            if (newHandsRaised.size > 0) {
+              console.log('✋ [POLL] Hands raised:', Array.from(newHandsRaised).join(', '));
+            }
+          }
+        }
       } catch (error) {
         // Silently fail - don't spam console
       }
     };
     
     // Poll every 1 second
-    const interval = setInterval(pollReactions, 1000);
+    const interval = setInterval(pollReactionsAndHands, 1000);
     
     return () => clearInterval(interval);
   }, [roomId]);
@@ -1243,16 +1260,34 @@ const VideoRoom = () => {
   };
 
   // Raise hand functions
-  const toggleRaiseHand = () => {
+  const toggleRaiseHand = async () => {
     const newState = !isHandRaised;
     setIsHandRaised(newState);
     
-    if (socketRef.current) {
-      socketRef.current.emit('hand-raised', {
-        roomId,
-        userName,
-        isRaised: newState
+    // Send to server via HTTP API
+    try {
+      const serverUrl = process.env.NODE_ENV === 'production' 
+        ? window.location.origin 
+        : 'http://localhost:3000';
+      
+      const response = await fetch(`${serverUrl}/api/socket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          roomId, 
+          handRaise: { userName, isRaised: newState }
+        })
       });
+      
+      if (response.ok) {
+        console.log(`✋ [HAND] ${newState ? 'Raised' : 'Lowered'} hand successfully`);
+      } else {
+        console.error('❌ [HAND] Server error:', await response.text());
+      }
+    } catch (error) {
+      console.error('❌ [HAND] Failed to send:', error);
     }
   };
 
