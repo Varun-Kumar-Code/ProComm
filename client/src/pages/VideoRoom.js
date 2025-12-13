@@ -419,14 +419,17 @@ const VideoRoom = () => {
           const handsData = await handsResponse.json();
           
           if (handsData.handsRaised) {
-            // Keep all users in the Set - local video uses isHandRaised, remote videos use this Set
-            const newHandsRaised = new Set(handsData.handsRaised);
+            // CRITICAL: Filter out MY userName - I have my own isHandRaised state
+            // This Set should ONLY contain OTHER participants who raised hands
+            const othersWhoRaisedHands = handsData.handsRaised.filter(name => name !== userName);
+            const newHandsRaised = new Set(othersWhoRaisedHands);
             setHandsRaised(newHandsRaised);
             
-            if (newHandsRaised.size > 0) {
-              console.log('✋ [POLL] Hands raised Set:', Array.from(newHandsRaised));
+            if (newHandsRaised.size > 0 || handsData.handsRaised.includes(userName)) {
+              console.log('✋ [POLL] Server says raised:', handsData.handsRaised);
               console.log('✋ [POLL] My userName:', userName);
-              console.log('✋ [POLL] Remote participants:', Array.from(peers.entries()).map(([id, p]) => `${p.userName}`));
+              console.log('✋ [POLL] Others with hands raised:', Array.from(newHandsRaised));
+              console.log('✋ [POLL] Remote participants:', Array.from(peers.entries()).map(([id, p]) => p.userName));
             }
           }
         }
