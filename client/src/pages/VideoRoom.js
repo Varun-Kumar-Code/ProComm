@@ -55,12 +55,12 @@ const VideoRoom = () => {
   const [showToolsMenu, setShowToolsMenu] = useState(false);
 
   // Chat states
-  const [messages, setMessages] = useState([]);
+  const [messages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [participants, setParticipants] = useState([]);
   
   // Poll states
-  const [polls, setPolls] = useState([]);
+  const [polls] = useState([]);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
   const [newPoll, setNewPoll] = useState({
     question: '',
@@ -68,7 +68,7 @@ const VideoRoom = () => {
   });
   
   // Meeting features states
-  const [handsRaised, setHandsRaised] = useState(new Set());
+  const [handsRaised] = useState(new Set());
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [reactions, setReactions] = useState([]);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
@@ -933,7 +933,7 @@ const VideoRoom = () => {
           });
         });
 
-        // Poll event listeners
+        /* Poll event listeners - DISABLED
         socketRef.current.on('poll-created', (pollData) => {
           console.log(`📊 New poll received: ${pollData.poll.question}`);
           const pollWithDate = {
@@ -1180,7 +1180,7 @@ const VideoRoom = () => {
         isActive: true
       };
       
-      setPolls(prev => [...prev, poll]);
+      // setPolls(prev => [...prev, poll]); // DISABLED - Socket.IO not available
       
       if (socketRef.current) {
         socketRef.current.emit('poll-created', { roomId, poll });
@@ -1192,6 +1192,7 @@ const VideoRoom = () => {
   };
 
   const votePoll = (pollId, optionId) => {
+    /* DISABLED - Socket.IO not available
     setPolls(prev => prev.map(poll => {
       if (poll.id === pollId) {
         const updatedOptions = poll.options.map(option => {
@@ -1220,6 +1221,7 @@ const VideoRoom = () => {
       }
       return poll;
     }));
+    */
   };
 
   const addPollOption = () => {
