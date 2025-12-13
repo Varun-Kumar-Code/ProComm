@@ -1,9 +1,8 @@
 // REST API handler for Vercel (Socket.IO doesn't work well with serverless)
-// Using in-memory storage for reactions and hand raises (temp solution - consider Redis for production)
-// Note: Vercel serverless may create multiple instances, causing state loss
+// Using in-memory storage for reactions and hand raises
+// WORKAROUND: Store both in same Map since Vercel serverless instances are short-lived (~30s)
 
-const roomReactions = new Map(); // Map<roomId, Array<reactions>>
-const roomHandRaises = new Map(); // Map<roomId, Set<userName>>
+const roomData = new Map(); // Map<roomId, { reactions: Array, handsRaised: Set }>
 
 // Log when module initializes to track cold starts
 console.log('[INIT] API handler module loaded at', new Date().toISOString());
@@ -27,20 +26,21 @@ const ioHandler = (req, res) => {
       return;
     }
     
+    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Set() };
+    
     if (type === 'hands') {
       // Get hand raises
-      const handsRaised = roomHandRaises.get(roomId) || new Set();
-      console.log(`[GET HANDS] Room ${roomId}: ${Array.from(handsRaised).join(', ') || 'none'}`);
-      res.status(200).json({ handsRaised: Array.from(handsRaised) });
+      console.log(`[GET HANDS] Room ${roomId}: ${Array.from(data.handsRaised).join(', ') || 'none'}`);
+      res.status(200).json({ handsRaised: Array.from(data.handsRaised) });
       return;
     }
     
     // Default: Get reactions
-    const reactions = roomReactions.get(roomId) || [];
-    // Clean up old reactions (older than 5 seconds)
     const now = Date.now();
-    const freshReactions = reactions.filter(r => now - r.timestamp < 5000);
-    roomReactions.set(roomId, freshReactions);
+    const freshReactions = data.reactions.filter(r => now - r.timestamp < 5000);
+    
+    // Update the room data with fresh reactions
+    roomData.set(roomId, { ...data, reactions: freshReactions });
     
     res.status(200).json({ reactions: freshReactions });
     return;
@@ -50,6 +50,8 @@ const ioHandler = (req, res) => {
   if (req.method === 'POST') {
     const { roomId, reaction, handRaise } = req.body;
     
+    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Set() };
+    
     if (handRaise) {
       // Handle hand raise
       const { userName, isRaised } = handRaise;
@@ -58,17 +60,17 @@ const ioHandler = (req, res) => {
         return;
       }
       
-      let handsRaised = roomHandRaises.get(roomId) || new Set();
       if (isRaised) {
-        handsRaised.add(userName);
+        data.handsRaised.add(userName);
       } else {
-        handsRaised.delete(userName);
+        data.handsRaised.delete(userName);
       }
-      roomHandRaises.set(roomId, handsRaised);
+      
+      roomData.set(roomId, data);
       
       console.log(`[HAND] ${userName} ${isRaised ? 'raised' : 'lowered'} hand in room ${roomId}`);
-      console.log(`[HAND] Current hands raised:`, Array.from(handsRaised));
-      res.status(200).json({ success: true, handsRaised: Array.from(handsRaised) });
+      console.log(`[HAND] Current hands raised:`, Array.from(data.handsRaised));
+      res.status(200).json({ success: true, handsRaised: Array.from(data.handsRaised) });
       return;
     }
     
@@ -79,9 +81,8 @@ const ioHandler = (req, res) => {
         return;
       }
       
-      const reactions = roomReactions.get(roomId) || [];
-      reactions.push(reaction);
-      roomReactions.set(roomId, reactions);
+      data.reactions.push(reaction);
+      roomData.set(roomId, data);
       
       console.log(`[REACTION] Added ${reaction.emoji} to room ${roomId} by ${reaction.userName}`);
       res.status(200).json({ success: true, reaction });

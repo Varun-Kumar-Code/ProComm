@@ -331,6 +331,38 @@ const VideoRoom = () => {
     }
   }, [searchParams, roomId]);
 
+  // Heartbeat to keep hand raise alive in serverless function (every 10 seconds)
+  useEffect(() => {
+    if (!roomId || !userName) return;
+    
+    const sendHandRaiseHeartbeat = async () => {
+      if (!isHandRaised) return; // Only send if hand is raised
+      
+      try {
+        const serverUrl = process.env.NODE_ENV === 'production' 
+          ? window.location.origin 
+          : 'http://localhost:3000';
+        
+        await fetch(`${serverUrl}/api/socket`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            roomId, 
+            handRaise: { userName, isRaised: true }
+          })
+        });
+        console.log('💓 [HEARTBEAT] Hand raise status refreshed');
+      } catch (error) {
+        console.error('❌ [HEARTBEAT] Failed:', error);
+      }
+    };
+    
+    // Send heartbeat every 10 seconds
+    const interval = setInterval(sendHandRaiseHeartbeat, 10000);
+    
+    return () => clearInterval(interval);
+  }, [roomId, userName, isHandRaised]);
+  
   // Poll for reactions and hand raises from other participants (every 1 second)
   useEffect(() => {
     if (!roomId) return;
