@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Mic, 
@@ -35,22 +35,7 @@ const VideoRoom = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  
-  // Make userName unique - if Anonymous, add unique ID stored in sessionStorage
-  const baseUserName = searchParams.get('name') || 'Anonymous';
-  const userName = useMemo(() => {
-    if (baseUserName === 'Anonymous') {
-      // Get or create unique ID for this session
-      let anonymousId = sessionStorage.getItem('anonymousId');
-      if (!anonymousId) {
-        anonymousId = Math.random().toString(36).substring(2, 8);
-        sessionStorage.setItem('anonymousId', anonymousId);
-      }
-      return `Anonymous_${anonymousId}`;
-    }
-    return baseUserName;
-  }, [baseUserName]);
-  
+  const userName = searchParams.get('name') || 'Anonymous';
   const userEmail = searchParams.get('email') || '';
 
   // Video states
@@ -83,7 +68,7 @@ const VideoRoom = () => {
   });
   
   // Meeting features states
-  const [handsRaised, setHandsRaised] = useState(new Set());
+  const [handsRaised, setHandsRaised] = useState(new Set()); // Set of peer IDs (not userNames)
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [reactions, setReactions] = useState([]);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
@@ -348,13 +333,11 @@ const VideoRoom = () => {
 
   // Heartbeat to keep hand raise alive in serverless function (every 10 seconds)
   useEffect(() => {
-    if (!roomId || !userName) return;
+    if (!roomId || !peerRef.current?.id) return;
     
     const sendHandRaiseHeartbeat = async () => {
-      console.log('💓 [HEARTBEAT] Checking... isHandRaised:', isHandRaised);
-      if (!isHandRaised) {
-        console.log('💓 [HEARTBEAT] Skipping - hand not raised');
-        return; // Only send if hand is raised
+      if (!isHandRaised || !peerRef.current?.id) {
+        return; // Only send if hand is raised and we have a peer ID
       }
       
       try {
@@ -367,10 +350,14 @@ const VideoRoom = () => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             roomId, 
-            handRaise: { userName, isRaised: true }
+            handRaise: { 
+              peerId: peerRef.current.id, 
+              userName: userName,
+              isRaised: true 
+            }
           })
         });
-        console.log('💓 [HEARTBEAT] Hand raise status refreshed');
+        console.log('💓 [HEARTBEAT] Hand raise status refreshed for ID:', peerRef.current.id);
       } catch (error) {
         console.error('❌ [HEARTBEAT] Failed:', error);
       }
@@ -434,17 +421,18 @@ const VideoRoom = () => {
           const handsData = await handsResponse.json();
           
           if (handsData.handsRaised) {
-            // CRITICAL: Filter out MY userName - I have my own isHandRaised state
-            // This Set should ONLY contain OTHER participants who raised hands
-            const othersWhoRaisedHands = handsData.handsRaised.filter(name => name !== userName);
+            const myPeerId = peerRef.current?.id;
+            // CRITICAL: Filter out MY peer ID - I have my own isHandRaised state
+            // This Set should ONLY contain OTHER participants' peer IDs who raised hands
+            const othersWhoRaisedHands = handsData.handsRaised.filter(id => id !== myPeerId);
             const newHandsRaised = new Set(othersWhoRaisedHands);
             setHandsRaised(newHandsRaised);
             
-            if (newHandsRaised.size > 0 || handsData.handsRaised.includes(userName)) {
-              console.log('✋ [POLL] Server says raised:', handsData.handsRaised);
-              console.log('✋ [POLL] My userName:', userName);
-              console.log('✋ [POLL] Others with hands raised:', Array.from(newHandsRaised));
-              console.log('✋ [POLL] Remote participants:', Array.from(peers.entries()).map(([id, p]) => p.userName));
+            if (newHandsRaised.size > 0 || (myPeerId && handsData.handsRaised.includes(myPeerId))) {
+              console.log('✋ [POLL] Server IDs raised:', handsData.handsRaised);
+              console.log('✋ [POLL] My peer ID:', myPeerId);
+              console.log('✋ [POLL] Others IDs with hands:', Array.from(newHandsRaised));
+              console.log('✋ [POLL] Remote participants:', Array.from(peers.entries()).map(([id, p]) => `${p.userName} (${id})`));
             }
           }
         }
@@ -1321,9 +1309,15 @@ const VideoRoom = () => {
     const newState = !isHandRaised;
     setIsHandRaised(newState);
     
-    console.log('✋ [TOGGLE] My userName:', userName, 'New state:', newState);
+    if (!peerRef.current?.id) {
+      console.error('❌ [HAND] No peer ID available yet');
+      return;
+    }
     
-    // Send to server via HTTP API
+    const myPeerId = peerRef.current.id;
+    console.log('✋ [TOGGLE] My ID:', myPeerId, 'Name:', userName, 'New state:', newState);
+    
+    // Send to server via HTTP API using peer ID
     try {
       const serverUrl = process.env.NODE_ENV === 'production' 
         ? window.location.origin 
@@ -1336,14 +1330,18 @@ const VideoRoom = () => {
         },
         body: JSON.stringify({ 
           roomId, 
-          handRaise: { userName, isRaised: newState }
+          handRaise: { 
+            peerId: myPeerId, 
+            userName: userName, // For display purposes only
+            isRaised: newState 
+          }
         })
       });
       
       if (response.ok) {
         const result = await response.json();
         console.log(`✋ [HAND] ${newState ? 'Raised' : 'Lowered'} hand successfully`);
-        console.log('✋ [HAND] Server confirmed hands:', result.handsRaised);
+        console.log('✋ [HAND] Server confirmed IDs:', result.handsRaised);
       } else {
         console.error('❌ [HAND] Server error:', await response.text());
       }
@@ -1699,7 +1697,7 @@ const VideoRoom = () => {
                           className="w-full h-full object-contain bg-black"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                        {handsRaised.has(peerData.userName) && (
+                        {handsRaised.has(peerId) && (
                           <div className="absolute top-3 right-14 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
                             <Hand className="w-4 h-4 text-white animate-bounce" />
                           </div>
@@ -1762,6 +1760,7 @@ const VideoRoom = () => {
                   return (
                     <RemoteVideo
                       key={peerId}
+                      peerId={peerId}
                       stream={peerData.stream}
                       userName={peerData.userName}
                       handsRaised={handsRaised}
@@ -1846,7 +1845,8 @@ const VideoRoom = () => {
               {/* Remote Videos */}
               {getSortedParticipants().map(([peerId, peerData]) => (
                 <RemoteVideo 
-                  key={peerId} 
+                  key={peerId}
+                  peerId={peerId}
                   stream={peerData.stream} 
                   userName={peerData.userName} 
                   handsRaised={handsRaised}
@@ -2374,9 +2374,9 @@ const VideoRoom = () => {
   );
 };
 
-const RemoteVideo = ({ stream, userName, handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin }) => {
+const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin }) => {
   const videoRef = useRef(null);
-  const isHandRaised = handsRaised.has(userName);
+  const isHandRaised = handsRaised.has(peerId); // Use peerId not userName
 
   useEffect(() => {
     if (videoRef.current && stream) {
