@@ -26,7 +26,7 @@ import {
   Pin,
   PinOff
 } from 'lucide-react';
-import io from 'socket.io-client';
+// import io from 'socket.io-client'; // DISABLED - using HTTP polling
 import Peer from 'peerjs';
 import LoadingScreen from '../components/LoadingScreen';
 import Whiteboard from '../components/Whiteboard';
@@ -331,6 +331,60 @@ const VideoRoom = () => {
     }
   }, [searchParams, roomId]);
 
+  // Poll for reactions from other participants (every 1 second)
+  useEffect(() => {
+    if (!roomId) return;
+    
+    const seenReactionIds = new Set();
+    
+    const pollReactions = async () => {
+      try {
+        const serverUrl = process.env.NODE_ENV === 'production' 
+          ? window.location.origin 
+          : 'http://localhost:3000';
+        
+        const response = await fetch(`${serverUrl}/api/socket?roomId=${roomId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Only add reactions we haven't seen before
+          if (data.reactions && data.reactions.length > 0) {
+            const newReactions = data.reactions.filter(r => !seenReactionIds.has(r.id));
+            
+            if (newReactions.length > 0) {
+              console.log('😀 [POLL] Received new reactions:', newReactions.length);
+              
+              newReactions.forEach(reaction => {
+                seenReactionIds.add(reaction.id);
+                
+                // Add to state
+                setReactions(prev => {
+                  // Avoid duplicates
+                  if (prev.some(r => r.id === reaction.id)) return prev;
+                  return [...prev, reaction];
+                });
+                
+                // Auto-remove after 3 seconds
+                setTimeout(() => {
+                  setReactions(prev => prev.filter(r => r.id !== reaction.id));
+                  seenReactionIds.delete(reaction.id);
+                }, 3000);
+              });
+            }
+          }
+        }
+      } catch (error) {
+        // Silently fail - don't spam console
+      }
+    };
+    
+    // Poll every 1 second
+    const interval = setInterval(pollReactions, 1000);
+    
+    return () => clearInterval(interval);
+  }, [roomId]);
+
   // Hide loading screen when initialization is complete and no errors
   useEffect(() => {
     if (!isInitializing && !error) {
@@ -511,6 +565,9 @@ const VideoRoom = () => {
       setLocalStream(stream);
       console.log('🎥 Local stream state updated, useEffect will attach to video element');
 
+      // Socket.IO DISABLED - Using HTTP polling instead (Vercel serverless limitation)
+      console.log('ℹ️ Socket.IO disabled - using HTTP API for reactions');
+      /*
       // Initialize socket connection - ALWAYS connect for real-time features
       const isProductionEnv = process.env.NODE_ENV === 'production';
       const serverUrl = isProductionEnv 
@@ -553,6 +610,7 @@ const VideoRoom = () => {
       socketRef.current.on('reconnect', (attemptNumber) => {
         console.log('🔄 [SOCKET] Reconnected after', attemptNumber, 'attempts');
       });
+      */
       
       // Initialize PeerJS (production/development aware)
       const isProduction = process.env.NODE_ENV === 'production';
@@ -809,6 +867,7 @@ const VideoRoom = () => {
         });
       });
 
+      /* Socket.IO event listeners DISABLED - using HTTP polling
       // Socket event listeners (only if Socket.IO is available)
       if (socketRef.current) {
         socketRef.current.on('user-joined', ({ userId, userName: joinedUserName, socketId }) => {
@@ -928,6 +987,7 @@ const VideoRoom = () => {
           }, 3000);
         });
       }
+      */
 
       // Mark initialization as complete - let LoadingScreen animation finish
       setIsInitializing(false);
@@ -1195,12 +1255,8 @@ const VideoRoom = () => {
   };
 
   // Reaction functions
-  const sendReaction = (emoji) => {
+  const sendReaction = async (emoji) => {
     console.log('😀 [REACTION] User clicked emoji:', emoji);
-    console.log('😀 [REACTION] Socket exists:', !!socketRef.current);
-    console.log('😀 [REACTION] Socket connected:', socketRef.current?.connected);
-    console.log('😀 [REACTION] Room ID:', roomId);
-    console.log('😀 [REACTION] User Name:', userName);
     
     const reaction = {
       id: Date.now(),
@@ -1215,18 +1271,29 @@ const VideoRoom = () => {
       return [...prev, reaction];
     });
     
-    // Send to server if socket is available
-    if (socketRef.current && socketRef.current.connected) {
-      console.log('😀 [REACTION] Emitting to server:', { roomId, reaction });
-      socketRef.current.emit('reaction', { roomId, reaction });
-      console.log('😀 [REACTION] Emitted successfully');
-    } else {
-      console.error('❌ [REACTION] Cannot send - Socket not connected!');
-      console.error('❌ [REACTION] Socket state:', {
-        exists: !!socketRef.current,
-        connected: socketRef.current?.connected,
-        id: socketRef.current?.id
+    // Send to server via HTTP API
+    try {
+      const serverUrl = process.env.NODE_ENV === 'production' 
+        ? window.location.origin 
+        : 'http://localhost:3000';
+      
+      console.log('😀 [REACTION] Sending to server:', serverUrl);
+      
+      const response = await fetch(`${serverUrl}/api/socket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ roomId, reaction })
       });
+      
+      if (response.ok) {
+        console.log('😀 [REACTION] Sent successfully to server');
+      } else {
+        console.error('❌ [REACTION] Server error:', await response.text());
+      }
+    } catch (error) {
+      console.error('❌ [REACTION] Failed to send:', error);
     }
     
     // Remove reaction after 3 seconds

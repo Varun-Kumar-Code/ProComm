@@ -1,102 +1,65 @@
-// Socket.IO handler for Vercel
-import { Server } from 'socket.io';
+// REST API handler for Vercel (Socket.IO doesn't work well with serverless)
+// Using in-memory storage for reactions (temp solution - consider Redis for production)
 
+const roomReactions = new Map(); // Map<roomId, Array<reactions>>
 const participants = new Map();
 
 const ioHandler = (req, res) => {
-  if (res.socket.server.io) {
-    console.log('Socket.io already running');
-    res.end();
+  // Enable CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
     return;
   }
 
-  const io = new Server(res.socket.server, {
-    path: '/api/socket',
-    addTrailingSlash: false,
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"]
+  // Handle GET - fetch reactions for a room
+  if (req.method === 'GET') {
+    const { roomId } = req.query;
+    if (!roomId) {
+      res.status(400).json({ error: 'roomId required' });
+      return;
     }
-  });
+    
+    const reactions = roomReactions.get(roomId) || [];
+    // Clean up old reactions (older than 5 seconds)
+    const now = Date.now();
+    const freshReactions = reactions.filter(r => now - r.timestamp < 5000);
+    roomReactions.set(roomId, freshReactions);
+    
+    res.status(200).json({ reactions: freshReactions });
+    return;
+  }
 
-  res.socket.server.io = io;
+  // Handle POST - add new reaction
+  if (req.method === 'POST') {
+    const { roomId, reaction } = req.body;
+    if (!roomId || !reaction) {
+      res.status(400).json({ error: 'roomId and reaction required' });
+      return;
+    }
+    
+    const reactions = roomReactions.get(roomId) || [];
+    reactions.push(reaction);
+    roomReactions.set(roomId, reactions);
+    
+    console.log(`[REACTION] Added ${reaction.emoji} to room ${roomId} by ${reaction.userName}`);
+    res.status(200).json({ success: true, reaction });
+    return;
+  }
 
-  io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+  res.status(405).json({ error: 'Method not allowed' });
+};
 
-    // Join meeting room
-    socket.on('join-meeting', (meetingId, userId, userName, userEmail) => {
-      console.log(`User ${userName} (${userId}) joining meeting ${meetingId}`);
-      
-      participants.set(socket.id, {
-        userId,
-        userName,
-        userEmail,
-        meetingId,
-        joinedAt: new Date()
-      });
+// OLD SOCKET.IO CODE COMMENTED OUT (doesn't work on Vercel Hobby)
+/*
+import { Server } from 'socket.io';
 
-      socket.join(meetingId);
-      
-      socket.to(meetingId).emit('user-joined', {
-        userId,
-        userName,
-        userEmail,
-        socketId: socket.id
-      });
+*/
 
-      const meetingParticipants = Array.from(participants.values())
-        .filter(p => p.meetingId === meetingId && p.userId !== userId);
-      
-      socket.emit('existing-participants', meetingParticipants);
-    });
-
-    // Handle chat messages
-    socket.on('chat-message', (data) => {
-      const participant = participants.get(socket.id);
-      if (participant) {
-        const messageData = {
-          id: Date.now() + Math.random(),
-          userId: participant.userId,
-          userName: participant.userName,
-          message: data.message,
-          timestamp: new Date(),
-          type: 'text'
-        };
-        io.to(participant.meetingId).emit('chat-message', messageData);
-      }
-    });
-
-    // Handle reactions
-    socket.on('reaction', (data) => {
-      console.log('😀 [SERVER] Reaction received:', data);
-      const participant = participants.get(socket.id);
-      console.log('😀 [SERVER] Participant found:', !!participant);
-      
-      if (participant) {
-        console.log('😀 [SERVER] Broadcasting to meeting:', participant.meetingId);
-        console.log('😀 [SERVER] Reaction data:', data.reaction);
-        
-        io.to(participant.meetingId).emit('reaction', {
-          reaction: data.reaction
-        });
-        
-        console.log('😀 [SERVER] Reaction broadcasted successfully');
-      } else {
-        console.error('❌ [SERVER] No participant found for socket:', socket.id);
-      }
-    });
-
-    // Handle hand raise
-    socket.on('hand-raised', (data) => {
-      const participant = participants.get(socket.id);
-      if (participant) {
-        io.to(participant.meetingId).emit('hand-raised', {
-          userName: data.userName,
-          isRaised: data.isRaised
-        });
-      }
-    });
+  res.status(200).end();
 
     // Handle poll creation
     socket.on('poll-created', (data) => {
@@ -134,14 +97,9 @@ const ioHandler = (req, res) => {
     socket.on('screen-share-start', (roomId, userId) => {
       socket.to(roomId).emit('user-screen-share-start', userId);
     });
+*/
 
-    socket.on('screen-share-stop', (roomId, userId) => {
-      socket.to(roomId).emit('user-screen-share-stop', userId);
-    });
-  });
-
-  console.log('Socket.io server started');
-  res.end();
+  res.status(200).end();
 };
 
 export default ioHandler;
