@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Mic, 
@@ -35,7 +35,22 @@ const VideoRoom = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const userName = searchParams.get('name') || 'Anonymous';
+  
+  // Make userName unique - if Anonymous, add unique ID stored in sessionStorage
+  const baseUserName = searchParams.get('name') || 'Anonymous';
+  const userName = useMemo(() => {
+    if (baseUserName === 'Anonymous') {
+      // Get or create unique ID for this session
+      let anonymousId = sessionStorage.getItem('anonymousId');
+      if (!anonymousId) {
+        anonymousId = Math.random().toString(36).substring(2, 8);
+        sessionStorage.setItem('anonymousId', anonymousId);
+      }
+      return `Anonymous_${anonymousId}`;
+    }
+    return baseUserName;
+  }, [baseUserName]);
+  
   const userEmail = searchParams.get('email') || '';
 
   // Video states
