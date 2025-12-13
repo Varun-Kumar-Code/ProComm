@@ -420,12 +420,12 @@ const VideoRoom = () => {
       console.log('🎥 Requesting camera and microphone access...');
       let stream;
       try {
-        // Request high-quality video and audio (1080p ideal, flexible fallback)
+        // Request maximum quality video and audio (1080p @ 60fps)
         stream = await navigator.mediaDevices.getUserMedia({
           video: {
             width: { ideal: 1920, max: 1920 },
             height: { ideal: 1080, max: 1080 },
-            frameRate: { ideal: 30 },
+            frameRate: { ideal: 60, max: 60 },
             facingMode: 'user'
           },
           audio: {
@@ -443,7 +443,7 @@ const VideoRoom = () => {
             video: { 
               width: { ideal: 1920, max: 1920 },
               height: { ideal: 1080, max: 1080 },
-              frameRate: { ideal: 30 }
+              frameRate: { ideal: 60, max: 60 }
             }, 
             audio: false 
           });
@@ -637,7 +637,12 @@ const VideoRoom = () => {
                   console.log('📞 Calling existing peer via API:', peerData.userName);
                   setTimeout(() => {
                     const call = peer.call(peerData.userId, stream, {
-                      metadata: { userName, userEmail }
+                      metadata: { userName, userEmail },
+                      sdpTransform: (sdp) => {
+                        // Increase bandwidth for 1080p60
+                        return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
+                                  .replace(/b=TIAS:(\d+)/g, 'b=TIAS:5000000');
+                      }
                     });
                     
                     if (call) {
@@ -684,7 +689,12 @@ const VideoRoom = () => {
                 newPeers.forEach(peerData => {
                   console.log('📞 New peer detected via polling:', peerData.userName);
                   const call = peer.call(peerData.userId, stream, {
-                    metadata: { userName, userEmail }
+                    metadata: { userName, userEmail },
+                    sdpTransform: (sdp) => {
+                      // Increase bandwidth for 1080p60
+                      return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
+                                .replace(/b=TIAS:(\d+)/g, 'b=TIAS:5000000');
+                    }
                   });
                   
                   if (call) {
@@ -786,7 +796,12 @@ const VideoRoom = () => {
           console.log('👤 User joined:', joinedUserName, 'with userId:', userId);
           // Call the new user
           const call = peer.call(userId, stream, {
-            metadata: { userName }
+            metadata: { userName },
+            sdpTransform: (sdp) => {
+              // Increase bandwidth for 1080p60
+              return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
+                        .replace(/b=TIAS:(\d+)/g, 'b=TIAS:5000000');
+            }
           });
           
           if (call) {
@@ -819,7 +834,12 @@ const VideoRoom = () => {
           participantList.forEach(participant => {
             console.log('📞 Calling existing participant:', participant.userName);
             const call = peer.call(participant.userId, stream, {
-              metadata: { userName }
+              metadata: { userName },
+              sdpTransform: (sdp) => {
+                // Increase bandwidth for 1080p60
+                return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
+                          .replace(/b=TIAS:(\d+)/g, 'b=TIAS:5000000');
+              }
             });
             
             if (call) {
