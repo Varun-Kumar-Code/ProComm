@@ -383,10 +383,15 @@ const VideoRoom = () => {
           const handsData = await handsResponse.json();
           
           if (handsData.handsRaised) {
-            // Filter out current user - they have their own isHandRaised state
-            const othersHandsRaised = handsData.handsRaised.filter(name => name !== userName);
-            const newHandsRaised = new Set(othersHandsRaised);
+            // Keep all users in the Set - local video uses isHandRaised, remote videos use this Set
+            const newHandsRaised = new Set(handsData.handsRaised);
             setHandsRaised(newHandsRaised);
+            
+            if (newHandsRaised.size > 0) {
+              console.log('✋ [POLL] Hands raised Set:', Array.from(newHandsRaised));
+              console.log('✋ [POLL] My userName:', userName);
+              console.log('✋ [POLL] Remote participants:', Array.from(peers.entries()).map(([id, p]) => `${p.userName}`));
+            }
           }
         }
       } catch (error) {
@@ -398,7 +403,7 @@ const VideoRoom = () => {
     const interval = setInterval(pollReactionsAndHands, 1000);
     
     return () => clearInterval(interval);
-  }, [roomId, userName]);
+  }, [roomId, userName, peers]);
 
   // Hide loading screen when initialization is complete and no errors
   useEffect(() => {
@@ -1261,6 +1266,8 @@ const VideoRoom = () => {
   const toggleRaiseHand = async () => {
     const newState = !isHandRaised;
     setIsHandRaised(newState);
+    
+    console.log('✋ [TOGGLE] My userName:', userName, 'New state:', newState);
     
     // Send to server via HTTP API
     try {
