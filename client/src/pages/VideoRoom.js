@@ -398,7 +398,7 @@ const VideoRoom = () => {
     const interval = setInterval(pollReactionsAndHands, 1000);
     
     return () => clearInterval(interval);
-  }, [roomId]);
+  }, [roomId, userName]);
 
   // Hide loading screen when initialization is complete and no errors
   useEffect(() => {
