@@ -870,6 +870,7 @@ const VideoRoom = () => {
 
         // Poll event listeners
         socketRef.current.on('poll-created', (pollData) => {
+          console.log(`📊 New poll received: ${pollData.poll.question}`);
           const pollWithDate = {
             ...pollData.poll,
             createdAt: new Date(pollData.poll.createdAt)
@@ -878,6 +879,7 @@ const VideoRoom = () => {
         });
 
         socketRef.current.on('poll-vote', (pollData) => {
+          console.log(`🗳️ Poll vote received for: ${pollData.poll.question}`);
           const pollWithDate = {
             ...pollData.poll,
             createdAt: new Date(pollData.poll.createdAt)
@@ -889,6 +891,7 @@ const VideoRoom = () => {
         
         // Hand raise event listeners
         socketRef.current.on('hand-raised', ({ userName: handUserName, isRaised }) => {
+          console.log(`✋ ${handUserName} ${isRaised ? 'raised' : 'lowered'} hand`);
           setHandsRaised(prev => {
             const newSet = new Set(prev);
             if (isRaised) {
@@ -902,6 +905,7 @@ const VideoRoom = () => {
 
         // Reaction event listeners
         socketRef.current.on('reaction', ({ reaction }) => {
+          console.log(`😀 Reaction received: ${reaction.emoji} from ${reaction.userName}`);
           setReactions(prev => [...prev, reaction]);
           setTimeout(() => {
             setReactions(prev => prev.filter(r => r.id !== reaction.id));
