@@ -2,7 +2,6 @@
 // Using in-memory storage for reactions (temp solution - consider Redis for production)
 
 const roomReactions = new Map(); // Map<roomId, Array<reactions>>
-const participants = new Map();
 
 const ioHandler = (req, res) => {
   // Enable CORS
@@ -51,55 +50,6 @@ const ioHandler = (req, res) => {
   }
 
   res.status(405).json({ error: 'Method not allowed' });
-};
-
-// OLD SOCKET.IO CODE COMMENTED OUT (doesn't work on Vercel Hobby)
-/*
-import { Server } from 'socket.io';
-
-*/
-
-  res.status(200).end();
-
-    // Handle poll creation
-    socket.on('poll-created', (data) => {
-      const participant = participants.get(socket.id);
-      if (participant) {
-        io.to(participant.meetingId).emit('poll-created', {
-          poll: data.poll
-        });
-      }
-    });
-
-    // Handle poll votes
-    socket.on('poll-vote', (data) => {
-      const participant = participants.get(socket.id);
-      if (participant) {
-        io.to(participant.meetingId).emit('poll-vote', {
-          poll: data.poll
-        });
-      }
-    });
-
-    // Handle disconnect
-    socket.on('disconnect', () => {
-      const participant = participants.get(socket.id);
-      if (participant) {
-        socket.to(participant.meetingId).emit('user-left', {
-          userId: participant.userId,
-          userName: participant.userName
-        });
-        participants.delete(socket.id);
-      }
-    });
-
-    // Handle screen sharing
-    socket.on('screen-share-start', (roomId, userId) => {
-      socket.to(roomId).emit('user-screen-share-start', userId);
-    });
-*/
-
-  res.status(200).end();
 };
 
 export default ioHandler;
