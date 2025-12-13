@@ -11,7 +11,6 @@ import {
   MessageSquare,
   Users,
   MoreVertical,
-  Camera,
   X,
   Send,
   BarChart3,
@@ -1346,31 +1345,34 @@ const VideoRoom = () => {
       {/* Modern Header - Mobile Responsive */}
       <div className="bg-black/40 backdrop-blur-md border-b border-white/10 p-3 sm:p-4">
         <div className="flex items-center justify-between">
-          {/* Left Section - Logo and Title */}
-          <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
-            <div className="bg-blue-600/20 p-2 rounded-xl backdrop-blur-sm flex-shrink-0">
-              <Camera className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
+          {/* Left Section - Timer and Clock with Premium Design */}
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Meeting Duration */}
+            <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 px-3 sm:px-4 py-2 rounded-xl backdrop-blur-sm border border-blue-400/30 shadow-lg shadow-blue-500/20">
+              <div className="flex items-center space-x-2">
+                <Timer className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
+                <span className="text-xs sm:text-sm font-mono font-semibold text-white">{meetingDuration}</span>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h1 className="font-semibold text-sm sm:text-lg text-white truncate">Meeting Room</h1>
-              <p className="text-xs sm:text-sm text-gray-300 truncate">ID: {roomId.slice(-8)}</p>
+            {/* Current Time - Hidden on mobile */}
+            <div className="hidden md:flex bg-gradient-to-br from-green-500/20 to-emerald-500/20 px-3 sm:px-4 py-2 rounded-xl backdrop-blur-sm border border-green-400/30 shadow-lg shadow-green-500/20">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" />
+                <span className="text-xs sm:text-sm font-mono font-semibold text-white">
+                  {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
             </div>
           </div>
           
-          {/* Center Section - Timer and Clock (Hidden on mobile) */}
-          <div className="hidden lg:flex items-center space-x-4">
-            <div className="bg-white/10 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10">
-              <div className="flex items-center space-x-2">
-                <Timer className="w-4 h-4 text-blue-400" />
-                <span className="text-sm font-mono text-white">{meetingDuration}</span>
-              </div>
-            </div>
-            <div className="bg-white/10 px-3 py-2 rounded-lg backdrop-blur-sm border border-white/10">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-green-400" />
-                <span className="text-sm font-mono text-white">
-                  {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+          {/* Center Section - Meeting Name */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 hidden lg:block">
+            <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 px-6 py-2.5 rounded-xl backdrop-blur-xl border border-white/20 shadow-2xl">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
+                <h1 className="font-bold text-lg text-white bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  Meeting Room
+                </h1>
               </div>
             </div>
           </div>
