@@ -1343,36 +1343,51 @@ const VideoRoom = () => {
     <div className="h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col overflow-hidden">
       
       {/* Modern Header - Mobile Responsive */}
-      <div className="bg-black/40 backdrop-blur-md border-b border-white/10 p-3 sm:p-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-xl border-b border-white/20 p-3 sm:p-4 shadow-2xl">
+        <div className="flex items-center justify-between relative">
           {/* Left Section - Timer and Clock with Premium Design */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3 z-10">
             {/* Meeting Duration */}
-            <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 px-3 sm:px-4 py-2 rounded-xl backdrop-blur-sm border border-blue-400/30 shadow-lg shadow-blue-500/20">
+            <div className="group relative bg-gradient-to-br from-blue-600/30 via-blue-500/20 to-purple-600/30 px-4 sm:px-5 py-2.5 rounded-2xl backdrop-blur-md border border-blue-400/40 shadow-xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105">
               <div className="flex items-center space-x-2">
-                <Timer className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
-                <span className="text-xs sm:text-sm font-mono font-semibold text-white">{meetingDuration}</span>
+                <div className="p-1 bg-blue-500/20 rounded-lg">
+                  <Timer className="w-4 h-4 text-blue-300" />
+                </div>
+                <span className="text-sm font-mono font-bold text-white tracking-wider">{meetingDuration}</span>
               </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-400/10 to-purple-500/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
             {/* Current Time - Hidden on mobile */}
-            <div className="hidden md:flex bg-gradient-to-br from-green-500/20 to-emerald-500/20 px-3 sm:px-4 py-2 rounded-xl backdrop-blur-sm border border-green-400/30 shadow-lg shadow-green-500/20">
+            <div className="hidden md:flex group relative bg-gradient-to-br from-emerald-600/30 via-green-500/20 to-teal-600/30 px-4 sm:px-5 py-2.5 rounded-2xl backdrop-blur-md border border-emerald-400/40 shadow-xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105">
               <div className="flex items-center space-x-2">
-                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" />
-                <span className="text-xs sm:text-sm font-mono font-semibold text-white">
+                <div className="p-1 bg-emerald-500/20 rounded-lg">
+                  <Clock className="w-4 h-4 text-emerald-300" />
+                </div>
+                <span className="text-sm font-mono font-bold text-white tracking-wider">
                   {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-400/10 to-teal-500/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </div>
           </div>
           
-          {/* Center Section - Meeting Name */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 hidden lg:block">
-            <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 px-6 py-2.5 rounded-xl backdrop-blur-xl border border-white/20 shadow-2xl">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-lg shadow-red-500/50"></div>
-                <h1 className="font-bold text-lg text-white bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                  Meeting Room
-                </h1>
+          {/* Center Section - Meeting ID/Name */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 hidden lg:block z-20">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-2xl opacity-75 blur-lg group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 px-8 py-3 rounded-2xl border-2 border-white/30 shadow-2xl">
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <div className="w-3 h-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-full animate-pulse"></div>
+                    <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Meeting ID</span>
+                    <h1 className="font-black text-xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-wide">
+                      {roomId}
+                    </h1>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
