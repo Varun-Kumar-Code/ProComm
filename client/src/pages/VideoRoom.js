@@ -1342,61 +1342,38 @@ const VideoRoom = () => {
   return (
     <div className="h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col overflow-hidden">
       
-      {/* Modern Header - Mobile Responsive */}
-      <div className="bg-gradient-to-r from-gray-900/95 via-black/95 to-gray-900/95 backdrop-blur-xl border-b border-white/20 p-3 sm:p-4 shadow-2xl">
-        <div className="flex items-center justify-between relative">
-          {/* Left Section - Timer and Clock with Premium Design */}
-          <div className="flex items-center space-x-2 sm:space-x-3 z-10">
+      {/* Professional Premium Header */}
+      <div className="bg-[#1a1a1a] border-b border-gray-800 px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between relative max-w-screen-2xl mx-auto">
+          {/* Left Section - Timer and Clock */}
+          <div className="flex items-center gap-3 z-10">
             {/* Meeting Duration */}
-            <div className="group relative bg-gradient-to-br from-blue-600/30 via-blue-500/20 to-purple-600/30 px-4 sm:px-5 py-2.5 rounded-2xl backdrop-blur-md border border-blue-400/40 shadow-xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105">
-              <div className="flex items-center space-x-2">
-                <div className="p-1 bg-blue-500/20 rounded-lg">
-                  <Timer className="w-4 h-4 text-blue-300" />
-                </div>
-                <span className="text-sm font-mono font-bold text-white tracking-wider">{meetingDuration}</span>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-400/10 to-purple-500/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="flex items-center gap-2 bg-[#2a2a2a] px-3 py-1.5 rounded-lg border border-gray-700">
+              <Timer className="w-3.5 h-3.5 text-blue-400" />
+              <span className="text-sm font-medium text-white font-mono">{meetingDuration}</span>
             </div>
-            {/* Current Time - Hidden on mobile */}
-            <div className="hidden md:flex group relative bg-gradient-to-br from-emerald-600/30 via-green-500/20 to-teal-600/30 px-4 sm:px-5 py-2.5 rounded-2xl backdrop-blur-md border border-emerald-400/40 shadow-xl hover:shadow-emerald-500/50 transition-all duration-300 hover:scale-105">
-              <div className="flex items-center space-x-2">
-                <div className="p-1 bg-emerald-500/20 rounded-lg">
-                  <Clock className="w-4 h-4 text-emerald-300" />
-                </div>
-                <span className="text-sm font-mono font-bold text-white tracking-wider">
-                  {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-400/10 to-teal-500/0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            {/* Current Time */}
+            <div className="hidden md:flex items-center gap-2 bg-[#2a2a2a] px-3 py-1.5 rounded-lg border border-gray-700">
+              <Clock className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-sm font-medium text-white font-mono">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
           </div>
           
-          {/* Center Section - Meeting ID/Name */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 hidden lg:block z-20">
-            <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-2xl opacity-75 blur-lg group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative bg-gradient-to-r from-gray-900 via-black to-gray-900 px-8 py-3 rounded-2xl border-2 border-white/30 shadow-2xl">
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <div className="w-3 h-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-full animate-pulse"></div>
-                    <div className="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">Meeting ID</span>
-                    <h1 className="font-black text-xl bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-wide">
-                      {roomId}
-                    </h1>
-                  </div>
-                </div>
-              </div>
+          {/* Center Section - Meeting Name */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 hidden lg:flex items-center gap-2 px-4 py-2 bg-[#2a2a2a] rounded-lg border border-gray-700">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+              <span className="text-sm font-semibold text-white">Meeting: {roomId}</span>
             </div>
           </div>
         
           {/* Right Section - Action Buttons */}
-          <div className="flex items-center space-x-1 sm:space-x-3">
+          <div className="flex items-center space-x-1 sm:space-x-3 z-10">
           <button
             onClick={() => setShowParticipants(!showParticipants)}
-            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition-all duration-300 backdrop-blur-sm border border-white/10"
+            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 bg-[#2a2a2a] hover:bg-[#333333] rounded-lg transition-colors duration-200 border border-gray-700"
           >
             <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="text-xs sm:text-sm font-medium">{participants.length + 1}</span>
@@ -1404,16 +1381,16 @@ const VideoRoom = () => {
           
           <button
             onClick={() => setShowChat(!showChat)}
-            className={`relative flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 backdrop-blur-sm border ${
+            className={`relative flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-lg transition-colors duration-200 border ${
               showChat 
-                ? 'bg-blue-500/20 border-blue-500/30 text-blue-300' 
-                : 'bg-white/10 hover:bg-white/20 border-white/10'
+                ? 'bg-blue-600 border-blue-500 text-white' 
+                : 'bg-[#2a2a2a] hover:bg-[#333333] border-gray-700'
             }`}
           >
             <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="text-xs sm:text-sm font-medium hidden sm:inline">Chat</span>
             {messages.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center animate-pulse text-xs">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-white font-semibold">
                 {messages.length > 9 ? '9+' : messages.length}
               </span>
             )}
@@ -1421,14 +1398,14 @@ const VideoRoom = () => {
           
           <button
             onClick={toggleRaiseHand}
-            className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-xl transition-all duration-300 backdrop-blur-sm border ${
+            className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-lg transition-colors duration-200 border ${
               isHandRaised 
-                ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300 animate-pulse' 
-                : 'bg-white/10 hover:bg-white/20 border-white/10'
+                ? 'bg-yellow-600 border-yellow-500 text-white' 
+                : 'bg-[#2a2a2a] hover:bg-[#333333] border-gray-700'
             }`}
             title="Raise hand"
           >
-            <Hand className={`w-4 h-4 sm:w-5 sm:h-5 ${isHandRaised ? 'animate-bounce' : ''}`} />
+            <Hand className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="text-xs sm:text-sm font-medium hidden sm:inline">Raise Hand</span>
           </button>
         </div>
