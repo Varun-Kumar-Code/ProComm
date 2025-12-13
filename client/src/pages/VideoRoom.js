@@ -511,42 +511,42 @@ const VideoRoom = () => {
       setLocalStream(stream);
       console.log('🎥 Local stream state updated, useEffect will attach to video element');
 
-      // Initialize socket connection (only in development or if server URL is explicitly set)
-      const hasSocketServer = process.env.REACT_APP_SERVER_URL && 
-        process.env.REACT_APP_SERVER_URL !== window.location.origin;
+      // Initialize socket connection - ALWAYS connect for real-time features
+      const isProductionEnv = process.env.NODE_ENV === 'production';
+      const serverUrl = isProductionEnv 
+        ? window.location.origin  // Use same origin in production (Vercel handles routing)
+        : (process.env.REACT_APP_SERVER_URL || 'http://localhost:3002');
       
-      if (hasSocketServer || process.env.NODE_ENV === 'development') {
-        const serverUrl = process.env.REACT_APP_SERVER_URL || 'http://localhost:3002';
+      console.log('🔌 Initializing Socket.IO connection...');
+      console.log('🔌 Environment:', isProductionEnv ? 'Production' : 'Development');
+      console.log('🔌 Server URL:', serverUrl);
         
-        const socketOptions = {
-          transports: ['websocket', 'polling'],
-          timeout: 20000,
-          forceNew: true,
-          reconnection: true,
-          reconnectionDelay: 1000,
-          reconnectionAttempts: 5
-        };
-        
-        console.log('🔌 Connecting to Socket.IO server:', serverUrl);
-        socketRef.current = io(serverUrl, socketOptions);
-        
-        // Socket connection events
-        socketRef.current.on('connect', () => {
-          console.log('✅ Socket.IO connected successfully!');
-        });
-        
-        socketRef.current.on('connect_error', (error) => {
-          console.error('❌ Socket.IO connection error:', error);
-          console.warn('⚠️ Falling back to localStorage peer discovery');
-        });
-        
-        socketRef.current.on('disconnect', (reason) => {
-          console.warn('⚠️ Socket.IO disconnected:', reason);
-        });
-      } else {
-        console.log('📡 Running without Socket.IO server - using localStorage peer discovery');
-        socketRef.current = null;
-      }
+      const socketOptions = {
+        path: isProductionEnv ? '/api/socket' : '/socket.io',
+        transports: ['polling', 'websocket'],
+        timeout: 20000,
+        forceNew: true,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
+      };
+      
+      console.log('🔌 Connecting to Socket.IO server with options:', socketOptions);
+      socketRef.current = io(serverUrl, socketOptions);
+      
+      // Socket connection events
+      socketRef.current.on('connect', () => {
+        console.log('✅ Socket.IO connected successfully! Socket ID:', socketRef.current.id);
+      });
+      
+      socketRef.current.on('connect_error', (error) => {
+        console.error('❌ Socket.IO connection error:', error.message);
+        console.warn('⚠️ Real-time features may not work without Socket.IO');
+      });
+      
+      socketRef.current.on('disconnect', (reason) => {
+        console.warn('⚠️ Socket.IO disconnected. Reason:', reason);
+      });
       
       // Initialize PeerJS (production/development aware)
       const isProduction = process.env.NODE_ENV === 'production';

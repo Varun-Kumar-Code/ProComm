@@ -1,6 +1,8 @@
 // Socket.IO handler for Vercel
 import { Server } from 'socket.io';
 
+const participants = new Map();
+
 const ioHandler = (req, res) => {
   if (res.socket.server.io) {
     console.log('Socket.io already running');
@@ -23,30 +25,99 @@ const ioHandler = (req, res) => {
     console.log('User connected:', socket.id);
 
     // Join meeting room
-    socket.on('join-room', (roomId, userId, userName) => {
-      console.log(`User ${userName} (${userId}) joining room ${roomId}`);
-      socket.join(roomId);
-      socket.to(roomId).emit('user-connected', userId, userName);
-
-      // Handle user disconnection
-      socket.on('disconnect', () => {
-        console.log(`User ${userName} disconnected`);
-        socket.to(roomId).emit('user-disconnected', userId);
+    socket.on('join-meeting', (meetingId, userId, userName, userEmail) => {
+      console.log(`User ${userName} (${userId}) joining meeting ${meetingId}`);
+      
+      participants.set(socket.id, {
+        userId,
+        userName,
+        userEmail,
+        meetingId,
+        joinedAt: new Date()
       });
+
+      socket.join(meetingId);
+      
+      socket.to(meetingId).emit('user-joined', {
+        userId,
+        userName,
+        userEmail,
+        socketId: socket.id
+      });
+
+      const meetingParticipants = Array.from(participants.values())
+        .filter(p => p.meetingId === meetingId && p.userId !== userId);
+      
+      socket.emit('existing-participants', meetingParticipants);
     });
 
     // Handle chat messages
-    socket.on('send-chat-message', (roomId, message, senderName) => {
-      socket.to(roomId).emit('receive-chat-message', message, senderName, socket.id);
+    socket.on('chat-message', (data) => {
+      const participant = participants.get(socket.id);
+      if (participant) {
+        const messageData = {
+          id: Date.now() + Math.random(),
+          userId: participant.userId,
+          userName: participant.userName,
+          message: data.message,
+          timestamp: new Date(),
+          type: 'text'
+        };
+        io.to(participant.meetingId).emit('chat-message', messageData);
+      }
     });
 
-    // Handle video/audio toggles
-    socket.on('video-toggle', (roomId, userId, isEnabled) => {
-      socket.to(roomId).emit('user-video-toggle', userId, isEnabled);
+    // Handle reactions
+    socket.on('reaction', (data) => {
+      const participant = participants.get(socket.id);
+      if (participant) {
+        io.to(participant.meetingId).emit('reaction', {
+          reaction: data.reaction
+        });
+      }
     });
 
-    socket.on('audio-toggle', (roomId, userId, isEnabled) => {
-      socket.to(roomId).emit('user-audio-toggle', userId, isEnabled);
+    // Handle hand raise
+    socket.on('hand-raised', (data) => {
+      const participant = participants.get(socket.id);
+      if (participant) {
+        io.to(participant.meetingId).emit('hand-raised', {
+          userName: data.userName,
+          isRaised: data.isRaised
+        });
+      }
+    });
+
+    // Handle poll creation
+    socket.on('poll-created', (data) => {
+      const participant = participants.get(socket.id);
+      if (participant) {
+        io.to(participant.meetingId).emit('poll-created', {
+          poll: data.poll
+        });
+      }
+    });
+
+    // Handle poll votes
+    socket.on('poll-vote', (data) => {
+      const participant = participants.get(socket.id);
+      if (participant) {
+        io.to(participant.meetingId).emit('poll-vote', {
+          poll: data.poll
+        });
+      }
+    });
+
+    // Handle disconnect
+    socket.on('disconnect', () => {
+      const participant = participants.get(socket.id);
+      if (participant) {
+        socket.to(participant.meetingId).emit('user-left', {
+          userId: participant.userId,
+          userName: participant.userName
+        });
+        participants.delete(socket.id);
+      }
     });
 
     // Handle screen sharing
