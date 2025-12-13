@@ -387,7 +387,9 @@ const VideoRoom = () => {
             setHandsRaised(newHandsRaised);
             
             if (newHandsRaised.size > 0) {
-              console.log('✋ [POLL] Hands raised:', Array.from(newHandsRaised).join(', '));
+              console.log('✋ [POLL] Hands raised by:', Array.from(newHandsRaised).join(', '));
+              console.log('✋ [POLL] My userName:', userName);
+              console.log('✋ [POLL] Participants:', Array.from(peers.entries()).map(([id, p]) => p.userName).join(', '));
             }
           }
         }
