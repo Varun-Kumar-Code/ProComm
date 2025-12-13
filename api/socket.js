@@ -69,11 +69,21 @@ const ioHandler = (req, res) => {
 
     // Handle reactions
     socket.on('reaction', (data) => {
+      console.log('😀 [SERVER] Reaction received:', data);
       const participant = participants.get(socket.id);
+      console.log('😀 [SERVER] Participant found:', !!participant);
+      
       if (participant) {
+        console.log('😀 [SERVER] Broadcasting to meeting:', participant.meetingId);
+        console.log('😀 [SERVER] Reaction data:', data.reaction);
+        
         io.to(participant.meetingId).emit('reaction', {
           reaction: data.reaction
         });
+        
+        console.log('😀 [SERVER] Reaction broadcasted successfully');
+      } else {
+        console.error('❌ [SERVER] No participant found for socket:', socket.id);
       }
     });
 

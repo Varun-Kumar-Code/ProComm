@@ -536,16 +536,22 @@ const VideoRoom = () => {
       
       // Socket connection events
       socketRef.current.on('connect', () => {
-        console.log('✅ Socket.IO connected successfully! Socket ID:', socketRef.current.id);
+        console.log('✅ [SOCKET] Connected successfully!');
+        console.log('✅ [SOCKET] Socket ID:', socketRef.current.id);
+        console.log('✅ [SOCKET] Transport:', socketRef.current.io.engine.transport.name);
       });
       
       socketRef.current.on('connect_error', (error) => {
-        console.error('❌ Socket.IO connection error:', error.message);
-        console.warn('⚠️ Real-time features may not work without Socket.IO');
+        console.error('❌ [SOCKET] Connection error:', error.message);
+        console.error('❌ [SOCKET] Error details:', error);
       });
       
       socketRef.current.on('disconnect', (reason) => {
-        console.warn('⚠️ Socket.IO disconnected. Reason:', reason);
+        console.warn('⚠️ [SOCKET] Disconnected. Reason:', reason);
+      });
+      
+      socketRef.current.on('reconnect', (attemptNumber) => {
+        console.log('🔄 [SOCKET] Reconnected after', attemptNumber, 'attempts');
       });
       
       // Initialize PeerJS (production/development aware)
@@ -905,10 +911,20 @@ const VideoRoom = () => {
 
         // Reaction event listeners
         socketRef.current.on('reaction', ({ reaction }) => {
-          console.log(`😀 Reaction received: ${reaction.emoji} from ${reaction.userName}`);
-          setReactions(prev => [...prev, reaction]);
+          console.log('😀 [REACTION RECEIVED] Full data:', { reaction });
+          console.log('😀 [REACTION RECEIVED] Emoji:', reaction.emoji);
+          console.log('😀 [REACTION RECEIVED] From:', reaction.userName);
+          console.log('😀 [REACTION RECEIVED] Current reactions count:', reactions.length);
+          
+          setReactions(prev => {
+            const newReactions = [...prev, reaction];
+            console.log('😀 [REACTION RECEIVED] Updated reactions count:', newReactions.length);
+            return newReactions;
+          });
+          
           setTimeout(() => {
             setReactions(prev => prev.filter(r => r.id !== reaction.id));
+            console.log('😀 [REACTION RECEIVED] Removed reaction after 3s:', reaction.id);
           }, 3000);
         });
       }
@@ -1180,7 +1196,12 @@ const VideoRoom = () => {
 
   // Reaction functions
   const sendReaction = (emoji) => {
-    console.log('😀 Sending reaction:', emoji);
+    console.log('😀 [REACTION] User clicked emoji:', emoji);
+    console.log('😀 [REACTION] Socket exists:', !!socketRef.current);
+    console.log('😀 [REACTION] Socket connected:', socketRef.current?.connected);
+    console.log('😀 [REACTION] Room ID:', roomId);
+    console.log('😀 [REACTION] User Name:', userName);
+    
     const reaction = {
       id: Date.now(),
       emoji,
@@ -1188,19 +1209,30 @@ const VideoRoom = () => {
       timestamp: Date.now()
     };
     
-    setReactions(prev => [...prev, reaction]);
-    console.log('😀 Reaction added locally:', reaction);
+    // Add reaction locally first
+    setReactions(prev => {
+      console.log('😀 [REACTION] Adding to local state. Current reactions:', prev.length);
+      return [...prev, reaction];
+    });
     
-    if (socketRef.current) {
+    // Send to server if socket is available
+    if (socketRef.current && socketRef.current.connected) {
+      console.log('😀 [REACTION] Emitting to server:', { roomId, reaction });
       socketRef.current.emit('reaction', { roomId, reaction });
-      console.log('😀 Reaction sent to server');
+      console.log('😀 [REACTION] Emitted successfully');
     } else {
-      console.warn('⚠️ Socket not available for reaction');
+      console.error('❌ [REACTION] Cannot send - Socket not connected!');
+      console.error('❌ [REACTION] Socket state:', {
+        exists: !!socketRef.current,
+        connected: socketRef.current?.connected,
+        id: socketRef.current?.id
+      });
     }
     
     // Remove reaction after 3 seconds
     setTimeout(() => {
       setReactions(prev => prev.filter(r => r.id !== reaction.id));
+      console.log('😀 [REACTION] Removed reaction:', reaction.id);
     }, 3000);
   };
 
