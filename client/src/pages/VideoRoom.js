@@ -336,7 +336,11 @@ const VideoRoom = () => {
     if (!roomId || !userName) return;
     
     const sendHandRaiseHeartbeat = async () => {
-      if (!isHandRaised) return; // Only send if hand is raised
+      console.log('💓 [HEARTBEAT] Checking... isHandRaised:', isHandRaised);
+      if (!isHandRaised) {
+        console.log('💓 [HEARTBEAT] Skipping - hand not raised');
+        return; // Only send if hand is raised
+      }
       
       try {
         const serverUrl = process.env.NODE_ENV === 'production' 
@@ -1319,7 +1323,9 @@ const VideoRoom = () => {
       });
       
       if (response.ok) {
+        const result = await response.json();
         console.log(`✋ [HAND] ${newState ? 'Raised' : 'Lowered'} hand successfully`);
+        console.log('✋ [HAND] Server confirmed hands:', result.handsRaised);
       } else {
         console.error('❌ [HAND] Server error:', await response.text());
       }
