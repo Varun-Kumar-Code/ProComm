@@ -372,7 +372,7 @@ const VideoRoom = () => {
     return () => clearInterval(interval);
   }, [roomId, userName, isHandRaised]);
 
-  // Heartbeat for polls - re-send polls every 15 seconds to keep them alive
+  // Heartbeat for polls - only send poll IDs to keep them alive, don't overwrite vote data
   useEffect(() => {
     if (!roomId || polls.length === 0) return;
     
@@ -382,29 +382,27 @@ const VideoRoom = () => {
           ? window.location.origin 
           : 'http://localhost:3000';
         
-        // Re-send each poll to keep it alive on server
-        for (const poll of polls) {
-          await fetch(`${serverUrl}/api/socket`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-              roomId,
-              type: 'poll',
-              poll
-            })
-          });
-        }
+        // Send poll IDs to keep them alive without overwriting vote data
+        await fetch(`${serverUrl}/api/socket`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            roomId,
+            type: 'pollHeartbeat',
+            pollIds: polls.map(p => p.id)
+          })
+        });
         
-        console.log('💓 [POLL HEARTBEAT] Re-sent', polls.length, 'poll(s)');
+        console.log('💓 [POLL HEARTBEAT] Pinged', polls.length, 'poll(s)');
       } catch (error) {
         console.error('❌ [POLL HEARTBEAT] Failed:', error);
       }
     };
     
-    // Send heartbeat every 15 seconds
-    const interval = setInterval(sendPollsHeartbeat, 15000);
+    // Send heartbeat every 20 seconds
+    const interval = setInterval(sendPollsHeartbeat, 20000);
     
     return () => clearInterval(interval);
   }, [roomId, polls]);
@@ -501,34 +499,13 @@ const VideoRoom = () => {
             }
           }
           
-          // Poll for polls
-          const pollsResponse = await fetch(`/api/socket?roomId=${roomId}&type=polls`);
+          // Poll for polls - always use server data as source of truth
+          const pollsResponse = await fetch(`${serverUrl}/api/socket?roomId=${roomId}&type=polls`);
           if (pollsResponse.ok) {
             const pollsData = await pollsResponse.json();
-            if (pollsData.polls && Array.isArray(pollsData.polls)) {
-              // Update polls while preserving existing ones
-              setPolls(prev => {
-                // If server has polls, use them
-                if (pollsData.polls.length > 0) {
-                  // Merge with existing polls to avoid losing data during serverless recycling
-                  const mergedPolls = [...prev];
-                  
-                  pollsData.polls.forEach(serverPoll => {
-                    const existingIndex = mergedPolls.findIndex(p => p.id === serverPoll.id);
-                    if (existingIndex >= 0) {
-                      // Update existing poll with server data (for vote counts)
-                      mergedPolls[existingIndex] = serverPoll;
-                    } else {
-                      // Add new poll
-                      mergedPolls.push(serverPoll);
-                    }
-                  });
-                  
-                  return mergedPolls;
-                }
-                // If server has no polls but we have some locally, keep ours
-                return prev.length > 0 ? prev : pollsData.polls;
-              });
+            if (pollsData.polls && Array.isArray(pollsData.polls) && pollsData.polls.length > 0) {
+              // Always use server data directly for accurate vote counts
+              setPolls(pollsData.polls);
             }
           }
         }
@@ -1400,8 +1377,35 @@ const VideoRoom = () => {
   const votePoll = async (pollId, optionId) => {
     const previousVote = pollVotes[pollId];
     
-    // Update local vote tracking
+    // Update local vote tracking immediately for instant feedback
     setPollVotes(prev => ({ ...prev, [pollId]: optionId }));
+    
+    // Optimistically update local poll state for instant UI feedback
+    setPolls(prev => prev.map(poll => {
+      if (poll.id === pollId) {
+        const updatedOptions = poll.options.map(opt => {
+          // Remove vote from previous option
+          if (previousVote !== undefined && opt.id === previousVote) {
+            return {
+              ...opt,
+              votes: Math.max(0, opt.votes - 1),
+              voters: opt.voters.filter(v => v !== userName)
+            };
+          }
+          // Add vote to new option
+          if (opt.id === optionId && !opt.voters.includes(userName)) {
+            return {
+              ...opt,
+              votes: opt.votes + 1,
+              voters: [...opt.voters, userName]
+            };
+          }
+          return opt;
+        });
+        return { ...poll, options: updatedOptions };
+      }
+      return poll;
+    }));
     
     // Send vote to server
     try {
@@ -1427,6 +1431,16 @@ const VideoRoom = () => {
       console.log('📊 [POLL] Vote submitted successfully');
     } catch (error) {
       console.error('❌ [POLL] Failed to vote:', error);
+      // Revert optimistic update on error
+      setPollVotes(prev => {
+        const updated = { ...prev };
+        if (previousVote !== undefined) {
+          updated[pollId] = previousVote;
+        } else {
+          delete updated[pollId];
+        }
+        return updated;
+      });
     }
   };
 

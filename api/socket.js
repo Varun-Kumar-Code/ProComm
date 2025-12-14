@@ -64,21 +64,35 @@ const ioHandler = (req, res) => {
 
   // Handle POST - add new reaction, raise hand, or send message
   if (req.method === 'POST') {
-    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName, previousVote } = req.body;
+    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName, previousVote, pollIds } = req.body;
     
     const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [] };
     
+    if (type === 'pollHeartbeat') {
+      // Handle poll heartbeat - just acknowledge, polls already exist
+      console.log(`[POLL HEARTBEAT] Received for ${pollIds?.length || 0} polls`);
+      res.status(200).json({ success: true });
+      return;
+    }
+    
     if (type === 'poll') {
-      // Handle poll creation
+      // Handle poll creation - avoid duplicates
       if (!roomId || !poll) {
         res.status(400).json({ error: 'roomId and poll required' });
         return;
       }
       
-      data.polls.push(poll);
-      roomData.set(roomId, data);
+      // Check if poll already exists
+      const existingPollIndex = data.polls.findIndex(p => p.id === poll.id);
+      if (existingPollIndex >= 0) {
+        // Don't overwrite existing poll to preserve vote data
+        console.log(`[POLL] Poll ${poll.id} already exists, skipping duplicate`);
+      } else {
+        data.polls.push(poll);
+        console.log(`[POLL] Created poll: ${poll.question} by ${poll.createdBy}`);
+      }
       
-      console.log(`[POLL] Created poll: ${poll.question} by ${poll.createdBy}`);
+      roomData.set(roomId, data);
       res.status(200).json({ success: true, poll });
       return;
     }
