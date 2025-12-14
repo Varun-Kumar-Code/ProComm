@@ -24,7 +24,8 @@ import {
   Clock,
   Timer,
   Pin,
-  PinOff
+  PinOff,
+  Reply
 } from 'lucide-react';
 // import io from 'socket.io-client'; // DISABLED - using HTTP polling
 import Peer from 'peerjs';
@@ -57,6 +58,7 @@ const VideoRoom = () => {
   // Chat states
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
   const [participants, setParticipants] = useState([]);
   
   // Poll states
@@ -1242,12 +1244,18 @@ const VideoRoom = () => {
       id: Date.now() + Math.random(), // Unique ID
       userName,
       message: newMessage.trim(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      replyTo: replyTo ? {
+        id: replyTo.id,
+        userName: replyTo.userName,
+        message: replyTo.message
+      } : null
     };
     
     // Add to local state immediately
     setMessages(prev => [...prev, message]);
     setNewMessage('');
+    setReplyTo(null);
     
     // Send to server via HTTP API
     try {
@@ -1988,11 +1996,32 @@ const VideoRoom = () => {
                       </div>
                     ) : (
                       messages.map((message) => (
-                        <div key={message.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-2 lg:p-4 border border-white/10">
-                          <div className="font-semibold text-xs lg:text-sm text-blue-300 mb-1">{message.userName}</div>
-                          <div className="text-xs lg:text-sm text-white leading-relaxed break-words">{message.message}</div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <div key={message.id} className="group bg-white/10 backdrop-blur-sm rounded-lg p-2 lg:p-4 border border-white/10 hover:bg-white/15 transition-all relative">
+                          {/* Reply indicator */}
+                          {message.replyTo && (
+                            <div className="mb-2 pb-2 border-l-2 border-blue-500 pl-2 bg-white/5 rounded p-1.5">
+                              <div className="text-xs text-blue-300 font-semibold">{message.replyTo.userName}</div>
+                              <div className="text-xs text-gray-400 truncate">{message.replyTo.message}</div>
+                            </div>
+                          )}
+                          
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="font-semibold text-xs lg:text-sm text-blue-300 mb-1">{message.userName}</div>
+                              <div className="text-xs lg:text-sm text-white leading-relaxed break-words">{message.message}</div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            </div>
+                            
+                            {/* Reply button */}
+                            <button
+                              onClick={() => setReplyTo(message)}
+                              className="opacity-0 group-hover:opacity-100 ml-2 p-1.5 rounded hover:bg-white/10 transition-all flex-shrink-0"
+                              title="Reply"
+                            >
+                              <Reply className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-gray-400 hover:text-blue-400" />
+                            </button>
                           </div>
                         </div>
                       ))
@@ -2001,13 +2030,29 @@ const VideoRoom = () => {
                   </div>
                   
                   <div className="p-2 lg:p-4 border-t border-white/10 bg-gray-900 flex-shrink-0">
+                    {/* Reply preview */}
+                    {replyTo && (
+                      <div className="mb-2 flex items-start justify-between bg-blue-500/10 border-l-2 border-blue-500 p-2 rounded">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-blue-300 font-semibold">Replying to {replyTo.userName}</div>
+                          <div className="text-xs text-gray-400 truncate">{replyTo.message}</div>
+                        </div>
+                        <button
+                          onClick={() => setReplyTo(null)}
+                          className="ml-2 p-1 hover:bg-white/10 rounded flex-shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5 text-gray-400" />
+                        </button>
+                      </div>
+                    )}
+                    
                     <div className="flex space-x-2">
                       <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                        placeholder="Type message..."
+                        placeholder={replyTo ? `Reply to ${replyTo.userName}...` : "Type message..."}
                         className="flex-1 bg-white/10 backdrop-blur-sm text-white placeholder-gray-400 px-2.5 py-2.5 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 text-sm"
                       />
                       <button
