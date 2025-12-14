@@ -62,12 +62,13 @@ const VideoRoom = () => {
   const [participants, setParticipants] = useState([]);
   
   // Poll states
-  const [polls] = useState([]);
+  const [polls, setPolls] = useState([]);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
   const [newPoll, setNewPoll] = useState({
     question: '',
     options: ['', '']
   });
+  const [pollVotes, setPollVotes] = useState({}); // Track user's votes by poll ID
   
   // Meeting features states
   const [handsRaised, setHandsRaised] = useState(new Set()); // Set of peer IDs (not userNames)
@@ -460,6 +461,15 @@ const VideoRoom = () => {
                   return [...prev, msg];
                 });
               });
+            }
+          }
+          
+          // Poll for polls
+          const pollsResponse = await fetch(`/api/socket?roomId=${roomId}&type=polls`);
+          if (pollsResponse.ok) {
+            const pollsData = await pollsResponse.json();
+            if (pollsData.polls && Array.isArray(pollsData.polls)) {
+              setPolls(pollsData.polls);
             }
           }
         }
@@ -1281,29 +1291,104 @@ const VideoRoom = () => {
   };
 
   // Poll functions
-  const createPoll = () => {
-    if (newPoll.question.trim() && newPoll.options.every(opt => opt.trim())) {
-      const poll = {
-        id: Date.now(),
-        question: newPoll.question,
-        options: newPoll.options.map((option, index) => ({
-          id: index,
-          text: option,
-          votes: []
-        })),
-        createdBy: userName,
-        createdAt: new Date(),
-        isActive: true
-      };
+  const createPoll = async () => {
+    if (!newPoll.question.trim() || !newPoll.options.every(opt => opt.trim())) {
+      return;
+    }
+    
+    const poll = {
+      id: Date.now() + Math.random(),
+      question: newPoll.question.trim(),
+      options: newPoll.options.filter(opt => opt.trim()).map((option, index) => ({
+        id: index,
+        text: option.trim(),
+        votes: 0,
+        voters: [] // Array of userNames who voted for this option
+      })),
+      createdBy: userName,
+      timestamp: Date.now()
+    };
+    
+    // Add to local state immediately
+    setPolls(prev => [...prev, poll]);
+    setNewPoll({ question: '', options: ['', ''] });
+    setShowCreatePoll(false);
+    
+    // Send to server via HTTP API
+    try {
+      const serverUrl = process.env.NODE_ENV === 'production' 
+        ? window.location.origin 
+        : 'http://localhost:3000';
       
-      // setPolls(prev => [...prev, poll]); // DISABLED - Socket.IO not available
+      await fetch(`${serverUrl}/api/socket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          roomId,
+          type: 'poll',
+          poll
+        })
+      });
       
-      if (socketRef.current) {
-        socketRef.current.emit('poll-created', { roomId, poll });
-      }
+      console.log('📊 [POLL] Poll created successfully');
+    } catch (error) {
+      console.error('❌ [POLL] Failed to create:', error);
+    }
+  };
+
+  const votePoll = async (pollId, optionId) => {
+    // Check if already voted on this poll
+    if (pollVotes[pollId] !== undefined) {
+      console.log('Already voted on this poll');
+      return;
+    }
+    
+    // Update local vote tracking
+    setPollVotes(prev => ({ ...prev, [pollId]: optionId }));
+    
+    // Send vote to server
+    try {
+      const serverUrl = process.env.NODE_ENV === 'production' 
+        ? window.location.origin 
+        : 'http://localhost:3000';
       
-      setNewPoll({ question: '', options: ['', ''] });
-      setShowCreatePoll(false);
+      await fetch(`${serverUrl}/api/socket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          roomId,
+          type: 'pollVote',
+          pollId,
+          optionId,
+          userName
+        })
+      });
+      
+      console.log('📊 [POLL] Vote submitted successfully');
+    } catch (error) {
+      console.error('❌ [POLL] Failed to vote:', error);
+    }
+  };
+
+  const addPollOption = () => {
+    if (newPoll.options.length < 10) {
+      setNewPoll(prev => ({
+        ...prev,
+        options: [...prev.options, '']
+      }));
+    }
+  };
+
+  const removePollOption = (index) => {
+    if (newPoll.options.length > 2) {
+      setNewPoll(prev => ({
+        ...prev,
+        options: prev.options.filter((_, i) => i !== index)
+      }));
     }
   };
 
@@ -2150,47 +2235,61 @@ const VideoRoom = () => {
                         <p className="text-sm">No polls yet. Create one to get started!</p>
                       </div>
                     ) : (
-                      polls.map((poll) => (
-                        <div key={poll.id} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
-                          <h4 className="font-medium text-white mb-3">{poll.question}</h4>
-                          <div className="space-y-2">
-                            {poll.options.map((option) => {
-                              const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes.length, 0);
-                              const percentage = totalVotes > 0 ? (option.votes.length / totalVotes) * 100 : 0;
-                              const hasVoted = option.votes.includes(userName);
-                              
-                              return (
-                                <button
-                                  key={option.id}
-                                  onClick={() => votePoll(poll.id, option.id)}
-                                  className={`w-full text-left p-3 rounded-lg border transition-all duration-300 ${
-                                    hasVoted
-                                      ? 'bg-blue-500/20 border-blue-500/30 text-blue-300'
-                                      : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300'
-                                  }`}
-                                >
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="text-sm font-medium">{option.text}</span>
-                                    <span className="text-xs">{percentage.toFixed(1)}%</span>
-                                  </div>
-                                  <div className="w-full bg-white/10 rounded-full h-2">
-                                    <div 
-                                      className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                                      style={{ width: `${percentage}%` }}
-                                    ></div>
-                                  </div>
-                                  <div className="text-xs text-gray-400 mt-1">
-                                    {option.votes.length} vote{option.votes.length !== 1 ? 's' : ''}
-                                  </div>
-                                </button>
-                              );
-                            })}
+                      polls.map((poll) => {
+                        const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
+                        const userVoted = pollVotes[poll.id] !== undefined;
+                        
+                        return (
+                          <div key={poll.id} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                            <h4 className="font-medium text-white mb-3 text-sm lg:text-base">{poll.question}</h4>
+                            <div className="space-y-2">
+                              {poll.options.map((option) => {
+                                const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                                const hasVoted = pollVotes[poll.id] === option.id;
+                                
+                                return (
+                                  <button
+                                    key={option.id}
+                                    onClick={() => votePoll(poll.id, option.id)}
+                                    disabled={userVoted}
+                                    className={`w-full text-left p-3 rounded-lg border transition-all duration-300 ${
+                                      hasVoted
+                                        ? 'bg-blue-500/30 border-blue-500/50 text-blue-200'
+                                        : userVoted
+                                        ? 'bg-white/5 border-white/10 text-gray-400 cursor-not-allowed'
+                                        : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300 cursor-pointer'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs lg:text-sm font-medium">{option.text}</span>
+                                      <span className="text-xs font-semibold">{percentage.toFixed(0)}%</span>
+                                    </div>
+                                    <div className="w-full bg-white/10 rounded-full h-2">
+                                      <div 
+                                        className={`h-2 rounded-full transition-all duration-500 ${
+                                          hasVoted ? 'bg-blue-500' : 'bg-gray-500'
+                                        }`}
+                                        style={{ width: `${percentage}%` }}
+                                      ></div>
+                                    </div>
+                                    <div className="text-xs text-gray-400 mt-1">
+                                      {option.votes} vote{option.votes !== 1 ? 's' : ''}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/10">
+                              <div className="text-xs text-gray-400">
+                                By {poll.createdBy}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {totalVotes} total vote{totalVotes !== 1 ? 's' : ''}
+                              </div>
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-400 mt-3">
-                            Created by {poll.createdBy} • {new Date(poll.createdAt).toLocaleTimeString()}
-                          </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </>

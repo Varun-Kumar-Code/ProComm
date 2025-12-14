@@ -3,7 +3,7 @@
 // WORKAROUND: Store both in same Map since Vercel serverless instances are short-lived (~30s)
 // Hand raises now use peer IDs instead of userNames to support duplicate names
 
-const roomData = new Map(); // Map<roomId, { reactions: Array, handsRaised: Map<peerId, userName>, messages: Array }>
+const roomData = new Map(); // Map<roomId, { reactions: Array, handsRaised: Map<peerId, userName>, messages: Array, polls: Array }>
 
 // Log when module initializes to track cold starts
 console.log('[INIT] API handler module loaded at', new Date().toISOString());
@@ -27,7 +27,7 @@ const ioHandler = (req, res) => {
       return;
     }
     
-    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [] };
+    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [] };
     
     if (type === 'hands') {
       // Get hand raises - return array of peer IDs
@@ -44,6 +44,13 @@ const ioHandler = (req, res) => {
       return;
     }
     
+    if (type === 'polls') {
+      // Get polls
+      console.log(`[GET POLLS] Room ${roomId}: ${data.polls.length} polls`);
+      res.status(200).json({ polls: data.polls });
+      return;
+    }
+    
     // Default: Get reactions
     const now = Date.now();
     const freshReactions = data.reactions.filter(r => now - r.timestamp < 5000);
@@ -57,9 +64,55 @@ const ioHandler = (req, res) => {
 
   // Handle POST - add new reaction, raise hand, or send message
   if (req.method === 'POST') {
-    const { roomId, reaction, handRaise, message } = req.body;
+    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName } = req.body;
     
-    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [] };
+    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [] };
+    
+    if (type === 'poll') {
+      // Handle poll creation
+      if (!roomId || !poll) {
+        res.status(400).json({ error: 'roomId and poll required' });
+        return;
+      }
+      
+      data.polls.push(poll);
+      roomData.set(roomId, data);
+      
+      console.log(`[POLL] Created poll: ${poll.question} by ${poll.createdBy}`);
+      res.status(200).json({ success: true, poll });
+      return;
+    }
+    
+    if (type === 'pollVote') {
+      // Handle poll vote
+      if (!roomId || pollId === undefined || optionId === undefined || !userName) {
+        res.status(400).json({ error: 'roomId, pollId, optionId, and userName required' });
+        return;
+      }
+      
+      // Find the poll and update vote
+      const pollIndex = data.polls.findIndex(p => p.id === pollId);
+      if (pollIndex !== -1) {
+        const poll = data.polls[pollIndex];
+        const option = poll.options.find(opt => opt.id === optionId);
+        
+        if (option) {
+          // Check if user already voted
+          const alreadyVoted = poll.options.some(opt => opt.voters.includes(userName));
+          
+          if (!alreadyVoted) {
+            option.votes += 1;
+            option.voters.push(userName);
+            
+            roomData.set(roomId, data);
+            console.log(`[POLL VOTE] ${userName} voted for option ${optionId} in poll ${pollId}`);
+          }
+        }
+      }
+      
+      res.status(200).json({ success: true });
+      return;
+    }
     
     if (handRaise) {
       // Handle hand raise using peer ID
@@ -114,7 +167,7 @@ const ioHandler = (req, res) => {
       return;
     }
     
-    res.status(400).json({ error: 'reaction, handRaise, or message required' });
+    res.status(400).json({ error: 'reaction, handRaise, message, or poll required' });
     return;
   }
 
