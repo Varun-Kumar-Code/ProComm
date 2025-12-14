@@ -1928,7 +1928,7 @@ const VideoRoom = () => {
 
         {/* Enhanced Meeting Sidebar */}
         {showChat && (
-          <div className="fixed lg:relative bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t border-white/10 flex flex-col h-[calc(100vh-160px)] lg:h-full lg:max-h-[calc(100vh-200px)] z-40">
+          <div className="fixed lg:relative bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t border-white/10 flex flex-col max-h-[65vh] lg:h-full lg:max-h-[calc(100vh-200px)] z-40">
             {/* Tab Navigation */}
             <div className="border-b border-white/10 flex-shrink-0">
               <div className="flex">
@@ -1940,7 +1940,7 @@ const VideoRoom = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 flex items-center justify-center space-x-2 p-3 lg:p-4 transition-all duration-300 ${
+                    className={`flex-1 flex items-center justify-center space-x-2 p-2.5 lg:p-4 transition-all duration-300 ${
                       activeTab === tab.id
                         ? 'bg-blue-500/20 border-b-2 border-blue-500 text-blue-300'
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -1963,24 +1963,24 @@ const VideoRoom = () => {
               
               {/* Chat Tab */}
               {activeTab === 'chat' && (
-                <>
-                  <div className="p-3 lg:p-4 border-b border-white/10 flex-shrink-0">
+                <div className="flex flex-col h-full">
+                  <div className="p-2.5 lg:p-4 border-b border-white/10 flex-shrink-0">
                     <h3 className="font-semibold text-white text-sm lg:text-base">Meeting Chat</h3>
                     <p className="text-xs lg:text-sm text-gray-300 mt-1">{participants.length + 1} participants</p>
                   </div>
                   
-                  <div className="flex-1 p-3 lg:p-4 overflow-y-auto space-y-3 lg:space-y-4 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent min-h-0">
+                  <div className="flex-1 p-2.5 lg:p-4 overflow-y-auto space-y-2.5 lg:space-y-4 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent min-h-0">
                     {messages.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p className="text-sm">No messages yet. Start the conversation!</p>
+                      <div className="text-center py-6 text-gray-400">
+                        <MessageSquare className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                        <p className="text-xs">No messages yet. Start the conversation!</p>
                       </div>
                     ) : (
                       messages.map((message) => (
-                        <div key={message.id} className="bg-white/10 backdrop-blur-sm rounded-2xl p-3 lg:p-4 border border-white/10 hover:bg-white/15 transition-all duration-300">
+                        <div key={message.id} className="bg-white/10 backdrop-blur-sm rounded-xl p-2.5 lg:p-4 border border-white/10 hover:bg-white/15 transition-all duration-300">
                           <div className="font-semibold text-xs lg:text-sm text-blue-300 mb-1">{message.userName}</div>
                           <div className="text-xs lg:text-sm text-white leading-relaxed break-words">{message.message}</div>
-                          <div className="text-xs text-gray-400 mt-2">
+                          <div className="text-xs text-gray-400 mt-1.5">
                             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
@@ -1989,26 +1989,26 @@ const VideoRoom = () => {
                     <div ref={messagesEndRef} />
                   </div>
                   
-                  <div className="p-3 lg:p-4 border-t border-white/10 bg-gray-900 flex-shrink-0">
-                    <div className="flex space-x-2 lg:space-x-3">
+                  <div className="p-2.5 lg:p-4 border-t border-white/10 bg-gray-900/95 flex-shrink-0">
+                    <div className="flex space-x-2">
                       <input
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                         placeholder="Type a message..."
-                        className="flex-1 bg-white/10 backdrop-blur-sm text-white placeholder-gray-400 px-3 lg:px-4 py-2 lg:py-3 rounded-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 text-sm lg:text-base"
+                        className="flex-1 bg-white/10 backdrop-blur-sm text-white placeholder-gray-400 px-3 py-2 lg:py-2.5 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 text-sm"
                       />
                       <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim()}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-3 lg:px-4 py-2 lg:py-3 rounded-xl transition-all duration-300 transform hover:scale-105 flex-shrink-0"
+                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2 lg:py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 flex-shrink-0"
                       >
                         <Send className="w-4 h-4 lg:w-5 lg:h-5" />
                       </button>
                     </div>
                   </div>
-                </>
+                </div>
               )}
 
               {/* Polls Tab */}
