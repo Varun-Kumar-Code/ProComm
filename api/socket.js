@@ -3,7 +3,7 @@
 // WORKAROUND: Store both in same Map since Vercel serverless instances are short-lived (~30s)
 // Hand raises now use peer IDs instead of userNames to support duplicate names
 
-const roomData = new Map(); // Map<roomId, { reactions: Array, handsRaised: Map<peerId, userName> }>
+const roomData = new Map(); // Map<roomId, { reactions: Array, handsRaised: Map<peerId, userName>, messages: Array }>
 
 // Log when module initializes to track cold starts
 console.log('[INIT] API handler module loaded at', new Date().toISOString());
@@ -27,13 +27,20 @@ const ioHandler = (req, res) => {
       return;
     }
     
-    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map() };
+    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [] };
     
     if (type === 'hands') {
       // Get hand raises - return array of peer IDs
       const peerIds = Array.from(data.handsRaised.keys());
       console.log(`[GET HANDS] Room ${roomId}: ${peerIds.join(', ') || 'none'}`);
       res.status(200).json({ handsRaised: peerIds });
+      return;
+    }
+    
+    if (type === 'messages') {
+      // Get chat messages
+      console.log(`[GET MESSAGES] Room ${roomId}: ${data.messages.length} messages`);
+      res.status(200).json({ messages: data.messages });
       return;
     }
     
@@ -48,11 +55,11 @@ const ioHandler = (req, res) => {
     return;
   }
 
-  // Handle POST - add new reaction or raise hand
+  // Handle POST - add new reaction, raise hand, or send message
   if (req.method === 'POST') {
-    const { roomId, reaction, handRaise } = req.body;
+    const { roomId, reaction, handRaise, message } = req.body;
     
-    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map() };
+    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [] };
     
     if (handRaise) {
       // Handle hand raise using peer ID
@@ -92,7 +99,22 @@ const ioHandler = (req, res) => {
       return;
     }
     
-    res.status(400).json({ error: 'reaction or handRaise required' });
+    if (message) {
+      // Handle chat message
+      if (!roomId || !message) {
+        res.status(400).json({ error: 'roomId and message required' });
+        return;
+      }
+      
+      data.messages.push(message);
+      roomData.set(roomId, data);
+      
+      console.log(`[MESSAGE] ${message.userName}: ${message.message.substring(0, 50)}...`);
+      res.status(200).json({ success: true, message });
+      return;
+    }
+    
+    res.status(400).json({ error: 'reaction, handRaise, or message required' });
     return;
   }
 

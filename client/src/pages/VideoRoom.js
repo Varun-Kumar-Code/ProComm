@@ -55,7 +55,7 @@ const VideoRoom = () => {
   const [showToolsMenu, setShowToolsMenu] = useState(false);
 
   // Chat states
-  const [messages] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [participants, setParticipants] = useState([]);
   
@@ -369,13 +369,14 @@ const VideoRoom = () => {
     return () => clearInterval(interval);
   }, [roomId, userName, isHandRaised]);
   
-  // Poll for reactions and hand raises from other participants (every 1 second)
+  // Poll for reactions, hand raises, and chat messages from other participants (every 1 second)
   useEffect(() => {
     if (!roomId) return;
     
     const seenReactionIds = new Set();
+    const seenMessageIds = new Set();
     
-    const pollReactionsAndHands = async () => {
+    const pollReactionsHandsAndChat = async () => {
       try {
         const serverUrl = process.env.NODE_ENV === 'production' 
           ? window.location.origin 
@@ -436,13 +437,37 @@ const VideoRoom = () => {
             }
           }
         }
+        
+        // Poll chat messages
+        const chatResponse = await fetch(`${serverUrl}/api/socket?roomId=${roomId}&type=messages`);
+        
+        if (chatResponse.ok) {
+          const chatData = await chatResponse.json();
+          
+          if (chatData.messages && chatData.messages.length > 0) {
+            const newMessages = chatData.messages.filter(m => !seenMessageIds.has(m.id));
+            
+            if (newMessages.length > 0) {
+              console.log('💬 [POLL] Received new messages:', newMessages.length);
+              
+              newMessages.forEach(msg => {
+                seenMessageIds.add(msg.id);
+                setMessages(prev => {
+                  // Avoid duplicates
+                  if (prev.some(m => m.id === msg.id)) return prev;
+                  return [...prev, msg];
+                });
+              });
+            }
+          }
+        }
       } catch (error) {
         // Silently fail - don't spam console
       }
     };
     
     // Poll every 1 second
-    const interval = setInterval(pollReactionsAndHands, 1000);
+    const interval = setInterval(pollReactionsHandsAndChat, 1000);
     
     return () => clearInterval(interval);
   }, [roomId, userName, peers]);
@@ -1210,19 +1235,40 @@ const VideoRoom = () => {
     }
   };
 
-  const sendMessage = () => {
-    console.log('💬 Sending message:', newMessage.trim());
-    console.log('💬 Socket available:', !!socketRef.current);
+  const sendMessage = async () => {
+    if (!newMessage.trim()) return;
     
-    if (newMessage.trim() && socketRef.current) {
-      socketRef.current.emit('chat-message', {
-        roomId,
-        message: newMessage.trim()
+    const message = {
+      id: Date.now() + Math.random(), // Unique ID
+      userName,
+      message: newMessage.trim(),
+      timestamp: Date.now()
+    };
+    
+    // Add to local state immediately
+    setMessages(prev => [...prev, message]);
+    setNewMessage('');
+    
+    // Send to server via HTTP API
+    try {
+      const serverUrl = process.env.NODE_ENV === 'production' 
+        ? window.location.origin 
+        : 'http://localhost:3000';
+      
+      await fetch(`${serverUrl}/api/socket`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          roomId, 
+          message
+        })
       });
-      console.log('💬 Chat message sent to server');
-      setNewMessage('');
-    } else {
-      console.warn('⚠️ Cannot send message - no socket or empty message');
+      
+      console.log('💬 [CHAT] Message sent successfully');
+    } catch (error) {
+      console.error('❌ [CHAT] Failed to send:', error);
     }
   };
 
