@@ -1970,17 +1970,17 @@ const VideoRoom = () => {
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 flex flex-col overflow-hidden min-h-0 bg-gray-900">
+            <div className="flex-1 flex flex-col min-h-0 bg-gray-900 overflow-hidden">
               
               {/* Chat Tab */}
               {activeTab === 'chat' && (
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full min-h-0">
                   <div className="hidden lg:block p-4 border-b border-white/10 flex-shrink-0">
                     <h3 className="font-semibold text-white text-base">Meeting Chat</h3>
                     <p className="text-sm text-gray-300 mt-1">{participants.length + 1} participants</p>
                   </div>
                   
-                  <div className="flex-1 p-2 lg:p-4 overflow-y-auto space-y-2 lg:space-y-4 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent min-h-0 pb-2">
+                  <div className="flex-1 overflow-y-scroll p-2 lg:p-4 space-y-2 lg:space-y-4 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
                     {messages.length === 0 ? (
                       <div className="text-center py-4 text-gray-400">
                         <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
