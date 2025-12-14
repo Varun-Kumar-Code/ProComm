@@ -1392,57 +1392,6 @@ const VideoRoom = () => {
     }
   };
 
-  const votePoll = (pollId, optionId) => {
-    /* DISABLED - Socket.IO not available
-    setPolls(prev => prev.map(poll => {
-      if (poll.id === pollId) {
-        const updatedOptions = poll.options.map(option => {
-          if (option.id === optionId) {
-            return {
-              ...option,
-              votes: option.votes.includes(userName) 
-                ? option.votes 
-                : [...option.votes, userName]
-            };
-          } else {
-            return {
-              ...option,
-              votes: option.votes.filter(voter => voter !== userName)
-            };
-          }
-        });
-        
-        const updatedPoll = { ...poll, options: updatedOptions };
-        
-        if (socketRef.current) {
-          socketRef.current.emit('poll-vote', { roomId, poll: updatedPoll });
-        }
-        
-        return updatedPoll;
-      }
-      return poll;
-    }));
-    */
-  };
-
-  const addPollOption = () => {
-    if (newPoll.options.length < 5) {
-      setNewPoll(prev => ({
-        ...prev,
-        options: [...prev.options, '']
-      }));
-    }
-  };
-
-  const removePollOption = (index) => {
-    if (newPoll.options.length > 2) {
-      setNewPoll(prev => ({
-        ...prev,
-        options: prev.options.filter((_, i) => i !== index)
-      }));
-    }
-  };
-
   // Raise hand functions
   const toggleRaiseHand = async () => {
     const newState = !isHandRaised;
