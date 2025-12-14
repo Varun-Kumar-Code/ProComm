@@ -2242,7 +2242,6 @@ const VideoRoom = () => {
                     ) : (
                       polls.map((poll) => {
                         const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.voters ? opt.voters.length : opt.votes || 0), 0);
-                        const userVoted = pollVotes[poll.id] !== undefined;
                         
                         return (
                           <div key={poll.id} className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
