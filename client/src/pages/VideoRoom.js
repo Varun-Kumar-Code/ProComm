@@ -1928,9 +1928,9 @@ const VideoRoom = () => {
 
         {/* Enhanced Meeting Sidebar */}
         {showChat && (
-          <div className="fixed lg:relative bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t border-white/10 flex flex-col h-auto lg:h-full max-h-[50vh] lg:max-h-[calc(100vh-200px)] z-40">
+          <div className="fixed lg:relative bottom-16 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t border-white/10 flex flex-col h-auto lg:h-full max-h-[45vh] lg:max-h-[calc(100vh-200px)] z-40 mb-2 lg:mb-0">
             {/* Header with Close Button for Mobile */}
-            <div className="lg:hidden flex items-center justify-between p-3 border-b border-white/10 flex-shrink-0">
+            <div className="lg:hidden flex items-center justify-between p-2.5 border-b border-white/10 flex-shrink-0 bg-gray-900">
               <h3 className="font-semibold text-white text-sm">Meeting Chat</h3>
               <button 
                 onClick={() => setShowChat(false)}
@@ -1941,7 +1941,7 @@ const VideoRoom = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="border-b border-white/10 flex-shrink-0">
+            <div className="border-b border-white/10 flex-shrink-0 bg-gray-900">
               <div className="flex">
                 {[
                   { id: 'chat', label: 'Chat', icon: <MessageSquare className="w-4 h-4" />, badge: messages.length },
@@ -1951,7 +1951,7 @@ const VideoRoom = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 flex items-center justify-center space-x-1.5 p-2 lg:p-4 transition-all duration-300 ${
+                    className={`flex-1 flex items-center justify-center space-x-1.5 py-2 px-1 lg:p-4 transition-all duration-300 ${
                       activeTab === tab.id
                         ? 'bg-blue-500/20 border-b-2 border-blue-500 text-blue-300'
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -1970,7 +1970,7 @@ const VideoRoom = () => {
             </div>
 
             {/* Tab Content */}
-            <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+            <div className="flex-1 flex flex-col overflow-hidden min-h-0 bg-gray-900">
               
               {/* Chat Tab */}
               {activeTab === 'chat' && (
@@ -1980,7 +1980,7 @@ const VideoRoom = () => {
                     <p className="text-sm text-gray-300 mt-1">{participants.length + 1} participants</p>
                   </div>
                   
-                  <div className="flex-1 p-2 lg:p-4 overflow-y-auto space-y-2 lg:space-y-4 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent min-h-0 max-h-[20vh] lg:max-h-none">
+                  <div className="flex-1 p-2 lg:p-4 overflow-y-auto space-y-2 lg:space-y-4 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent min-h-0 pb-2">
                     {messages.length === 0 ? (
                       <div className="text-center py-4 text-gray-400">
                         <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -2008,12 +2008,12 @@ const VideoRoom = () => {
                         onChange={(e) => setNewMessage(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
                         placeholder="Type message..."
-                        className="flex-1 bg-white/10 backdrop-blur-sm text-white placeholder-gray-400 px-2.5 py-2 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 text-sm"
+                        className="flex-1 bg-white/10 backdrop-blur-sm text-white placeholder-gray-400 px-2.5 py-2.5 rounded-lg border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 text-sm"
                       />
                       <button
                         onClick={sendMessage}
                         disabled={!newMessage.trim()}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-2.5 py-2 rounded-lg transition-all duration-300 flex-shrink-0"
+                        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-3 py-2.5 rounded-lg transition-all duration-300 flex-shrink-0"
                       >
                         <Send className="w-4 h-4" />
                       </button>
