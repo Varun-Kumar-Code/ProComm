@@ -64,7 +64,7 @@ const ioHandler = (req, res) => {
 
   // Handle POST - add new reaction, raise hand, or send message
   if (req.method === 'POST') {
-    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName } = req.body;
+    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName, previousVote } = req.body;
     
     const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [] };
     
@@ -84,7 +84,7 @@ const ioHandler = (req, res) => {
     }
     
     if (type === 'pollVote') {
-      // Handle poll vote
+      // Handle poll vote (allow changing votes)
       if (!roomId || pollId === undefined || optionId === undefined || !userName) {
         res.status(400).json({ error: 'roomId, pollId, optionId, and userName required' });
         return;
@@ -94,19 +94,33 @@ const ioHandler = (req, res) => {
       const pollIndex = data.polls.findIndex(p => p.id === pollId);
       if (pollIndex !== -1) {
         const poll = data.polls[pollIndex];
-        const option = poll.options.find(opt => opt.id === optionId);
         
-        if (option) {
-          // Check if user already voted
-          const alreadyVoted = poll.options.some(opt => opt.voters.includes(userName));
-          
-          if (!alreadyVoted) {
-            option.votes += 1;
-            option.voters.push(userName);
-            
-            roomData.set(roomId, data);
-            console.log(`[POLL VOTE] ${userName} voted for option ${optionId} in poll ${pollId}`);
+        // Remove previous vote if exists
+        if (previousVote !== undefined) {
+          const previousOption = poll.options.find(opt => opt.id === previousVote);
+          if (previousOption && previousOption.voters.includes(userName)) {
+            previousOption.votes = Math.max(0, previousOption.votes - 1);
+            previousOption.voters = previousOption.voters.filter(v => v !== userName);
+            console.log(`[POLL VOTE] ${userName} removed vote from option ${previousVote}`);
           }
+        } else {
+          // Remove vote from any option if user voted elsewhere
+          poll.options.forEach(opt => {
+            if (opt.voters.includes(userName)) {
+              opt.votes = Math.max(0, opt.votes - 1);
+              opt.voters = opt.voters.filter(v => v !== userName);
+            }
+          });
+        }
+        
+        // Add new vote
+        const newOption = poll.options.find(opt => opt.id === optionId);
+        if (newOption && !newOption.voters.includes(userName)) {
+          newOption.votes += 1;
+          newOption.voters.push(userName);
+          
+          roomData.set(roomId, data);
+          console.log(`[POLL VOTE] ${userName} voted for option ${optionId} in poll ${pollId}`);
         }
       }
       

@@ -1398,11 +1398,7 @@ const VideoRoom = () => {
   };
 
   const votePoll = async (pollId, optionId) => {
-    // Check if already voted on this poll
-    if (pollVotes[pollId] !== undefined) {
-      console.log('Already voted on this poll');
-      return;
-    }
+    const previousVote = pollVotes[pollId];
     
     // Update local vote tracking
     setPollVotes(prev => ({ ...prev, [pollId]: optionId }));
@@ -1423,6 +1419,7 @@ const VideoRoom = () => {
           type: 'pollVote',
           pollId,
           optionId,
+          previousVote,
           userName
         })
       });
@@ -2244,7 +2241,7 @@ const VideoRoom = () => {
                       </div>
                     ) : (
                       polls.map((poll) => {
-                        const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
+                        const totalVotes = poll.options.reduce((sum, opt) => sum + (opt.voters ? opt.voters.length : opt.votes || 0), 0);
                         const userVoted = pollVotes[poll.id] !== undefined;
                         
                         return (
@@ -2252,19 +2249,17 @@ const VideoRoom = () => {
                             <h4 className="font-medium text-white mb-3 text-sm lg:text-base">{poll.question}</h4>
                             <div className="space-y-2">
                               {poll.options.map((option) => {
-                                const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                                const voteCount = option.voters ? option.voters.length : (option.votes || 0);
+                                const percentage = totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0;
                                 const hasVoted = pollVotes[poll.id] === option.id;
                                 
                                 return (
                                   <button
                                     key={option.id}
                                     onClick={() => votePoll(poll.id, option.id)}
-                                    disabled={userVoted}
                                     className={`w-full text-left p-3 rounded-lg border transition-all duration-300 ${
                                       hasVoted
                                         ? 'bg-blue-500/30 border-blue-500/50 text-blue-200'
-                                        : userVoted
-                                        ? 'bg-white/5 border-white/10 text-gray-400 cursor-not-allowed'
                                         : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-300 cursor-pointer'
                                     }`}
                                   >
@@ -2281,7 +2276,7 @@ const VideoRoom = () => {
                                       ></div>
                                     </div>
                                     <div className="text-xs text-gray-400 mt-1">
-                                      {option.votes} vote{option.votes !== 1 ? 's' : ''}
+                                      {voteCount} vote{voteCount !== 1 ? 's' : ''}
                                     </div>
                                   </button>
                                 );
