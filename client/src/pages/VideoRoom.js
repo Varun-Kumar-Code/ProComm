@@ -372,7 +372,7 @@ const VideoRoom = () => {
     return () => clearInterval(interval);
   }, [roomId, userName, isHandRaised]);
 
-  // Heartbeat for polls - only send poll IDs to keep them alive, don't overwrite vote data
+  // Heartbeat for polls - resend polls to keep them alive on server
   useEffect(() => {
     if (!roomId || polls.length === 0) return;
     
@@ -382,20 +382,23 @@ const VideoRoom = () => {
           ? window.location.origin 
           : 'http://localhost:3000';
         
-        // Send poll IDs to keep them alive without overwriting vote data
-        await fetch(`${serverUrl}/api/socket`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ 
-            roomId,
-            type: 'pollHeartbeat',
-            pollIds: polls.map(p => p.id)
-          })
-        });
+        // Resend all polls to keep them alive on server
+        // Note: Server won't overwrite existing polls with votes
+        for (const poll of polls) {
+          await fetch(`${serverUrl}/api/socket`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              roomId,
+              type: 'pollHeartbeat',
+              poll
+            })
+          });
+        }
         
-        console.log('💓 [POLL HEARTBEAT] Pinged', polls.length, 'poll(s)');
+        console.log('💓 [POLL HEARTBEAT] Re-sent', polls.length, 'poll(s)');
       } catch (error) {
         console.error('❌ [POLL HEARTBEAT] Failed:', error);
       }
@@ -499,13 +502,20 @@ const VideoRoom = () => {
             }
           }
           
-          // Poll for polls - always use server data as source of truth
+          // Poll for polls - merge server and local data
           const pollsResponse = await fetch(`${serverUrl}/api/socket?roomId=${roomId}&type=polls`);
           if (pollsResponse.ok) {
             const pollsData = await pollsResponse.json();
-            if (pollsData.polls && Array.isArray(pollsData.polls) && pollsData.polls.length > 0) {
-              // Always use server data directly for accurate vote counts
-              setPolls(pollsData.polls);
+            if (pollsData.polls && Array.isArray(pollsData.polls)) {
+              setPolls(prev => {
+                // If server has polls, use them as they have latest vote data
+                if (pollsData.polls.length > 0) {
+                  return pollsData.polls;
+                }
+                // If server has no polls but we have local polls, keep local polls
+                // This handles serverless recycling
+                return prev;
+              });
             }
           }
         }

@@ -64,13 +64,30 @@ const ioHandler = (req, res) => {
 
   // Handle POST - add new reaction, raise hand, or send message
   if (req.method === 'POST') {
-    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName, previousVote, pollIds } = req.body;
+    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName, previousVote } = req.body;
     
     const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [] };
     
     if (type === 'pollHeartbeat') {
-      // Handle poll heartbeat - just acknowledge, polls already exist
-      console.log(`[POLL HEARTBEAT] Received for ${pollIds?.length || 0} polls`);
+      // Handle poll heartbeat - merge/restore poll data
+      if (!roomId || !poll) {
+        res.status(200).json({ success: true });
+        return;
+      }
+      
+      const existingPollIndex = data.polls.findIndex(p => p.id === poll.id);
+      if (existingPollIndex >= 0) {
+        // Poll exists - merge to preserve server's vote data but update from client if needed
+        const existingPoll = data.polls[existingPollIndex];
+        // Keep server's votes (more accurate) but ensure poll structure is maintained
+        console.log(`[POLL HEARTBEAT] Poll ${poll.id} already exists with ${existingPoll.options.reduce((sum, opt) => sum + (opt.voters?.length || 0), 0)} votes`);
+      } else {
+        // Poll doesn't exist (server recycled) - restore it
+        data.polls.push(poll);
+        roomData.set(roomId, data);
+        console.log(`[POLL HEARTBEAT] Restored poll: ${poll.question}`);
+      }
+      
       res.status(200).json({ success: true });
       return;
     }
