@@ -1387,37 +1387,10 @@ const VideoRoom = () => {
   const votePoll = async (pollId, optionId) => {
     const previousVote = pollVotes[pollId];
     
-    // Update local vote tracking immediately for instant feedback
+    // Update local vote tracking immediately for UI feedback
     setPollVotes(prev => ({ ...prev, [pollId]: optionId }));
     
-    // Optimistically update local poll state for instant UI feedback
-    setPolls(prev => prev.map(poll => {
-      if (poll.id === pollId) {
-        const updatedOptions = poll.options.map(opt => {
-          // Remove vote from previous option
-          if (previousVote !== undefined && opt.id === previousVote) {
-            return {
-              ...opt,
-              votes: Math.max(0, opt.votes - 1),
-              voters: opt.voters.filter(v => v !== userName)
-            };
-          }
-          // Add vote to new option
-          if (opt.id === optionId && !opt.voters.includes(userName)) {
-            return {
-              ...opt,
-              votes: opt.votes + 1,
-              voters: [...opt.voters, userName]
-            };
-          }
-          return opt;
-        });
-        return { ...poll, options: updatedOptions };
-      }
-      return poll;
-    }));
-    
-    // Send vote to server
+    // Send vote to server (no optimistic update - rely on server polling)
     try {
       const serverUrl = process.env.NODE_ENV === 'production' 
         ? window.location.origin 
@@ -1441,7 +1414,7 @@ const VideoRoom = () => {
       console.log('📊 [POLL] Vote submitted successfully');
     } catch (error) {
       console.error('❌ [POLL] Failed to vote:', error);
-      // Revert optimistic update on error
+      // Revert vote tracking on error
       setPollVotes(prev => {
         const updated = { ...prev };
         if (previousVote !== undefined) {
