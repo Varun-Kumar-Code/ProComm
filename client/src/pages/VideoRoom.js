@@ -371,6 +371,43 @@ const VideoRoom = () => {
     
     return () => clearInterval(interval);
   }, [roomId, userName, isHandRaised]);
+
+  // Heartbeat for polls - re-send polls every 15 seconds to keep them alive
+  useEffect(() => {
+    if (!roomId || polls.length === 0) return;
+    
+    const sendPollsHeartbeat = async () => {
+      try {
+        const serverUrl = process.env.NODE_ENV === 'production' 
+          ? window.location.origin 
+          : 'http://localhost:3000';
+        
+        // Re-send each poll to keep it alive on server
+        for (const poll of polls) {
+          await fetch(`${serverUrl}/api/socket`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              roomId,
+              type: 'poll',
+              poll
+            })
+          });
+        }
+        
+        console.log('💓 [POLL HEARTBEAT] Re-sent', polls.length, 'poll(s)');
+      } catch (error) {
+        console.error('❌ [POLL HEARTBEAT] Failed:', error);
+      }
+    };
+    
+    // Send heartbeat every 15 seconds
+    const interval = setInterval(sendPollsHeartbeat, 15000);
+    
+    return () => clearInterval(interval);
+  }, [roomId, polls]);
   
   // Poll for reactions, hand raises, and chat messages from other participants (every 1 second)
   useEffect(() => {
@@ -469,7 +506,29 @@ const VideoRoom = () => {
           if (pollsResponse.ok) {
             const pollsData = await pollsResponse.json();
             if (pollsData.polls && Array.isArray(pollsData.polls)) {
-              setPolls(pollsData.polls);
+              // Update polls while preserving existing ones
+              setPolls(prev => {
+                // If server has polls, use them
+                if (pollsData.polls.length > 0) {
+                  // Merge with existing polls to avoid losing data during serverless recycling
+                  const mergedPolls = [...prev];
+                  
+                  pollsData.polls.forEach(serverPoll => {
+                    const existingIndex = mergedPolls.findIndex(p => p.id === serverPoll.id);
+                    if (existingIndex >= 0) {
+                      // Update existing poll with server data (for vote counts)
+                      mergedPolls[existingIndex] = serverPoll;
+                    } else {
+                      // Add new poll
+                      mergedPolls.push(serverPoll);
+                    }
+                  });
+                  
+                  return mergedPolls;
+                }
+                // If server has no polls but we have some locally, keep ours
+                return prev.length > 0 ? prev : pollsData.polls;
+              });
             }
           }
         }
