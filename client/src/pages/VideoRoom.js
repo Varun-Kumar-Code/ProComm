@@ -1979,7 +1979,7 @@ const VideoRoom = () => {
           ) : (
             <div className={gridClass}>
               {/* Local Video */}
-              <div className={`relative bg-gray-900 rounded-2xl overflow-hidden shadow-xl border-2 border-gray-700/40 group hover:border-gray-600/60 transition-all duration-300 ease-in-out ${singleVideoClass || ''} ${totalParticipants === 2 ? 'w-[48%] aspect-[4/3]' : totalParticipants === 3 ? 'w-[30%] aspect-[4/3]' : totalParticipants === 4 ? 'w-[48%] aspect-[4/3]' : totalParticipants <= 6 ? 'w-[31%] aspect-[4/3]' : 'aspect-video'}`}>
+              <div className={`relative bg-gray-900 rounded-2xl overflow-hidden shadow-xl border-2 border-gray-700/40 group hover:border-gray-600/60 transition-all duration-300 ease-in-out ${singleVideoClass || ''} ${participants.length + 1 === 2 ? 'w-[48%] aspect-[4/3]' : participants.length + 1 === 3 ? 'w-[30%] aspect-[4/3]' : participants.length + 1 === 4 ? 'w-[48%] aspect-[4/3]' : participants.length + 1 <= 6 ? 'w-[31%] aspect-[4/3]' : 'aspect-video'}`}>
                 <video
                   ref={localVideoCallbackRef}
                   autoPlay
