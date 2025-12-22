@@ -1899,35 +1899,17 @@ const VideoRoom = () => {
                 getSortedParticipants().map(([peerId, peerData]) => {
                   if (peerId === pinnedParticipant) {
                     return (
-                      <div key={peerId} className={`relative bg-gray-900 rounded-lg md:rounded-xl overflow-hidden shadow-2xl border border-blue-500/70 group transition-all duration-300 ${pinnedClass}`}>
-                        <video
-                          ref={(el) => {
-                            if (el && peerData.stream) el.srcObject = peerData.stream;
-                          }}
-                          autoPlay
-                          playsInline
-                          className="w-full h-full object-contain bg-black"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-                        {handsRaised.has(peerId) && (
-                          <div className="absolute top-3 right-14 bg-gradient-to-br from-yellow-400 to-orange-500 backdrop-blur-sm p-2 rounded-lg shadow-lg shadow-yellow-500/50 animate-pulse">
-                            <Hand className="w-4 h-4 text-white animate-bounce" />
-                          </div>
-                        )}
-                        <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-white/10 shadow-xl">
-                          <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
-                            <span className="text-sm font-semibold text-white">{peerData.userName} (Pinned)</span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setPinnedParticipant(null)}
-                          className="absolute top-3 right-3 bg-blue-500/90 hover:bg-blue-600 backdrop-blur-sm p-2 rounded-lg shadow-lg transition-colors"
-                          title="Unpin"
-                        >
-                          <PinOff className="w-4 h-4 text-white" />
-                        </button>
-                      </div>
+                      <RemoteVideo
+                        key={peerId}
+                        peerId={peerId}
+                        stream={peerData.stream}
+                        userName={peerData.userName}
+                        handsRaised={handsRaised}
+                        isPinned={true}
+                        isThumbnail={false}
+                        onPin={() => setPinnedParticipant(null)}
+                        pinnedClass={pinnedClass}
+                      />
                     );
                   }
                   return null;
@@ -2655,7 +2637,7 @@ const VideoRoom = () => {
   );
 };
 
-const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin }) => {
+const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin, pinnedClass = '' }) => {
   const videoRef = useRef(null);
   const [hasVideo, setHasVideo] = useState(true);
   const isHandRaised = handsRaised.has(peerId);
@@ -2750,6 +2732,51 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
             <Hand className="w-3 h-3 text-white" />
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (isPinned) {
+    // Pinned mode - large video view
+    return (
+      <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-blue-500/50 group transition-all duration-300 ease-in-out ${pinnedClass}`}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className={`w-full h-full object-contain bg-black transition-opacity duration-300 ${!hasVideo ? 'opacity-0' : 'opacity-100'}`}
+          style={{ transform: 'scaleX(-1)' }}
+        />
+        
+        {/* Avatar when camera is off */}
+        {!hasVideo && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a1a]">
+            <div className={`w-32 h-32 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
+              <span className="text-5xl font-semibold text-white">{getUserInitials(userName)}</span>
+            </div>
+          </div>
+        )}
+        
+        {/* Hand Raised Indicator */}
+        {isHandRaised && (
+          <div className="absolute top-3 left-3 bg-gradient-to-br from-yellow-400 to-orange-500 p-2 rounded-full">
+            <Hand className="w-5 h-5 text-white" />
+          </div>
+        )}
+        
+        {/* User Name Badge */}
+        <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-md">
+          <span className="text-sm font-medium text-white">{userName} (Pinned)</span>
+        </div>
+        
+        {/* Unpin Button - Top Right */}
+        <button
+          onClick={onPin}
+          className="absolute top-3 right-3 bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+          title="Unpin"
+        >
+          <PinOff className="w-4 h-4 text-white" />
+        </button>
       </div>
     );
   }
