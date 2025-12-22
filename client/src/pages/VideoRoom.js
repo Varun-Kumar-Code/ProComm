@@ -138,7 +138,7 @@ const VideoRoom = () => {
     
     if (hasPinned) {
       // Pinned layout: Large pinned video (90%) + small thumbnails (10%)
-      containerClass = 'w-full h-full flex flex-col gap-2 p-3 transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full flex flex-col gap-2 p-2 transition-all duration-300 ease-in-out';
       pinnedClass = 'w-full flex-1 min-h-0 flex items-center justify-center'; // Center the pinned video
       gridClass = 'flex flex-wrap gap-2 h-20 overflow-x-auto flex-shrink-0'; // Smaller thumbnails
       gridVideoClass = 'h-full aspect-video flex-shrink-0';
@@ -148,7 +148,7 @@ const VideoRoom = () => {
     if (totalParticipants === 1) {
       // Solo: Large centered video
       gridClass = '';
-      containerClass = 'flex items-center justify-center w-full h-full p-6 transition-all duration-300 ease-in-out';
+      containerClass = 'flex items-center justify-center w-full h-full p-3 transition-all duration-300 ease-in-out';
       return { 
         gridClass, 
         containerClass, 
@@ -158,23 +158,23 @@ const VideoRoom = () => {
     } else if (totalParticipants === 2) {
       // 2 people: Side by side, centered
       gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-6 flex items-center justify-center transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 3) {
       // 3 people: Responsive grid, centered
       gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-6 flex items-center justify-center transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 4) {
       // 4 people: Perfect 2x2, centered
       gridClass = 'grid grid-cols-2 gap-4 transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-6 flex items-center justify-center transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants <= 6) {
       // 5-6 people: 2x3 or 3x2 grid, centered
       gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-6 flex items-center justify-center transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else {
       // 7+ people: Scrollable grid
       gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full auto-rows-max content-start transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-4 overflow-y-auto transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-2 overflow-y-auto transition-all duration-300 ease-in-out';
     }
     
     return { gridClass, containerClass, singleVideoClass: null, hasPinned };
@@ -2086,7 +2086,7 @@ const VideoRoom = () => {
 
         {/* Enhanced Meeting Sidebar */}
         {showChat && (
-          <div className="fixed lg:relative bottom-16 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t border-white/10 flex flex-col h-auto lg:h-full max-h-[45vh] lg:max-h-[calc(100vh-200px)] z-40 mb-2 lg:mb-0">
+          <div className="fixed lg:relative bottom-0 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col h-[calc(100vh-140px)] lg:h-full z-40">
             {/* Header with Close Button for Mobile */}
             <div className="lg:hidden flex items-center justify-between p-2.5 border-b border-white/10 flex-shrink-0 bg-gray-900">
               <h3 className="font-semibold text-white text-sm">Meeting Chat</h3>
