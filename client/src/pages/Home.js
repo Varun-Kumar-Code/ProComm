@@ -11,7 +11,8 @@ import {
   TrendingUp,
   Monitor,
   Mic,
-  Camera
+  Camera,
+  Loader2
 } from 'lucide-react';
 import Chatbot from '../components/Chatbot';
 import JoinMeetingModal from '../components/JoinMeetingModal';
@@ -23,13 +24,25 @@ const Home = () => {
   const [upcomingMeetings, setUpcomingMeetings] = useState([]);
   const [recentMeetings, setRecentMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Simulate fetching data with loading state
+    // Simulate fetching data with loading state and progress
     setIsLoading(true);
+    setLoadingProgress(0);
+    
+    // Simulate progress updates
+    const progressInterval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 200);
     
     const fetchData = setTimeout(() => {
+      setLoadingProgress(100);
+      
       setUpcomingMeetings([
         {
           id: 1,
@@ -66,55 +79,109 @@ const Home = () => {
         }
       ]);
       
-      setIsLoading(false);
-    }, 1500); // Simulate network delay
+      setTimeout(() => setIsLoading(false), 300);
+    }, 1800);
 
-    return () => clearTimeout(fetchData);
+    return () => {
+      clearTimeout(fetchData);
+      clearInterval(progressInterval);
+    };
   }, []);
 
-  // Skeleton loader component
-  const SkeletonCard = ({ className = "" }) => (
-    <div className={`animate-pulse ${className}`}>
-      <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-3"></div>
-      <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2 mb-2"></div>
-      <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/3"></div>
+  // Premium Shimmer Effect Component
+  const ShimmerEffect = ({ className = "" }) => (
+    <div className={`relative overflow-hidden ${className}`}>
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
     </div>
   );
 
+  // Premium Skeleton Stat Card
   const SkeletonStat = () => (
-    <div className="bg-white dark:bg-purple-900/20 backdrop-blur-xl border border-gray-200 dark:border-purple-700/50 rounded-xl shadow-md p-6 animate-pulse">
-      <div className="flex items-center justify-between">
+    <div className="relative bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg p-6 overflow-hidden">
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent"></div>
+      <div className="flex items-center justify-between relative z-10">
         <div className="flex-1">
-          <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-20 mb-2"></div>
-          <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-12 mt-2"></div>
+          <div className="h-3 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-full w-24 mb-3"></div>
+          <div className="h-8 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-lg w-16 mt-2"></div>
         </div>
-        <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
+        <div className="w-16 h-16 bg-gradient-to-br from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-xl animate-pulse"></div>
       </div>
-      <div className="mt-4 flex items-center">
-        <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-16"></div>
+      <div className="mt-4 flex items-center relative z-10">
+        <div className="h-3 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-full w-20"></div>
       </div>
     </div>
   );
 
+  // Premium Skeleton Meeting Card
   const SkeletonMeeting = () => (
-    <div className="border border-gray-200 dark:border-gray-600/50 rounded-lg p-4 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-32 mb-2"></div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-40 mb-2"></div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-24 mt-2"></div>
+    <div className="relative border border-gray-200/50 dark:border-gray-600/30 rounded-xl p-5 overflow-hidden bg-gradient-to-br from-gray-50 to-white dark:from-gray-800/30 dark:to-gray-900/30">
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent"></div>
+      <div className="flex items-center justify-between relative z-10">
+        <div className="flex-1 space-y-3">
+          <div className="h-5 bg-gradient-to-r from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700 rounded-lg w-36"></div>
+          <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full w-44"></div>
+          <div className="flex items-center space-x-2 mt-2">
+            <div className="w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-100 dark:from-gray-700 dark:to-gray-800 rounded-full w-28"></div>
+          </div>
         </div>
-        <div className="h-9 w-16 bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
+        <div className="h-10 w-20 bg-gradient-to-r from-blue-300 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 rounded-xl animate-pulse"></div>
       </div>
     </div>
   );
 
-  // Loading spinner component
-  const LoadingSpinner = () => (
-    <div className="flex items-center justify-center space-x-2">
-      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-      <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+  // Premium Loading Overlay
+  const LoadingOverlay = () => (
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900/95 via-blue-900/90 to-purple-900/95 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="text-center">
+        {/* Animated Logo/Icon */}
+        <div className="relative mb-8">
+          <div className="w-24 h-24 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-blue-500/30 animate-pulse">
+            <Video className="w-12 h-12 text-white" />
+          </div>
+          {/* Orbiting dots */}
+          <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s' }}>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 w-3 h-3 bg-blue-400 rounded-full shadow-lg shadow-blue-400/50"></div>
+          </div>
+          <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s', animationDelay: '-1s' }}>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 w-3 h-3 bg-purple-400 rounded-full shadow-lg shadow-purple-400/50"></div>
+          </div>
+          <div className="absolute inset-0 animate-spin" style={{ animationDuration: '3s', animationDelay: '-2s' }}>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 w-3 h-3 bg-pink-400 rounded-full shadow-lg shadow-pink-400/50"></div>
+          </div>
+        </div>
+        
+        {/* Brand Text */}
+        <h2 className="text-3xl font-bold text-white mb-2 tracking-wide">ProComm</h2>
+        <p className="text-blue-200 mb-8 text-sm">Loading your dashboard...</p>
+        
+        {/* Progress Bar */}
+        <div className="w-64 mx-auto">
+          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden backdrop-blur-sm">
+            <div 
+              className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full transition-all duration-300 ease-out relative"
+              style={{ width: `${loadingProgress}%` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_1s_infinite]"></div>
+            </div>
+          </div>
+          <p className="text-white/50 text-xs mt-3">{Math.round(loadingProgress)}%</p>
+        </div>
+        
+        {/* Loading Status */}
+        <div className="mt-6 flex items-center justify-center space-x-2">
+          <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+          <span className="text-blue-300 text-sm">Fetching your meetings...</span>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Inline Skeleton Section Loading
+  const SectionLoader = ({ title, color = "blue" }) => (
+    <div className="flex items-center space-x-3">
+      <div className={`w-5 h-5 border-2 border-${color}-400 border-t-transparent rounded-full animate-spin`}></div>
+      <span className={`text-${color}-400 text-sm animate-pulse`}>Loading {title}...</span>
     </div>
   );
 
@@ -158,29 +225,33 @@ const Home = () => {
   ];
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 py-8">
+    <>
+      {/* Premium Loading Overlay */}
+      {isLoading && <LoadingOverlay />}
+      
+      <div className={`min-h-screen transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 py-8">
         
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">Welcome back, Varun!</h1>
-                <p className="text-blue-100 text-lg">Ready to connect and collaborate?</p>
-              </div>
-              <div className="hidden md:flex items-center space-x-4">
-                <div className="bg-white/10 rounded-lg p-4">
-                  <Monitor className="w-8 h-8" />
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white animate-gradient" style={{ backgroundSize: '200% 200%' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">Welcome back, Varun!</h1>
+                  <p className="text-blue-100 text-lg">Ready to connect and collaborate?</p>
+                </div>
+                <div className="hidden md:flex items-center space-x-4">
+                  <div className="bg-white/10 rounded-lg p-4 animate-float">
+                    <Monitor className="w-8 h-8" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white dark:bg-blue-900/20 backdrop-blur-xl border border-gray-200 dark:border-blue-700/50 rounded-xl shadow-md hover:shadow-lg p-6 transition-all duration-300 ease-in-out hover:bg-gray-50 hover:border-gray-300 dark:hover:bg-blue-900/30">
+          {/* Quick Actions */}
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <div className="bg-white dark:bg-blue-900/20 backdrop-blur-xl border border-gray-200 dark:border-blue-700/50 rounded-xl shadow-md hover:shadow-lg p-6 transition-all duration-300 ease-in-out hover:bg-gray-50 hover:border-gray-300 dark:hover:bg-blue-900/30">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-blue-100 mb-4">Quick Actions</h2>
             <div className="space-y-3">
               <button
@@ -366,21 +437,22 @@ const Home = () => {
             </div>
           </div>
         </div>
+        </div>
+
+        {/* Chatbot Widget */}
+        <Chatbot />
+
+        {/* Modals */}
+        <JoinMeetingModal 
+          isOpen={showJoinModal} 
+          onClose={() => setShowJoinModal(false)} 
+        />
+        <CreateMeetingModal 
+          isOpen={showCreateModal} 
+          onClose={() => setShowCreateModal(false)} 
+        />
       </div>
-
-      {/* Chatbot Widget */}
-      <Chatbot />
-
-      {/* Modals */}
-      <JoinMeetingModal 
-        isOpen={showJoinModal} 
-        onClose={() => setShowJoinModal(false)} 
-      />
-      <CreateMeetingModal 
-        isOpen={showCreateModal} 
-        onClose={() => setShowCreateModal(false)} 
-      />
-    </div>
+    </>
   );
 };
 
