@@ -22,46 +22,149 @@ const Home = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [upcomingMeetings, setUpcomingMeetings] = useState([]);
   const [recentMeetings, setRecentMeetings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load mock data
-    setUpcomingMeetings([
-      {
-        id: 1,
-        title: 'Team Standup',
-        time: '10:00 AM - 10:30 AM',
-        date: 'Today',
-        participants: 5,
-        type: 'recurring'
-      },
-      {
-        id: 2,
-        title: 'Client Review',
-        time: '2:00 PM - 3:00 PM',
-        date: 'Tomorrow',
-        participants: 3,
-        type: 'meeting'
-      }
-    ]);
+    // Simulate fetching data
+    setIsLoading(true);
+    
+    const timer = setTimeout(() => {
+      setUpcomingMeetings([
+        {
+          id: 1,
+          title: 'Team Standup',
+          time: '10:00 AM - 10:30 AM',
+          date: 'Today',
+          participants: 5,
+          type: 'recurring'
+        },
+        {
+          id: 2,
+          title: 'Client Review',
+          time: '2:00 PM - 3:00 PM',
+          date: 'Tomorrow',
+          participants: 3,
+          type: 'meeting'
+        }
+      ]);
 
-    setRecentMeetings([
-      {
-        id: 1,
-        title: 'Project Kickoff',
-        date: 'Yesterday, 11:00 AM',
-        duration: '45 min',
-        participants: 8
-      },
-      {
-        id: 2,
-        title: 'Design Review',
-        date: 'Monday, 3:00 PM',
-        duration: '30 min',
-        participants: 4
-      }
-    ]);
+      setRecentMeetings([
+        {
+          id: 1,
+          title: 'Project Kickoff',
+          date: 'Yesterday, 11:00 AM',
+          duration: '45 min',
+          participants: 8
+        },
+        {
+          id: 2,
+          title: 'Design Review',
+          date: 'Monday, 3:00 PM',
+          duration: '30 min',
+          participants: 4
+        }
+      ]);
+      
+      setIsLoading(false);
+    }, 1200);
+
+    return () => clearTimeout(timer);
   }, []);
+
+  // Instagram-style Skeleton Components
+  const Shimmer = ({ className }) => (
+    <div className={`relative overflow-hidden bg-gray-200 dark:bg-gray-700 ${className}`}>
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent" />
+    </div>
+  );
+
+  const SkeletonWelcome = () => (
+    <div className="bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 rounded-lg p-8 relative overflow-hidden">
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 dark:via-white/10 to-transparent" />
+      <div className="flex items-center justify-between">
+        <div className="space-y-3">
+          <Shimmer className="h-8 w-64 rounded-lg" />
+          <Shimmer className="h-5 w-48 rounded-lg" />
+        </div>
+        <Shimmer className="hidden md:block w-16 h-16 rounded-lg" />
+      </div>
+    </div>
+  );
+
+  const SkeletonQuickActions = () => (
+    <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <Shimmer className="h-6 w-32 rounded-lg mb-4" />
+      <div className="space-y-3">
+        <Shimmer className="h-12 w-full rounded-lg" />
+        <Shimmer className="h-12 w-full rounded-lg" />
+        <Shimmer className="h-12 w-full rounded-lg" />
+      </div>
+    </div>
+  );
+
+  const SkeletonDeviceStatus = () => (
+    <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <Shimmer className="h-6 w-32 rounded-lg mb-4" />
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Shimmer className="w-5 h-5 rounded-full" />
+              <Shimmer className="h-4 w-24 rounded" />
+            </div>
+            <Shimmer className="h-4 w-16 rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const SkeletonStat = () => (
+    <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-6 relative overflow-hidden">
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent" />
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <Shimmer className="h-3 w-20 rounded" />
+          <Shimmer className="h-7 w-12 rounded" />
+        </div>
+        <Shimmer className="w-14 h-14 rounded-lg" />
+      </div>
+      <div className="mt-4">
+        <Shimmer className="h-3 w-28 rounded" />
+      </div>
+    </div>
+  );
+
+  const SkeletonMeeting = () => (
+    <div className="border border-gray-200 dark:border-gray-600/50 rounded-lg p-4 relative overflow-hidden">
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/60 dark:via-white/10 to-transparent" />
+      <div className="flex items-center justify-between">
+        <div className="flex-1 space-y-2">
+          <Shimmer className="h-5 w-32 rounded" />
+          <Shimmer className="h-3 w-40 rounded" />
+          <div className="flex items-center space-x-2 mt-2">
+            <Shimmer className="w-4 h-4 rounded-full" />
+            <Shimmer className="h-3 w-24 rounded" />
+          </div>
+        </div>
+        <Shimmer className="h-9 w-16 rounded-lg" />
+      </div>
+    </div>
+  );
+
+  const SkeletonMeetingsSection = ({ title }) => (
+    <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <Shimmer className="h-6 w-40 rounded-lg" />
+        <Shimmer className="w-5 h-5 rounded" />
+      </div>
+      <div className="space-y-4">
+        <SkeletonMeeting />
+        <SkeletonMeeting />
+      </div>
+    </div>
+  );
 
   const handleQuickJoin = () => {
     setShowJoinModal(true);
@@ -101,6 +204,40 @@ const Home = () => {
       changeColor: 'text-green-600'
     }
   ];
+
+  // Show Instagram-style skeleton loading
+  if (isLoading) {
+    return (
+      <div className="min-h-screen">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-12 xl:px-16 py-8">
+          {/* Skeleton Welcome */}
+          <div className="mb-8">
+            <SkeletonWelcome />
+          </div>
+
+          {/* Skeleton Quick Actions & Device Status */}
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <SkeletonQuickActions />
+            <SkeletonDeviceStatus />
+          </div>
+
+          {/* Skeleton Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <SkeletonStat />
+            <SkeletonStat />
+            <SkeletonStat />
+            <SkeletonStat />
+          </div>
+
+          {/* Skeleton Meetings */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            <SkeletonMeetingsSection title="Upcoming" />
+            <SkeletonMeetingsSection title="Recent" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
