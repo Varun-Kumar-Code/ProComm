@@ -138,7 +138,7 @@ const VideoRoom = () => {
     
     if (hasPinned) {
       // Pinned layout: Large pinned video (90%) + small thumbnails (10%)
-      containerClass = 'w-full h-full flex flex-col gap-2 p-3';
+      containerClass = 'w-full h-full flex flex-col gap-2 p-3 transition-all duration-300 ease-in-out';
       pinnedClass = 'w-full flex-1 min-h-0'; // Takes ~90% of space
       gridClass = 'flex flex-wrap gap-2 h-20 overflow-x-auto flex-shrink-0'; // Smaller thumbnails
       gridVideoClass = 'h-full aspect-video flex-shrink-0';
@@ -148,7 +148,7 @@ const VideoRoom = () => {
     if (totalParticipants === 1) {
       // Solo: Large centered video
       gridClass = '';
-      containerClass = 'flex items-center justify-center w-full h-full p-6';
+      containerClass = 'flex items-center justify-center w-full h-full p-6 transition-all duration-300 ease-in-out';
       return { 
         gridClass, 
         containerClass, 
@@ -157,24 +157,24 @@ const VideoRoom = () => {
       };
     } else if (totalParticipants === 2) {
       // 2 people: Side by side, centered
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4';
-      containerClass = 'w-full h-full p-6 flex items-center justify-center';
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-6 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 3) {
       // 3 people: Responsive grid, centered
-      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4';
-      containerClass = 'w-full h-full p-6 flex items-center justify-center';
+      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-6 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 4) {
       // 4 people: Perfect 2x2, centered
-      gridClass = 'grid grid-cols-2 gap-4';
-      containerClass = 'w-full h-full p-6 flex items-center justify-center';
+      gridClass = 'grid grid-cols-2 gap-4 transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-6 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants <= 6) {
       // 5-6 people: 2x3 or 3x2 grid, centered
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4';
-      containerClass = 'w-full h-full p-6 flex items-center justify-center';
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-6 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else {
       // 7+ people: Scrollable grid
-      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full auto-rows-max content-start';
-      containerClass = 'w-full h-full p-4 overflow-y-auto';
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full auto-rows-max content-start transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-4 overflow-y-auto transition-all duration-300 ease-in-out';
     }
     
     return { gridClass, containerClass, singleVideoClass: null, hasPinned };
@@ -1997,7 +1997,7 @@ const VideoRoom = () => {
           ) : (
             <div className={gridClass}>
               {/* Local Video */}
-              <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-200 aspect-video ${singleVideoClass || ''}`}>
+              <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out aspect-video ${singleVideoClass || ''}`}>
                 <video
                   ref={localVideoCallbackRef}
                   autoPlay
@@ -2041,17 +2041,16 @@ const VideoRoom = () => {
                 <span className="text-sm font-medium text-white truncate max-w-[120px]">{userName}</span>
               </div>
               
-              {/* Pin Button - Shows on Hover */}
-              <button
-                onClick={() => setPinnedParticipant('local')}
-                className="absolute top-2 md:top-3 right-14 md:right-20 bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1 md:p-1.5 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
-                title="Pin your video"
-              >
-                <Pin className="w-3 h-3 md:w-3.5 md:h-3.5 text-white" />
-              </button>
-              
               {/* Status Indicators - Top Right */}
               <div className="absolute top-3 right-3 flex gap-1">
+                {/* Pin Button */}
+                <button
+                  onClick={() => setPinnedParticipant('local')}
+                  className="bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                  title="Pin your video"
+                >
+                  <Pin className="w-4 h-4 text-white" />
+                </button>
                 {!isMicOn && (
                   <div className="bg-red-600 p-1.5 rounded-full">
                     <MicOff className="w-4 h-4 text-white" />
@@ -2722,7 +2721,7 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
   if (isThumbnail) {
     // Thumbnail mode in pinned layout
     return (
-      <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-200 aspect-video">
+      <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out aspect-video">
         <video
           ref={videoRef}
           autoPlay
@@ -2756,7 +2755,7 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
   }
 
   return (
-    <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-200 aspect-video">
+    <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out aspect-video">
       <video
         ref={videoRef}
         autoPlay
@@ -2786,10 +2785,14 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
         <span className="text-sm font-medium text-white truncate max-w-[120px]">{userName}</span>
       </div>
       
-      {/* Mic Indicator */}
-      <div className="absolute top-3 right-3">
-        {/* Assuming mic status would come from stream - placeholder for now */}
-      </div>
+      {/* Pin Button - Top Right */}
+      <button
+        onClick={onPin}
+        className="absolute top-3 right-3 bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+        title="Pin participant"
+      >
+        <Pin className="w-4 h-4 text-white" />
+      </button>
     </div>
   );
 };
