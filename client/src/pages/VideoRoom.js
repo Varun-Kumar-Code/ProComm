@@ -157,19 +157,19 @@ const VideoRoom = () => {
       };
     } else if (totalParticipants === 2) {
       // 2 people: Side by side, centered
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[80vh] w-full transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 w-full h-auto auto-rows-fr transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 3) {
       // 3 people: Responsive grid, centered
-      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[75vh] w-full transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full h-auto auto-rows-fr transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 4) {
       // 4 people: Perfect 2x2, centered
-      gridClass = 'grid grid-cols-2 gap-4 max-h-[85vh] w-full transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-2 gap-4 w-full h-auto auto-rows-fr transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants <= 6) {
       // 5-6 people: 2x3 or 3x2 grid, centered
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[80vh] w-full transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 w-full h-auto auto-rows-fr transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else {
       // 7+ people: Scrollable grid
@@ -1979,7 +1979,7 @@ const VideoRoom = () => {
           ) : (
             <div className={gridClass}>
               {/* Local Video */}
-              <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out aspect-video ${singleVideoClass || ''}`}>
+              <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out aspect-video min-h-[350px] ${singleVideoClass || ''}`}>
                 <video
                   ref={localVideoCallbackRef}
                   autoPlay
@@ -2086,7 +2086,7 @@ const VideoRoom = () => {
 
         {/* Enhanced Meeting Sidebar */}
         {showChat && (
-          <div className="fixed lg:relative bottom-0 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col h-[calc(100vh-140px)] lg:h-full z-40">
+          <div className="fixed lg:relative bottom-0 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col h-[calc(100vh-80px)] lg:h-full z-40">
             {/* Header with Close Button for Mobile */}
             <div className="lg:hidden flex items-center justify-between p-2.5 border-b border-white/10 flex-shrink-0 bg-gray-900">
               <h3 className="font-semibold text-white text-sm">Meeting Chat</h3>
