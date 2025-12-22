@@ -1781,6 +1781,7 @@ const VideoRoom = () => {
                     muted
                     playsInline
                     className="w-full h-full object-contain bg-black"
+                    style={{ transform: 'scaleX(-1)' }}
                   />
                   {!localStream && (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
@@ -1873,6 +1874,7 @@ const VideoRoom = () => {
                       muted
                       playsInline
                       className="w-full h-full object-cover bg-black"
+                      style={{ transform: 'scaleX(-1)' }}
                     />
                     {!localStream && (
                       <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
@@ -1923,6 +1925,7 @@ const VideoRoom = () => {
                   muted
                   playsInline
                   className="w-full h-full object-cover bg-black"
+                  style={{ transform: 'scaleX(-1)' }}
                 />
               {!localStream && (
                 <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
@@ -2593,6 +2596,7 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
           autoPlay
           playsInline
           className="w-full h-full object-cover bg-black"
+          style={{ transform: 'scaleX(-1)' }}
         />
         <div className="absolute bottom-1.5 left-1.5 bg-black/80 backdrop-blur-xl px-1.5 py-0.5 rounded text-xs font-semibold text-white truncate max-w-[calc(100%-3rem)]">
           {userName}
@@ -2620,6 +2624,7 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
         autoPlay
         playsInline
         className="w-full h-full object-cover bg-black"
+        style={{ transform: 'scaleX(-1)' }}
       />
       
       {/* Premium Gradient Overlay */}
