@@ -2132,7 +2132,7 @@ const VideoRoom = () => {
               
               {/* Chat Tab */}
               {activeTab === 'chat' && (
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full min-h-0">
                   {/* Header - Desktop only */}
                   <div className="hidden lg:block p-4 border-b border-white/10 flex-shrink-0">
                     <h3 className="font-semibold text-white text-base">Meeting Chat</h3>
@@ -2140,7 +2140,7 @@ const VideoRoom = () => {
                   </div>
                   
                   {/* Messages area - Scrollable */}
-                  <div className="flex-1 overflow-y-auto p-2 lg:p-4 space-y-2 lg:space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <div className="flex-1 min-h-0 overflow-y-auto p-2 lg:p-4 space-y-2 lg:space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                     {messages.length === 0 ? (
                       <div className="text-center py-4 text-gray-400">
                         <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -2222,7 +2222,7 @@ const VideoRoom = () => {
 
               {/* Polls Tab */}
               {activeTab === 'polls' && (
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full min-h-0">
                   <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
                     <h3 className="font-semibold text-white">Live Polls</h3>
                     <button
@@ -2234,7 +2234,7 @@ const VideoRoom = () => {
                     </button>
                   </div>
                   
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                  <div className="flex-1 min-h-0 p-4 overflow-y-auto space-y-4">
                     {showCreatePoll && (
                       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
                         <h4 className="text-sm font-medium text-white mb-3">Create New Poll</h4>
@@ -2362,7 +2362,7 @@ const VideoRoom = () => {
 
               {/* Notepad Tab */}
               {activeTab === 'notepad' && (
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full min-h-0">
                   <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
                     <h3 className="font-semibold text-white">Meeting Notes</h3>
                     <div className="flex space-x-2">
@@ -2388,7 +2388,7 @@ const VideoRoom = () => {
                     </div>
                   </div>
                   
-                  <div className="flex-1 p-4 overflow-hidden">
+                  <div className="flex-1 min-h-0 p-4 overflow-hidden">
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
