@@ -884,35 +884,47 @@ const VideoRoom = () => {
                     return;
                   }
                   
-                  console.log('📞 Calling existing peer via API:', peerData.userName);
+                  console.log('📞 Calling existing peer via API:', peerData.userName, 'peerId:', peerData.userId);
                   setTimeout(() => {
-                    const call = peer.call(peerData.userId, stream, {
-                      metadata: { userName, userEmail },
-                      sdpTransform: (sdp) => {
-                        // Increase bandwidth for 1080p60
-                        return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
-                                  .replace(/b=TIAS:(\d+)/g, 'b=TIAS:5000000');
+                    try {
+                      const call = peer.call(peerData.userId, stream, {
+                        metadata: { userName, userEmail },
+                        sdpTransform: (sdp) => {
+                          // Increase bandwidth for 1080p60
+                          return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
+                                    .replace(/b=TIAS:(\d+)/g, 'b=TIAS:5000000');
+                        }
+                      });
+                      
+                      if (call) {
+                        activeCallsRef.current.set(peerData.userId, call);
+                        console.log('✅ Call initiated to:', peerData.userName);
+                        
+                        call.on('stream', (remoteStream) => {
+                          console.log('📹 Received stream from:', peerData.userName);
+                          console.log('📹 Stream tracks:', {
+                            video: remoteStream.getVideoTracks().length,
+                            audio: remoteStream.getAudioTracks().length
+                          });
+                          addPeer(peerData.userId, remoteStream, peerData.userName);
+                        });
+                        
+                        call.on('close', () => {
+                          console.log('📞 Call closed:', peerData.userName);
+                          activeCallsRef.current.delete(peerData.userId);
+                          removePeer(peerData.userId);
+                        });
+                        
+                        call.on('error', (err) => {
+                          console.error('❌ Call error with', peerData.userName, ':', err);
+                          activeCallsRef.current.delete(peerData.userId);
+                          // Don't remove peer immediately, they might reconnect
+                        });
+                      } else {
+                        console.error('❌ Failed to create call to:', peerData.userName);
                       }
-                    });
-                    
-                    if (call) {
-                      activeCallsRef.current.set(peerData.userId, call);
-                      
-                      call.on('stream', (remoteStream) => {
-                        console.log('📹 Received stream from:', peerData.userName);
-                        addPeer(peerData.userId, remoteStream, peerData.userName);
-                      });
-                      
-                      call.on('close', () => {
-                        console.log('📞 Call closed:', peerData.userName);
-                        activeCallsRef.current.delete(peerData.userId);
-                        removePeer(peerData.userId);
-                      });
-                      
-                      call.on('error', (err) => {
-                        console.error('❌ Call error:', err);
-                        activeCallsRef.current.delete(peerData.userId);
-                      });
+                    } catch (callError) {
+                      console.error('❌ Exception calling peer:', peerData.userName, callError);
                     }
                   }, 1000);
                 });
@@ -1020,11 +1032,29 @@ const VideoRoom = () => {
       // Handle incoming calls
       peer.on('call', (call) => {
         console.log('📞 Incoming call from:', call.peer, 'metadata:', call.metadata);
+        
+        if (!stream) {
+          console.error('❌ Cannot answer call - no local stream available');
+          return;
+        }
+        
         call.answer(stream);
         activeCallsRef.current.set(call.peer, call);
+        console.log('✅ Answered call from:', call.metadata?.userName || call.peer);
         
         call.on('stream', (remoteStream) => {
           console.log('📹 Received stream from incoming call:', call.peer);
+          console.log('📹 Stream tracks:', {
+            video: remoteStream.getVideoTracks().length,
+            audio: remoteStream.getAudioTracks().length
+          });
+          
+          // Log video track details
+          const videoTrack = remoteStream.getVideoTracks()[0];
+          if (videoTrack) {
+            console.log('📹 Video track enabled:', videoTrack.enabled, 'readyState:', videoTrack.readyState);
+          }
+          
           addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown');
         });
         
@@ -1183,9 +1213,18 @@ const VideoRoom = () => {
   };
 
   const addPeer = (userId, stream, userName) => {
+    console.log('➕ Adding peer:', userName, 'userId:', userId);
+    console.log('➕ Stream details:', {
+      active: stream.active,
+      id: stream.id,
+      videoTracks: stream.getVideoTracks().length,
+      audioTracks: stream.getAudioTracks().length
+    });
+    
     setPeers(prevPeers => {
       const newPeers = new Map(prevPeers);
       newPeers.set(userId, { stream, userName });
+      console.log('➕ Peers count:', newPeers.size);
       return newPeers;
     });
     
@@ -2654,25 +2693,28 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
       
-      // Check if video track is enabled
+      // Check if video track exists and is enabled
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
-        setHasVideo(videoTrack.enabled);
+        setHasVideo(videoTrack.enabled && videoTrack.readyState === 'live');
         
         // Listen for track enabled/disabled events
         const handleTrackChange = () => {
-          setHasVideo(videoTrack.enabled);
+          setHasVideo(videoTrack.enabled && videoTrack.readyState === 'live');
         };
         
-        videoTrack.addEventListener('ended', handleTrackChange);
+        videoTrack.addEventListener('ended', () => setHasVideo(false));
         videoTrack.addEventListener('mute', () => setHasVideo(false));
-        videoTrack.addEventListener('unmute', () => setHasVideo(true));
+        videoTrack.addEventListener('unmute', handleTrackChange);
         
         return () => {
-          videoTrack.removeEventListener('ended', handleTrackChange);
+          videoTrack.removeEventListener('ended', () => setHasVideo(false));
           videoTrack.removeEventListener('mute', () => setHasVideo(false));
-          videoTrack.removeEventListener('unmute', () => setHasVideo(true));
+          videoTrack.removeEventListener('unmute', handleTrackChange);
         };
+      } else {
+        // No video track means camera is off
+        setHasVideo(false);
       }
     }
   }, [stream]);
