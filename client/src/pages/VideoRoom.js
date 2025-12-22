@@ -157,19 +157,19 @@ const VideoRoom = () => {
       };
     } else if (totalParticipants === 2) {
       // 2 people: Side by side, centered
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 w-full h-auto auto-rows-fr transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 w-full h-full grid-rows-1 transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 3) {
       // 3 people: Responsive grid, centered
-      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full h-auto auto-rows-fr transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full h-full grid-rows-1 transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 4) {
       // 4 people: Perfect 2x2, centered
-      gridClass = 'grid grid-cols-2 gap-4 w-full h-auto auto-rows-fr transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-2 gap-4 w-full h-full grid-rows-2 transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants <= 6) {
       // 5-6 people: 2x3 or 3x2 grid, centered
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 w-full h-auto auto-rows-fr transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 w-full h-full grid-rows-2 transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else {
       // 7+ people: Scrollable grid
@@ -1979,7 +1979,7 @@ const VideoRoom = () => {
           ) : (
             <div className={gridClass}>
               {/* Local Video */}
-              <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out aspect-video min-h-[350px] ${singleVideoClass || ''}`}>
+              <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out h-full w-full ${singleVideoClass || ''}`}>
                 <video
                   ref={localVideoCallbackRef}
                   autoPlay
