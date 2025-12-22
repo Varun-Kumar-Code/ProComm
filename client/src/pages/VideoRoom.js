@@ -2086,7 +2086,7 @@ const VideoRoom = () => {
 
         {/* Enhanced Meeting Sidebar */}
         {showChat && (
-          <div className="fixed lg:relative top-[56px] lg:top-0 bottom-[96px] lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col overflow-hidden lg:h-[calc(100vh-60px)] z-40">
+          <div className="fixed lg:relative top-[56px] lg:top-0 bottom-[96px] lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col overflow-hidden lg:h-[calc(100vh-140px)] z-40">
             {/* Header with Close Button for Mobile */}
             <div className="lg:hidden flex items-center justify-between p-2.5 border-b border-white/10 flex-shrink-0 bg-gray-900">
               <h3 className="font-semibold text-white text-sm">Meeting Chat</h3>
