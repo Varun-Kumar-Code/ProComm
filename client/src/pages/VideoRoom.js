@@ -139,7 +139,7 @@ const VideoRoom = () => {
     if (hasPinned) {
       // Pinned layout: Large pinned video (90%) + small thumbnails (10%)
       containerClass = 'w-full h-full flex flex-col gap-2 p-3 transition-all duration-300 ease-in-out';
-      pinnedClass = 'w-full flex-1 min-h-0'; // Takes ~90% of space
+      pinnedClass = 'w-full flex-1 min-h-0 flex items-center justify-center'; // Center the pinned video
       gridClass = 'flex flex-wrap gap-2 h-20 overflow-x-auto flex-shrink-0'; // Smaller thumbnails
       gridVideoClass = 'h-full aspect-video flex-shrink-0';
       return { gridClass, containerClass, singleVideoClass: null, pinnedClass, gridVideoClass, hasPinned };
@@ -1841,13 +1841,13 @@ const VideoRoom = () => {
             <>
               {/* Pinned Video - Large (70% of screen) */}
               {pinnedParticipant === 'local' ? (
-                <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-blue-500/50 group transition-all duration-200 ${pinnedClass}`}>
+                <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-blue-500/50 group transition-all duration-200 w-full max-w-6xl aspect-video mx-auto">
                   <video
                     ref={localVideoCallbackRef}
                     autoPlay
                     muted
                     playsInline
-                    className={`w-full h-full object-contain bg-black transition-opacity duration-300 ${!isCameraOn || !localStream ? 'opacity-0' : 'opacity-100'}`}
+                    className={`w-full h-full object-cover bg-black transition-opacity duration-300 ${!isCameraOn || !localStream ? 'opacity-0' : 'opacity-100'}`}
                     style={{ transform: 'scaleX(-1)' }}
                   />
                   {(!isCameraOn || !localStream) && (
@@ -2737,14 +2737,14 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
   }
 
   if (isPinned) {
-    // Pinned mode - large video view
+    // Pinned mode - large video view with proper aspect ratio
     return (
-      <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-blue-500/50 group transition-all duration-300 ease-in-out ${pinnedClass}`}>
+      <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-blue-500/50 group transition-all duration-300 ease-in-out w-full max-w-6xl aspect-video mx-auto`}>
         <video
           ref={videoRef}
           autoPlay
           playsInline
-          className={`w-full h-full object-contain bg-black transition-opacity duration-300 ${!hasVideo ? 'opacity-0' : 'opacity-100'}`}
+          className={`w-full h-full object-cover bg-black transition-opacity duration-300 ${!hasVideo ? 'opacity-0' : 'opacity-100'}`}
           style={{ transform: 'scaleX(-1)' }}
         />
         
