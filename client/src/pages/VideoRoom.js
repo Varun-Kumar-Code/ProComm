@@ -2132,13 +2132,15 @@ const VideoRoom = () => {
               
               {/* Chat Tab */}
               {activeTab === 'chat' && (
-                <div className="flex flex-col h-full min-h-0">
+                <div className="flex flex-col h-full">
+                  {/* Header - Desktop only */}
                   <div className="hidden lg:block p-4 border-b border-white/10 flex-shrink-0">
                     <h3 className="font-semibold text-white text-base">Meeting Chat</h3>
                     <p className="text-sm text-gray-300 mt-1">{participants.length + 1} participants</p>
                   </div>
                   
-                  <div className="flex-1 overflow-y-scroll p-2 lg:p-4 space-y-2 lg:space-y-4 min-h-0" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  {/* Messages area - Scrollable */}
+                  <div className="flex-1 overflow-y-auto p-2 lg:p-4 space-y-2 lg:space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                     {messages.length === 0 ? (
                       <div className="text-center py-4 text-gray-400">
                         <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -2179,6 +2181,7 @@ const VideoRoom = () => {
                     <div ref={messagesEndRef} />
                   </div>
                   
+                  {/* Input area - Fixed at bottom */}
                   <div className="p-2 lg:p-4 border-t border-white/10 bg-gray-900 flex-shrink-0">
                     {/* Reply preview */}
                     {replyTo && (
