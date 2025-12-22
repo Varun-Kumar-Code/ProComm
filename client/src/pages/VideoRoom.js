@@ -157,24 +157,24 @@ const VideoRoom = () => {
       };
     } else if (totalParticipants === 2) {
       // 2 people: Side by side, centered
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 w-full h-full grid-rows-1 transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
+      gridClass = 'flex flex-wrap gap-3 justify-center items-center w-full transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-2 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 3) {
       // 3 people: Responsive grid, centered
-      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full h-full grid-rows-1 transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
+      gridClass = 'flex flex-wrap gap-3 justify-center items-center w-full transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-2 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 4) {
       // 4 people: Perfect 2x2, centered
-      gridClass = 'grid grid-cols-2 gap-4 w-full h-full grid-rows-2 transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
+      gridClass = 'flex flex-wrap gap-3 justify-center items-center w-full max-w-full transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-2 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants <= 6) {
       // 5-6 people: 2x3 or 3x2 grid, centered
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 w-full h-full grid-rows-2 transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
+      gridClass = 'flex flex-wrap gap-3 justify-center items-center w-full transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-2 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else {
       // 7+ people: Scrollable grid
-      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 w-full auto-rows-max content-start transition-all duration-300 ease-in-out';
-      containerClass = 'w-full h-full p-2 overflow-y-auto transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 w-full auto-rows-max content-start transition-all duration-300 ease-in-out';
+      containerClass = 'w-full h-full p-1 overflow-y-auto transition-all duration-300 ease-in-out';
     }
     
     return { gridClass, containerClass, singleVideoClass: null, hasPinned };
@@ -1979,7 +1979,7 @@ const VideoRoom = () => {
           ) : (
             <div className={gridClass}>
               {/* Local Video */}
-              <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out h-full w-full ${singleVideoClass || ''}`}>
+              <div className={`relative bg-gray-900 rounded-2xl overflow-hidden shadow-xl border-2 border-gray-700/40 group hover:border-gray-600/60 transition-all duration-300 ease-in-out ${singleVideoClass || ''} ${totalParticipants === 2 ? 'w-[48%] aspect-[4/3]' : totalParticipants === 3 ? 'w-[30%] aspect-[4/3]' : totalParticipants === 4 ? 'w-[48%] aspect-[4/3]' : totalParticipants <= 6 ? 'w-[31%] aspect-[4/3]' : 'aspect-video'}`}>
                 <video
                   ref={localVideoCallbackRef}
                   autoPlay
