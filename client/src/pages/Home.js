@@ -88,13 +88,6 @@ const Home = () => {
     };
   }, []);
 
-  // Premium Shimmer Effect Component
-  const ShimmerEffect = ({ className = "" }) => (
-    <div className={`relative overflow-hidden ${className}`}>
-      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-    </div>
-  );
-
   // Premium Skeleton Stat Card
   const SkeletonStat = () => (
     <div className="relative bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800/50 dark:to-gray-900/50 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl shadow-lg p-6 overflow-hidden">
@@ -174,14 +167,6 @@ const Home = () => {
           <span className="text-blue-300 text-sm">Fetching your meetings...</span>
         </div>
       </div>
-    </div>
-  );
-
-  // Inline Skeleton Section Loading
-  const SectionLoader = ({ title, color = "blue" }) => (
-    <div className="flex items-center space-x-3">
-      <div className={`w-5 h-5 border-2 border-${color}-400 border-t-transparent rounded-full animate-spin`}></div>
-      <span className={`text-${color}-400 text-sm animate-pulse`}>Loading {title}...</span>
     </div>
   );
 
