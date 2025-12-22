@@ -157,19 +157,19 @@ const VideoRoom = () => {
       };
     } else if (totalParticipants === 2) {
       // 2 people: Side by side, centered
-      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[80vh] w-full transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 3) {
       // 3 people: Responsive grid, centered
-      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[75vh] w-full transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants === 4) {
       // 4 people: Perfect 2x2, centered
-      gridClass = 'grid grid-cols-2 gap-4 transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-2 gap-4 max-h-[85vh] w-full transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else if (totalParticipants <= 6) {
       // 5-6 people: 2x3 or 3x2 grid, centered
-      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 transition-all duration-300 ease-in-out';
+      gridClass = 'grid grid-cols-2 md:grid-cols-3 gap-4 max-h-[80vh] w-full transition-all duration-300 ease-in-out';
       containerClass = 'w-full h-full p-3 flex items-center justify-center transition-all duration-300 ease-in-out';
     } else {
       // 7+ people: Scrollable grid
