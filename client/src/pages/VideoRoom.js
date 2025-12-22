@@ -2222,8 +2222,8 @@ const VideoRoom = () => {
 
               {/* Polls Tab */}
               {activeTab === 'polls' && (
-                <>
-                  <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <div className="flex flex-col h-full">
+                  <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
                     <h3 className="font-semibold text-white">Live Polls</h3>
                     <button
                       onClick={() => setShowCreatePoll(!showCreatePoll)}
@@ -2234,7 +2234,7 @@ const VideoRoom = () => {
                     </button>
                   </div>
                   
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
+                  <div className="flex-1 p-4 overflow-y-auto space-y-4">
                     {showCreatePoll && (
                       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
                         <h4 className="text-sm font-medium text-white mb-3">Create New Poll</h4>
@@ -2357,13 +2357,13 @@ const VideoRoom = () => {
                       })
                     )}
                   </div>
-                </>
+                </div>
               )}
 
               {/* Notepad Tab */}
               {activeTab === 'notepad' && (
-                <>
-                  <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                <div className="flex flex-col h-full">
+                  <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
                     <h3 className="font-semibold text-white">Meeting Notes</h3>
                     <div className="flex space-x-2">
                       <button
@@ -2388,7 +2388,7 @@ const VideoRoom = () => {
                     </div>
                   </div>
                   
-                  <div className="flex-1 p-4">
+                  <div className="flex-1 p-4 overflow-hidden">
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
@@ -2396,7 +2396,7 @@ const VideoRoom = () => {
                       className="w-full h-full bg-white/10 backdrop-blur-sm text-white placeholder-gray-400 p-4 rounded-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 resize-none"
                     />
                   </div>
-                </>
+                </div>
               )}
             </div>
           </div>
