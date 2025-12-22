@@ -2687,16 +2687,15 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
           playsInline
           className={`w-full h-full object-cover bg-black transition-opacity duration-300 ${!hasVideo ? 'opacity-0' : 'opacity-100'}`}
           style={{ transform: 'scaleX(-1)' }}
-        />
-        {!hasVideo && (
-          <div className=\"absolute inset-0 flex items-center justify-center bg-[#1a1a1a]\">
+        />        {!hasVideo && (
+          <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a1a]">
             <div className={`w-12 h-12 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
-              <span className=\"text-lg font-semibold text-white\">{getUserInitials(userName)}</span>
+              <span className="text-lg font-semibold text-white">{getUserInitials(userName)}</span>
             </div>
           </div>
         )}
         <div className="absolute bottom-1.5 left-1.5 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md">
-          <span className=\"text-xs font-medium text-white truncate max-w-[calc(100%-3rem)]\">{userName}</span>
+          <span className="text-xs font-medium text-white truncate max-w-[calc(100%-3rem)]">{userName}</span>
         </div>
         <button
           onClick={onPin}
