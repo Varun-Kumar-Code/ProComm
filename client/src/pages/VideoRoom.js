@@ -1836,7 +1836,7 @@ const VideoRoom = () => {
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
         
         {/* Video Grid Container - Responsive & Centered */}
-        <div className={containerClass}>
+        <div className={`${containerClass} h-full flex items-center justify-center`}>
           {hasPinned ? (
             <>
               {/* Pinned Video - Large (70% of screen) */}
