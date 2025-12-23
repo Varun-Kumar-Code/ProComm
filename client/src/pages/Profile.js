@@ -95,15 +95,11 @@ const Profile = () => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith('image/')) return;
     
-    // Check file size (max 2MB for Cloudinary)
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Image must be less than 2MB');
-      return;
-    }
+    // Images larger than 2MB will be automatically compressed by Cloudinary service
 
     setIsUploadingPicture(true);
     try {
-      // Upload to Cloudinary and get URL
+      // Upload to Cloudinary (auto-compresses if > 2MB) and get URL
       const cloudinaryUrl = await uploadToCloudinary(file, currentUser.uid);
       
       // Save the URL to Firestore
