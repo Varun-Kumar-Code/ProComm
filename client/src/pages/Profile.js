@@ -1,17 +1,30 @@
-import React, { useState, useRef } from 'react';
-import { Camera, Moon, Sun, Bell, Mic, Video, Monitor, Edit3, X, Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, Moon, Sun, Bell, Mic, Video, Monitor, Edit3, X, Check, Loader2 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { 
+  getUserProfile, 
+  updateUserProfile, 
+  uploadProfilePicture,
+  getMeetingHistory 
+} from '../firebase/firestoreService';
 
 const Profile = () => {
   const { isDark, toggleTheme } = useTheme();
-  const [userName, setUserName] = useState('Varun Kumar');
-  const [userEmail] = useState('varunkumar1329@gmail.com');
-  const [userBio, setUserBio] = useState('Software developer passionate about creating innovative solutions and connecting people through technology.');
+  const { currentUser } = useAuth();
+  
+  // Profile state
+  const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userBio, setUserBio] = useState('');
   const [profilePicture, setProfilePicture] = useState('/ProComm Icon.png');
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingPicture, setIsUploadingPicture] = useState(false);
   const [editForm, setEditForm] = useState({
-    name: 'Varun Kumar',
-    bio: 'Software developer passionate about creating innovative solutions and connecting people through technology.'
+    name: '',
+    bio: ''
   });
   const [settings, setSettings] = useState({
     notifications: true,
@@ -20,45 +33,83 @@ const Profile = () => {
     screenShareNotifications: true,
     chatSounds: true
   });
-  const [callHistory] = useState([
-    {
-      id: 1,
-      title: 'Team Standup',
-      date: '2024-01-15',
-      duration: '25 min',
-      participants: 5,
-      status: 'completed'
-    },
-    {
-      id: 2,
-      title: 'Client Review',
-      date: '2024-01-14',
-      duration: '45 min',
-      participants: 3,
-      status: 'completed'
-    },
-    {
-      id: 3,
-      title: 'Project Discussion',
-      date: '2024-01-12',
-      duration: '30 min',
-      participants: 7,
-      status: 'completed'
-    }
-  ]);
+  const [callHistory, setCallHistory] = useState([]);
   
   const fileInputRef = useRef(null);
 
-  const handleProfilePictureChange = (e) => {
+  // Fetch user profile from Firestore on component mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!currentUser) return;
+      
+      setIsLoading(true);
+      try {
+        const profile = await getUserProfile(currentUser.uid);
+        if (profile) {
+          setUserName(profile.displayName || '');
+          setUserBio(profile.bio || '');
+          setProfilePicture(profile.profilePicUrl || '/ProComm Icon.png');
+          setEditForm({
+            name: profile.displayName || '',
+            bio: profile.bio || ''
+          });
+        }
+        setUserEmail(currentUser.email || '');
+        
+        // Fetch meeting history
+        const history = await getMeetingHistory(currentUser.uid);
+        const formattedHistory = history.map((meeting, index) => ({
+          id: meeting.id || index + 1,
+          title: meeting.title,
+          date: meeting.startedAt?.toDate?.()?.toLocaleDateString() || 'Unknown',
+          duration: calculateDuration(meeting.startedAt, meeting.endedAt),
+          participants: meeting.participantsCount || 1,
+          status: 'completed'
+        }));
+        setCallHistory(formattedHistory);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [currentUser]);
+
+  // Helper function to calculate duration
+  const calculateDuration = (start, end) => {
+    if (!start || !end) return 'N/A';
+    const startDate = start.toDate ? start.toDate() : new Date(start);
+    const endDate = end.toDate ? end.toDate() : new Date(end);
+    const diffMs = endDate - startDate;
+    const diffMins = Math.round(diffMs / 60000);
+    if (diffMins < 60) return `${diffMins} min`;
+    const hours = Math.floor(diffMins / 60);
+    const mins = diffMins % 60;
+    return `${hours}h ${mins}m`;
+  };
+
+  const handleProfilePictureChange = async (e) => {
     const file = e.target.files[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        const imgSrc = evt.target.result;
-        setProfilePicture(imgSrc);
-        localStorage.setItem('profilePicture', imgSrc);
-      };
-      reader.readAsDataURL(file);
+    if (!file || !file.type.startsWith('image/')) return;
+    
+    // Check file size (max 1MB)
+    if (file.size > 1 * 1024 * 1024) {
+      alert('Image must be less than 1MB');
+      return;
+    }
+
+    setIsUploadingPicture(true);
+    try {
+      // Upload to Firebase Storage and get URL
+      const downloadUrl = await uploadProfilePicture(currentUser.uid, file);
+      setProfilePicture(downloadUrl);
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setIsUploadingPicture(false);
     }
   };
 
@@ -87,14 +138,32 @@ const Profile = () => {
     setIsEditMode(!isEditMode);
   };
 
-  const handleSaveProfile = () => {
-    setUserName(editForm.name);
-    setUserBio(editForm.bio);
-    localStorage.setItem('userName', editForm.name);
-    localStorage.setItem('userBio', editForm.bio);
-    setIsEditMode(false);
-    // Show success message
-    console.log('Profile updated successfully');
+  const handleSaveProfile = async () => {
+    // Validate bio length
+    if (editForm.bio.length > 500) {
+      alert('Bio must be 500 characters or less');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Update profile in Firestore
+      await updateUserProfile(currentUser.uid, {
+        displayName: editForm.name.trim(),
+        bio: editForm.bio.trim()
+      });
+      
+      // Update local state
+      setUserName(editForm.name.trim());
+      setUserBio(editForm.bio.trim());
+      setIsEditMode(false);
+      console.log('Profile updated successfully');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -103,6 +172,18 @@ const Profile = () => {
       [field]: value
     }));
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -115,6 +196,11 @@ const Profile = () => {
             {/* Profile Picture Section */}
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
+                {isUploadingPicture && (
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center z-10">
+                    <Loader2 className="w-8 h-8 animate-spin text-white" />
+                  </div>
+                )}
                 <img
                   src={profilePicture}
                   alt="Profile"
@@ -122,7 +208,8 @@ const Profile = () => {
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition-colors duration-200"
+                  disabled={isUploadingPicture}
+                  className="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white p-2 rounded-full shadow-lg transition-colors duration-200"
                 >
                   <Camera className="w-4 h-4" />
                 </button>
@@ -137,9 +224,17 @@ const Profile = () => {
               {isEditMode && (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                  disabled={isUploadingPicture}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2"
                 >
-                  Update Picture
+                  {isUploadingPicture ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    'Update Picture'
+                  )}
                 </button>
               )}
             </div>
@@ -166,14 +261,20 @@ const Profile = () => {
                     <>
                       <button
                         onClick={handleSaveProfile}
-                        className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors duration-200"
+                        disabled={isSaving}
+                        className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white p-2 rounded-lg transition-colors duration-200"
                         title="Save Changes"
                       >
-                        <Check className="w-4 h-4" />
+                        {isSaving ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Check className="w-4 h-4" />
+                        )}
                       </button>
                       <button
                         onClick={handleEditToggle}
-                        className="bg-gray-500 hover:bg-gray-600 text-white p-2 rounded-lg transition-colors duration-200"
+                        disabled={isSaving}
+                        className="bg-gray-500 hover:bg-gray-600 disabled:opacity-50 text-white p-2 rounded-lg transition-colors duration-200"
                         title="Cancel"
                       >
                         <X className="w-4 h-4" />
@@ -192,17 +293,27 @@ const Profile = () => {
               </div>
               
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Bio</h2>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Bio</h2>
+                  {isEditMode && (
+                    <span className={`text-sm ${editForm.bio.length > 500 ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}`}>
+                      {editForm.bio.length}/500
+                    </span>
+                  )}
+                </div>
                 {isEditMode ? (
                   <textarea
                     value={editForm.bio}
                     onChange={(e) => handleInputChange('bio', e.target.value)}
-                    className="w-full min-h-[100px] p-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-300 resize-vertical"
+                    className={`w-full min-h-[100px] p-4 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-300 resize-vertical ${
+                      editForm.bio.length > 500 ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    }`}
                     placeholder="Tell us about yourself..."
+                    maxLength={500}
                   />
                 ) : (
                   <div className="w-full min-h-[100px] p-4 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-300">
-                    {userBio}
+                    {userBio || 'No bio added yet. Click Edit Profile to add one!'}
                   </div>
                 )}
               </div>

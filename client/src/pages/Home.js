@@ -16,6 +16,8 @@ import {
 import Chatbot from '../components/Chatbot';
 import JoinMeetingModal from '../components/JoinMeetingModal';
 import CreateMeetingModal from '../components/CreateMeetingModal';
+import { useAuth } from '../context/AuthContext';
+import { getUserProfile } from '../firebase/firestoreService';
 
 const Home = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -23,7 +25,25 @@ const Home = () => {
   const [upcomingMeetings, setUpcomingMeetings] = useState([]);
   const [recentMeetings, setRecentMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState(null);
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    // Fetch user profile from Firestore
+    const fetchUserProfile = async () => {
+      if (currentUser) {
+        try {
+          const profile = await getUserProfile(currentUser.uid);
+          setUserProfile(profile);
+        } catch (error) {
+          console.error('Error fetching user profile:', error);
+        }
+      }
+    };
+
+    fetchUserProfile();
+  }, [currentUser]);
 
   useEffect(() => {
     // Simulate fetching data
@@ -248,7 +268,9 @@ const Home = () => {
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold mb-2">Welcome back, Varun!</h1>
+                <h1 className="text-3xl font-bold mb-2">
+                  Welcome back, {userProfile?.displayName || currentUser?.displayName || 'User'}!
+                </h1>
                 <p className="text-blue-100 text-lg">Ready to connect and collaborate?</p>
               </div>
               <div className="hidden md:flex items-center space-x-4">

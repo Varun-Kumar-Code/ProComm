@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, User, Lock, Eye, EyeOff, Mail, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { createUserProfile, getUserProfile } from '../firebase/firestoreService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -30,7 +32,14 @@ const Login = () => {
     
     try {
       if (isSignUp) {
-        await signUpWithEmail(email, password);
+        // Validate display name
+        if (!displayName.trim()) {
+          throw new Error('Please enter your name');
+        }
+        // Create Firebase Auth account
+        const user = await signUpWithEmail(email, password);
+        // Create user profile in Firestore
+        await createUserProfile(user.uid, displayName.trim(), '');
       } else {
         await loginWithEmail(email, password);
       }
@@ -47,7 +56,12 @@ const Login = () => {
     clearError();
     
     try {
-      await loginWithGoogle();
+      const user = await loginWithGoogle();
+      // Check if user profile exists, if not create one
+      const profile = await getUserProfile(user.uid);
+      if (!profile) {
+        await createUserProfile(user.uid, user.displayName || 'User', '');
+      }
       navigate('/');
     } catch (err) {
       console.error('Google login error:', err);
@@ -61,7 +75,12 @@ const Login = () => {
     clearError();
     
     try {
-      await loginWithApple();
+      const user = await loginWithApple();
+      // Check if user profile exists, if not create one
+      const profile = await getUserProfile(user.uid);
+      if (!profile) {
+        await createUserProfile(user.uid, user.displayName || 'User', '');
+      }
       navigate('/');
     } catch (err) {
       console.error('Apple login error:', err);
@@ -91,6 +110,7 @@ const Login = () => {
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
+    setDisplayName('');
     clearError();
     setShowForgotPassword(false);
     setResetEmailSent(false);
@@ -182,12 +202,35 @@ const Login = () => {
           <>
             {/* Login/Sign Up Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name Field - Only show during Sign Up */}
+              {isSignUp && (
+                <div>
+                  <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      id="displayName"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-300"
+                      placeholder="Enter your full name"
+                      required
+                      minLength={2}
+                      maxLength={100}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email Address
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="email"
                     id="email"
