@@ -12,36 +12,51 @@ import VideoRoom from './pages/VideoRoom';
 import Navbar from './components/Navbar';
 import TestComponent from './components/TestComponent';
 
+// Context
+import { AuthProvider } from './context/AuthContext';
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#0f172a] dark:text-gray-100 transition-colors duration-300 ease-in-out">
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={
-            <>
-              <Navbar />
-              <Home />
-            </>
-          } />
-          <Route path="/profile" element={
-            <>
-              <Navbar />
-              <Profile />
-            </>
-          } />
-          <Route path="/support" element={
-            <>
-              <Navbar />
-              <Support />
-            </>
-          } />
-          <Route path="/room/:roomId" element={<VideoRoom />} />
-          <Route path="/test" element={<TestComponent />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </div>
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#0f172a] dark:text-gray-100 transition-colors duration-300 ease-in-out">
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Navbar />
+                <Home />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Navbar />
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/support" element={
+              <ProtectedRoute>
+                <Navbar />
+                <Support />
+              </ProtectedRoute>
+            } />
+            <Route path="/room/:roomId" element={
+              <ProtectedRoute>
+                <VideoRoom />
+              </ProtectedRoute>
+            } />
+            <Route path="/test" element={<TestComponent />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </div>
+    </AuthProvider>
   );
 }
 

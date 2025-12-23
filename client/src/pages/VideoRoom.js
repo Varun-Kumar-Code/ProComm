@@ -1979,7 +1979,7 @@ const VideoRoom = () => {
           ) : (
             <div className={gridClass}>
               {/* Local Video */}
-              <div className={`relative bg-gray-900 rounded-2xl overflow-hidden shadow-xl border-2 border-gray-700/40 group hover:border-gray-600/60 transition-all duration-300 ease-in-out ${singleVideoClass || ''} ${participants.length + 1 === 2 ? 'w-[48%] aspect-[4/3]' : participants.length + 1 === 3 ? 'w-[30%] aspect-[4/3]' : participants.length + 1 === 4 ? 'w-[48%] aspect-[4/3]' : participants.length + 1 <= 6 ? 'w-[31%] aspect-[4/3]' : 'aspect-video'}`}>
+              <div className={`relative bg-gray-900 rounded-2xl overflow-hidden shadow-xl border-2 border-gray-700/40 group hover:border-gray-600/60 transition-all duration-300 ease-in-out ${singleVideoClass || ''} ${totalParticipants === 2 ? 'w-[48%] aspect-[4/3]' : totalParticipants === 3 ? 'w-[30%] aspect-[4/3]' : totalParticipants === 4 ? 'w-[48%] aspect-[4/3]' : totalParticipants <= 6 ? 'w-[31%] aspect-[4/3]' : 'aspect-video'}`}>
                 <video
                   ref={localVideoCallbackRef}
                   autoPlay
@@ -2086,7 +2086,7 @@ const VideoRoom = () => {
 
         {/* Enhanced Meeting Sidebar */}
         {showChat && (
-          <div className="fixed lg:relative top-[56px] lg:top-0 bottom-[96px] lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col overflow-hidden lg:h-[calc(100vh-140px)] z-40">
+          <div className="fixed lg:relative bottom-0 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col h-[calc(100vh-80px)] lg:h-[calc(100vh-60px)] z-40">
             {/* Header with Close Button for Mobile */}
             <div className="lg:hidden flex items-center justify-between p-2.5 border-b border-white/10 flex-shrink-0 bg-gray-900">
               <h3 className="font-semibold text-white text-sm">Meeting Chat</h3>
@@ -2132,7 +2132,7 @@ const VideoRoom = () => {
               
               {/* Chat Tab */}
               {activeTab === 'chat' && (
-                <div className="flex flex-col h-full min-h-0">
+                <div className="flex flex-col h-full">
                   {/* Header - Desktop only */}
                   <div className="hidden lg:block p-4 border-b border-white/10 flex-shrink-0">
                     <h3 className="font-semibold text-white text-base">Meeting Chat</h3>
@@ -2140,7 +2140,7 @@ const VideoRoom = () => {
                   </div>
                   
                   {/* Messages area - Scrollable */}
-                  <div className="flex-1 min-h-0 overflow-y-auto p-2 lg:p-4 space-y-2 lg:space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <div className="flex-1 overflow-y-auto p-2 lg:p-4 space-y-2 lg:space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                     {messages.length === 0 ? (
                       <div className="text-center py-4 text-gray-400">
                         <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -2222,8 +2222,8 @@ const VideoRoom = () => {
 
               {/* Polls Tab */}
               {activeTab === 'polls' && (
-                <div className="flex flex-col h-full min-h-0">
-                  <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                <>
+                  <div className="p-4 border-b border-white/10 flex items-center justify-between">
                     <h3 className="font-semibold text-white">Live Polls</h3>
                     <button
                       onClick={() => setShowCreatePoll(!showCreatePoll)}
@@ -2234,7 +2234,7 @@ const VideoRoom = () => {
                     </button>
                   </div>
                   
-                  <div className="flex-1 min-h-0 p-4 overflow-y-auto space-y-4">
+                  <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
                     {showCreatePoll && (
                       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
                         <h4 className="text-sm font-medium text-white mb-3">Create New Poll</h4>
@@ -2357,13 +2357,13 @@ const VideoRoom = () => {
                       })
                     )}
                   </div>
-                </div>
+                </>
               )}
 
               {/* Notepad Tab */}
               {activeTab === 'notepad' && (
-                <div className="flex flex-col h-full min-h-0">
-                  <div className="p-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                <>
+                  <div className="p-4 border-b border-white/10 flex items-center justify-between">
                     <h3 className="font-semibold text-white">Meeting Notes</h3>
                     <div className="flex space-x-2">
                       <button
@@ -2388,7 +2388,7 @@ const VideoRoom = () => {
                     </div>
                   </div>
                   
-                  <div className="flex-1 min-h-0 p-4 overflow-hidden">
+                  <div className="flex-1 p-4">
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
@@ -2396,7 +2396,7 @@ const VideoRoom = () => {
                       className="w-full h-full bg-white/10 backdrop-blur-sm text-white placeholder-gray-400 p-4 rounded-xl border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 resize-none"
                     />
                   </div>
-                </div>
+                </>
               )}
             </div>
           </div>
