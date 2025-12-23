@@ -106,11 +106,11 @@ export const AuthProvider = ({ children }) => {
   const getErrorMessage = (errorCode) => {
     switch (errorCode) {
       case 'auth/user-not-found':
-        return 'No account found with this email address.';
+        return 'No account found with this email. Please sign up first.';
       case 'auth/wrong-password':
         return 'Incorrect password. Please try again.';
       case 'auth/email-already-in-use':
-        return 'An account with this email already exists.';
+        return 'An account with this email already exists. Please sign in instead.';
       case 'auth/weak-password':
         return 'Password should be at least 6 characters.';
       case 'auth/invalid-email':
@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }) => {
       case 'auth/too-many-requests':
         return 'Too many failed attempts. Please try again later.';
       case 'auth/invalid-credential':
-        return 'Invalid email or password. Please check and try again.';
+        return 'Invalid email or password. If you don\'t have an account, please sign up first.';
       default:
         return 'An error occurred. Please try again.';
     }
