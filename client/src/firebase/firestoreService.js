@@ -1,5 +1,6 @@
 // src/firebase/firestoreService.js
 // Firestore service functions for user profiles, scheduled meetings, and meeting history
+// Profile pictures are stored in Cloudinary (not Firebase Storage) to stay on free Spark plan
 
 import { 
   doc, 
@@ -16,15 +17,14 @@ import {
   orderBy,
   Timestamp
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from './config';
+import { db } from './config';
 
 // ============================================================
 // CONSTANTS
 // ============================================================
 
 const MAX_SCHEDULED_MEETINGS = 4;
-const HISTORY_RETENTION_DAYS = 15;
+const HISTORY_RETENTION_DAYS = 7; // Changed from 15 to 7 days per user request
 
 // ============================================================
 // USER PROFILE FUNCTIONS
@@ -92,38 +92,17 @@ export const updateUserProfile = async (uid, updates) => {
 };
 
 /**
- * Uploads a profile picture and updates the user's profilePicUrl
+ * Updates the user's profile picture URL in Firestore
+ * The actual image is stored in Cloudinary, we only store the URL here
  * 
  * @param {string} uid - The user's Firebase Auth UID
- * @param {File} imageFile - The image file to upload
- * @returns {Promise<string>} - The download URL of the uploaded image
+ * @param {string} imageUrl - The Cloudinary URL of the uploaded image
+ * @returns {Promise<void>}
  */
-export const uploadProfilePicture = async (uid, imageFile) => {
-  // Validate file type
-  if (!imageFile.type.startsWith('image/')) {
-    throw new Error('File must be an image');
-  }
-
-  // Validate file size (max 1MB)
-  if (imageFile.size > 1 * 1024 * 1024) {
-    throw new Error('Image must be less than 1MB');
-  }
-
-  // Create storage reference
-  const storageRef = ref(storage, `profilePictures/${uid}.jpg`);
-
-  // Upload the file
-  await uploadBytes(storageRef, imageFile);
-
-  // Get the download URL
-  const downloadUrl = await getDownloadURL(storageRef);
-
-  // Update the user's profile with the new URL
+export const updateProfilePicUrl = async (uid, imageUrl) => {
   const userRef = doc(db, 'users', uid);
-  await updateDoc(userRef, { profilePicUrl: downloadUrl });
-
-  console.log('✅ Profile picture uploaded successfully');
-  return downloadUrl;
+  await updateDoc(userRef, { profilePicUrl: imageUrl });
+  console.log('✅ Profile picture URL updated successfully');
 };
 
 /**

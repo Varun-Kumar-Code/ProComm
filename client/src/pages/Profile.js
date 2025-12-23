@@ -5,9 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { 
   getUserProfile, 
   updateUserProfile, 
-  uploadProfilePicture,
+  updateProfilePicUrl,
   getMeetingHistory 
 } from '../firebase/firestoreService';
+import { uploadToCloudinary } from '../services/cloudinaryService';
 
 const Profile = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -94,20 +95,24 @@ const Profile = () => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith('image/')) return;
     
-    // Check file size (max 1MB)
-    if (file.size > 1 * 1024 * 1024) {
-      alert('Image must be less than 1MB');
+    // Check file size (max 2MB for Cloudinary)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image must be less than 2MB');
       return;
     }
 
     setIsUploadingPicture(true);
     try {
-      // Upload to Firebase Storage and get URL
-      const downloadUrl = await uploadProfilePicture(currentUser.uid, file);
-      setProfilePicture(downloadUrl);
+      // Upload to Cloudinary and get URL
+      const cloudinaryUrl = await uploadToCloudinary(file, currentUser.uid);
+      
+      // Save the URL to Firestore
+      await updateProfilePicUrl(currentUser.uid, cloudinaryUrl);
+      
+      setProfilePicture(cloudinaryUrl);
     } catch (error) {
       console.error('Error uploading profile picture:', error);
-      alert('Failed to upload image. Please try again.');
+      alert(error.message || 'Failed to upload image. Please try again.');
     } finally {
       setIsUploadingPicture(false);
     }
