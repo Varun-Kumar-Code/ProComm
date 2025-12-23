@@ -142,7 +142,7 @@ const VideoRoom = () => {
       pinnedClass = 'w-full flex-1 min-h-0 flex items-center justify-center'; // Center the pinned video
       gridClass = 'flex flex-wrap gap-2 h-20 overflow-x-auto flex-shrink-0'; // Smaller thumbnails
       gridVideoClass = 'h-full aspect-video flex-shrink-0';
-      return { gridClass, containerClass, singleVideoClass: null, pinnedClass, gridVideoClass, hasPinned };
+      return { gridClass, containerClass, singleVideoClass: null, pinnedClass, gridVideoClass, hasPinned, totalParticipants };
     }
     
     if (totalParticipants === 1) {
@@ -153,7 +153,8 @@ const VideoRoom = () => {
         gridClass, 
         containerClass, 
         singleVideoClass: 'w-full max-w-5xl aspect-video',
-        hasPinned
+        hasPinned,
+        totalParticipants
       };
     } else if (totalParticipants === 2) {
       // 2 people: Side by side, centered
@@ -177,7 +178,7 @@ const VideoRoom = () => {
       containerClass = 'w-full h-full p-1 overflow-y-auto transition-all duration-300 ease-in-out';
     }
     
-    return { gridClass, containerClass, singleVideoClass: null, hasPinned };
+    return { gridClass, containerClass, singleVideoClass: null, hasPinned, totalParticipants };
   };
 
   // Helper function to get user initials for avatar
@@ -208,7 +209,7 @@ const VideoRoom = () => {
     return colors[index];
   };
 
-  const { gridClass, containerClass, singleVideoClass, pinnedClass, gridVideoClass, hasPinned } = getGridLayout();
+  const { gridClass, containerClass, singleVideoClass, pinnedClass, gridVideoClass, hasPinned, totalParticipants } = getGridLayout();
 
   // Callback ref for local video - fires when element mounts
   const localVideoCallbackRef = useCallback((videoElement) => {
