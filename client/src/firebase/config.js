@@ -2,6 +2,8 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider, OAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Firebase configuration using environment variables for security
 const firebaseConfig = {
@@ -26,6 +28,12 @@ if (typeof window !== 'undefined') {
 // Initialize Firebase Authentication
 const auth = getAuth(app);
 
+// Initialize Firestore Database
+const db = getFirestore(app);
+
+// Initialize Firebase Storage
+const storage = getStorage(app);
+
 // Initialize Google Auth Provider
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
@@ -37,4 +45,4 @@ const appleProvider = new OAuthProvider('apple.com');
 appleProvider.addScope('email');
 appleProvider.addScope('name');
 
-export { app, analytics, auth, googleProvider, appleProvider };
+export { app, analytics, auth, db, storage, googleProvider, appleProvider };
