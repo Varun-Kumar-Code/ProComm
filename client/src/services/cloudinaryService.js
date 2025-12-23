@@ -107,4 +107,3 @@ const cloudinaryService = {
 };
 
 export default cloudinaryService;
-};
