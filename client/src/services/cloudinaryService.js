@@ -98,9 +98,13 @@ export const deleteFromCloudinary = async (publicId) => {
   console.log('Note: Image deletion should be handled via backend or Cloudinary console');
 };
 
-export default {
+// Named export object for convenience
+const cloudinaryService = {
   uploadToCloudinary,
   deleteFromCloudinary,
   MAX_FILE_SIZE,
   ALLOWED_TYPES
+};
+
+export default cloudinaryService;
 };
