@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 import Support from './pages/Support';
 import VideoRoom from './pages/VideoRoom';
 
@@ -38,6 +39,12 @@ function App() {
               <ProtectedRoute>
                 <Navbar />
                 <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Navbar />
+                <Settings />
               </ProtectedRoute>
             } />
             <Route path="/support" element={
