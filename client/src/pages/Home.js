@@ -7,7 +7,6 @@ import {
   Clock, 
   Plus,
   UserPlus,
-  Settings,
   TrendingUp,
   Monitor,
   Mic,
@@ -16,12 +15,14 @@ import {
 import Chatbot from '../components/Chatbot';
 import JoinMeetingModal from '../components/JoinMeetingModal';
 import CreateMeetingModal from '../components/CreateMeetingModal';
+import ScheduleMeetingModal from '../components/ScheduleMeetingModal';
 import { useAuth } from '../context/AuthContext';
 import { getUserProfile } from '../firebase/firestoreService';
 
 const Home = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [upcomingMeetings, setUpcomingMeetings] = useState([]);
   const [recentMeetings, setRecentMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -304,11 +305,11 @@ const Home = () => {
               </button>
               
               <button
-                onClick={() => navigate('/profile')}
+                onClick={() => setShowScheduleModal(true)}
                 className="w-full flex items-center justify-center space-x-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 py-3 px-4 rounded-lg transition-colors duration-300 ease-in-out border border-gray-200 dark:border-gray-600 shadow-sm"
               >
-                <Settings className="w-5 h-5" />
-                <span className="font-medium">Settings</span>
+                <Calendar className="w-5 h-5" />
+                <span className="font-medium">Schedule Meeting</span>
               </button>
             </div>
           </div>
@@ -448,6 +449,10 @@ const Home = () => {
       <CreateMeetingModal 
         isOpen={showCreateModal} 
         onClose={() => setShowCreateModal(false)} 
+      />
+      <ScheduleMeetingModal 
+        isOpen={showScheduleModal} 
+        onClose={() => setShowScheduleModal(false)} 
       />
     </div>
   );
