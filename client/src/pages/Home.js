@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { 
   Video, 
   Users, 
@@ -27,7 +26,6 @@ const Home = () => {
   const [recentMeetings, setRecentMeetings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
 
   useEffect(() => {
