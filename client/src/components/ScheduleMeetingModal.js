@@ -9,7 +9,6 @@ const ScheduleMeetingModal = ({ isOpen, onClose }) => {
   const [meetingDescription, setMeetingDescription] = useState('');
   const [meetingDate, setMeetingDate] = useState('');
   const [meetingTime, setMeetingTime] = useState('');
-  const [duration, setDuration] = useState(30);
   const [addToGoogleCalendar, setAddToGoogleCalendar] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -33,18 +32,25 @@ const ScheduleMeetingModal = ({ isOpen, onClose }) => {
   };
 
   // Generate Google Calendar URL
-  const generateGoogleCalendarUrl = (title, description, startDate, durationMins) => {
-    const endDate = new Date(startDate.getTime() + durationMins * 60000);
+  const generateGoogleCalendarUrl = (title, description, startDate) => {
+    // Default 1 hour meeting
+    const endDate = new Date(startDate.getTime() + 60 * 60000);
     
-    // Format dates for Google Calendar (YYYYMMDDTHHmmssZ format)
+    // Format dates for Google Calendar (YYYYMMDDTHHmmss format - local time)
     const formatDate = (date) => {
-      return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = '00';
+      return `${year}${month}${day}T${hours}${minutes}${seconds}`;
     };
     
     const params = new URLSearchParams({
       action: 'TEMPLATE',
       text: title,
-      details: description || '',
+      details: description || 'ProComm Meeting',
       dates: `${formatDate(startDate)}/${formatDate(endDate)}`
     });
     
@@ -79,7 +85,7 @@ const ScheduleMeetingModal = ({ isOpen, onClose }) => {
         title: meetingTitle.trim(),
         description: meetingDescription.trim(),
         scheduledAt: scheduledAt,
-        durationMinutes: duration
+        durationMinutes: 60 // Default 1 hour
       });
       
       // Open Google Calendar if toggle is on
@@ -87,8 +93,7 @@ const ScheduleMeetingModal = ({ isOpen, onClose }) => {
         const googleCalendarUrl = generateGoogleCalendarUrl(
           meetingTitle.trim(),
           meetingDescription.trim(),
-          scheduledAt,
-          duration
+          scheduledAt
         );
         window.open(googleCalendarUrl, '_blank');
       }
@@ -107,7 +112,6 @@ const ScheduleMeetingModal = ({ isOpen, onClose }) => {
     setMeetingDescription('');
     setMeetingDate('');
     setMeetingTime('');
-    setDuration(30);
     setAddToGoogleCalendar(true);
     setIsSuccess(false);
     setError('');
@@ -163,7 +167,7 @@ const ScheduleMeetingModal = ({ isOpen, onClose }) => {
                     hour: 'numeric',
                     minute: '2-digit',
                     hour12: true
-                  })} ({duration} min)
+                  })}
                 </span>
               </div>
             </div>
@@ -266,28 +270,6 @@ const ScheduleMeetingModal = ({ isOpen, onClose }) => {
                 required
               />
             </div>
-          </div>
-
-          {/* Duration */}
-          <div>
-            <label htmlFor="scheduleDuration" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Duration
-            </label>
-            <select
-              id="scheduleDuration"
-              value={duration}
-              onChange={(e) => setDuration(Number(e.target.value))}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors duration-300"
-            >
-              <option value={15}>15 minutes</option>
-              <option value={30}>30 minutes</option>
-              <option value={45}>45 minutes</option>
-              <option value={60}>1 hour</option>
-              <option value={90}>1.5 hours</option>
-              <option value={120}>2 hours</option>
-              <option value={180}>3 hours</option>
-              <option value={240}>4 hours</option>
-            </select>
           </div>
 
           {/* Add to Google Calendar Toggle */}

@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Monitor, Edit3, X, Check, Loader2 } from 'lucide-react';
+import { Camera, Monitor, Edit3, X, Check, Loader2, Calendar, Clock, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
   getUserProfile, 
   updateUserProfile, 
   updateProfilePicUrl,
-  getMeetingHistory
+  getMeetingHistory,
+  getScheduledMeetings,
+  deleteScheduledMeeting
 } from '../firebase/firestoreService';
 import { uploadToCloudinary } from '../services/cloudinaryService';
 
@@ -26,6 +28,8 @@ const Profile = () => {
     bio: ''
   });
   const [callHistory, setCallHistory] = useState([]);
+  const [scheduledMeetings, setScheduledMeetings] = useState([]);
+  const [isDeletingMeeting, setIsDeletingMeeting] = useState(null);
   
   const fileInputRef = useRef(null);
 
@@ -59,6 +63,10 @@ const Profile = () => {
           status: 'completed'
         }));
         setCallHistory(formattedHistory);
+        
+        // Fetch scheduled meetings
+        const scheduled = await getScheduledMeetings(currentUser.uid);
+        setScheduledMeetings(scheduled);
       } catch (error) {
         console.error('Error fetching profile:', error);
       } finally {
@@ -105,7 +113,35 @@ const Profile = () => {
     }
   };
 
+  // Handle deleting a scheduled meeting
+  const handleDeleteScheduledMeeting = async (meetingId) => {
+    if (!currentUser) return;
+    
+    setIsDeletingMeeting(meetingId);
+    try {
+      await deleteScheduledMeeting(currentUser.uid, meetingId);
+      setScheduledMeetings(prev => prev.filter(m => m.id !== meetingId));
+    } catch (error) {
+      console.error('Error deleting scheduled meeting:', error);
+      alert('Failed to delete meeting. Please try again.');
+    } finally {
+      setIsDeletingMeeting(null);
+    }
+  };
 
+  // Format scheduled meeting date/time
+  const formatScheduledDateTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
   const handleEditToggle = () => {
     if (isEditMode) {
@@ -309,6 +345,65 @@ const Profile = () => {
 
         <div className="grid gap-8">
           
+          {/* Scheduled Meetings Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-blue-600" />
+                Scheduled Meetings
+              </h2>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {scheduledMeetings.length}/4 meetings
+              </span>
+            </div>
+            
+            {scheduledMeetings.length > 0 ? (
+              <div className="space-y-3">
+                {scheduledMeetings.map((meeting) => (
+                  <div
+                    key={meeting.id}
+                    className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600"
+                  >
+                    <div className="flex-1">
+                      <h3 className="font-medium text-gray-900 dark:text-white">
+                        {meeting.title}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                          <Clock className="w-4 h-4" />
+                          {formatScheduledDateTime(meeting.scheduledAt)}
+                        </span>
+                      </div>
+                      {meeting.description && (
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                          {meeting.description}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleDeleteScheduledMeeting(meeting.id)}
+                      disabled={isDeletingMeeting === meeting.id}
+                      className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200 disabled:opacity-50"
+                      title="Delete meeting"
+                    >
+                      {isDeletingMeeting === meeting.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No scheduled meetings</p>
+                <p className="text-sm mt-1">Schedule a meeting from the home page</p>
+              </div>
+            )}
+          </div>
+
           {/* Call History Section */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-colors duration-300 border border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Recent Meetings</h2>
