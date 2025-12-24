@@ -5,7 +5,11 @@ import {
   createUserWithEmailAndPassword,
   signOut, 
   onAuthStateChanged,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  deleteUser,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup
 } from 'firebase/auth';
 import { auth, googleProvider, appleProvider } from '../firebase/config';
 
@@ -99,6 +103,55 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Delete user account
+  const deleteAccount = async (password = null) => {
+    try {
+      setError(null);
+      const user = auth.currentUser;
+      
+      if (!user) {
+        throw new Error('No user is currently signed in');
+      }
+
+      // Check the provider to determine reauthentication method
+      const providerData = user.providerData;
+      const isEmailProvider = providerData.some(p => p.providerId === 'password');
+      const isGoogleProvider = providerData.some(p => p.providerId === 'google.com');
+      const isAppleProvider = providerData.some(p => p.providerId === 'apple.com');
+
+      // Reauthenticate based on provider
+      if (isEmailProvider && password) {
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+      } else if (isGoogleProvider) {
+        await reauthenticateWithPopup(user, googleProvider);
+      } else if (isAppleProvider) {
+        await reauthenticateWithPopup(user, appleProvider);
+      }
+
+      // Delete the user from Firebase Auth
+      await deleteUser(user);
+      
+      // Clear local storage
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userSettings');
+      
+      console.log('✅ User account deleted successfully');
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      setError(getErrorMessage(err.code) || err.message);
+      throw err;
+    }
+  };
+
+  // Check if user signed in with email/password
+  const isEmailPasswordUser = () => {
+    const user = auth.currentUser;
+    if (!user) return false;
+    return user.providerData.some(p => p.providerId === 'password');
+  };
+
   // Clear error
   const clearError = () => setError(null);
 
@@ -159,6 +212,8 @@ export const AuthProvider = ({ children }) => {
     loginWithApple,
     logout,
     resetPassword,
+    deleteAccount,
+    isEmailPasswordUser,
     clearError
   };
 

@@ -121,6 +121,45 @@ export const getUserProfile = async (uid) => {
   return null;
 };
 
+/**
+ * Deletes all user data from Firestore
+ * This includes: user profile, scheduled meetings, and meeting history
+ * 
+ * @param {string} uid - The user's Firebase Auth UID
+ * @returns {Promise<void>}
+ */
+export const deleteUserData = async (uid) => {
+  try {
+    // Delete all scheduled meetings
+    const scheduledMeetingsRef = collection(db, 'users', uid, 'scheduledMeetings');
+    const scheduledMeetingsSnapshot = await getDocs(scheduledMeetingsRef);
+    const deleteScheduledPromises = scheduledMeetingsSnapshot.docs.map((docSnap) =>
+      deleteDoc(doc(db, 'users', uid, 'scheduledMeetings', docSnap.id))
+    );
+    await Promise.all(deleteScheduledPromises);
+    console.log('✅ Deleted all scheduled meetings');
+
+    // Delete all meeting history
+    const historyRef = collection(db, 'users', uid, 'meetingHistory');
+    const historySnapshot = await getDocs(historyRef);
+    const deleteHistoryPromises = historySnapshot.docs.map((docSnap) =>
+      deleteDoc(doc(db, 'users', uid, 'meetingHistory', docSnap.id))
+    );
+    await Promise.all(deleteHistoryPromises);
+    console.log('✅ Deleted all meeting history');
+
+    // Delete the user profile document
+    const userRef = doc(db, 'users', uid);
+    await deleteDoc(userRef);
+    console.log('✅ Deleted user profile');
+
+    console.log('✅ All user data deleted successfully');
+  } catch (error) {
+    console.error('Error deleting user data:', error);
+    throw new Error('Failed to delete user data. Please try again.');
+  }
+};
+
 // ============================================================
 // SCHEDULED MEETINGS FUNCTIONS
 // ============================================================
