@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Camera, Menu, X, User, LogOut, Settings } from 'lucide-react';
+import { Camera, Menu, X, User, LogOut, Settings, HelpCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getUserProfile } from '../firebase/firestoreService';
 
@@ -103,6 +103,14 @@ const Navbar = () => {
                       <Settings className="w-4 h-4 mr-3" />
                       Settings
                     </Link>
+                    <Link
+                      to="/support"
+                      className="flex items-center px-4 py-3 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors duration-200 mx-2 rounded-lg"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <HelpCircle className="w-4 h-4 mr-3" />
+                      Support
+                    </Link>
                     <hr className="my-2 border-gray-200 dark:border-gray-600" />
                     <button
                       className="flex items-center w-full px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200 mx-2 rounded-lg"
@@ -144,6 +152,13 @@ const Navbar = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Settings
+                </Link>
+                <Link
+                  to="/support"
+                  className="block px-4 py-3 rounded-xl font-medium text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all duration-300"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Support
                 </Link>
                 <button
                   className="block w-full text-left px-4 py-3 rounded-xl font-medium text-red-600 dark:text-red-200 hover:bg-red-50 dark:hover:bg-red-500/20 transition-all duration-300"
