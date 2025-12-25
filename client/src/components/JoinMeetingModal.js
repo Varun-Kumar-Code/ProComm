@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Video, User, Mail, AlertCircle, LogIn } from 'lucide-react';
+import { X, Video, AlertCircle, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getUserProfile, validateMeetingParticipant, addParticipantToMeeting } from '../firebase/firestoreService';
