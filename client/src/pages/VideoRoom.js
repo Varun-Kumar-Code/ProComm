@@ -25,20 +25,31 @@ import {
   Timer,
   Pin,
   PinOff,
-  Reply
+  Reply,
+  ShieldAlert
 } from 'lucide-react';
 // import io from 'socket.io-client'; // DISABLED - using HTTP polling
 import Peer from 'peerjs';
 import LoadingScreen from '../components/LoadingScreen';
 import Whiteboard from '../components/Whiteboard';
+import { useAuth } from '../context/AuthContext';
+import { validateMeetingParticipant, getUserProfile, addParticipantToMeeting } from '../firebase/firestoreService';
 
 const VideoRoom = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const userName = searchParams.get('name') || 'Anonymous';
-  const userEmail = searchParams.get('email') || '';
-  const userProfilePic = searchParams.get('profilePic') || '';
+  const { currentUser } = useAuth();
+  
+  // User info states - will be populated from auth or URL params
+  const [userName, setUserName] = useState(searchParams.get('name') || '');
+  const [userEmail, setUserEmail] = useState(searchParams.get('email') || '');
+  const [userProfilePic, setUserProfilePic] = useState(searchParams.get('profilePic') || '');
+  
+  // Access control states
+  const [isValidating, setIsValidating] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
+  const [accessDeniedReason, setAccessDeniedReason] = useState('');
 
   // Video states
   const [localStream, setLocalStream] = useState(null);
@@ -231,6 +242,66 @@ const VideoRoom = () => {
         .catch(err => console.warn('⚠️ Play failed:', err.message));
     }
   }, [localStream]);
+
+  // Validate user access and get user profile on mount
+  useEffect(() => {
+    const validateAccess = async () => {
+      setIsValidating(true);
+      
+      // Check if user is authenticated
+      if (!currentUser) {
+        setAccessDenied(true);
+        setAccessDeniedReason('You must be logged in to join this meeting. Please sign in first.');
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        // Get user profile from Firestore
+        const profile = await getUserProfile(currentUser.uid);
+        
+        // Set user info from profile or auth
+        const displayName = profile?.displayName || currentUser.displayName || currentUser.email?.split('@')[0] || 'User';
+        setUserName(displayName);
+        setUserEmail(currentUser.email || '');
+        setUserProfilePic(profile?.profilePicUrl || currentUser.photoURL || '');
+
+        // Validate if user is allowed to join this meeting
+        const validation = await validateMeetingParticipant(roomId, currentUser.email);
+        
+        if (!validation.isAllowed) {
+          setAccessDenied(true);
+          setAccessDeniedReason(validation.reason);
+          setIsValidating(false);
+          return;
+        }
+
+        // Add participant to meeting
+        await addParticipantToMeeting(roomId, {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: displayName,
+          profilePicUrl: profile?.profilePicUrl || currentUser.photoURL || ''
+        });
+
+        // Set meeting title from validation result
+        if (validation.meeting?.title) {
+          setMeetingTitle(validation.meeting.title);
+        }
+
+        setIsValidating(false);
+      } catch (error) {
+        console.error('Error validating access:', error);
+        // If meeting not found in Firestore, it might be an old/direct link - allow with warning
+        // Or deny access based on your requirements
+        setAccessDenied(true);
+        setAccessDeniedReason('Unable to validate meeting access. The meeting may not exist or has expired.');
+        setIsValidating(false);
+      }
+    };
+
+    validateAccess();
+  }, [currentUser, roomId]);
 
   // Attach local video stream to video element when stream is available
   useEffect(() => {
@@ -1716,6 +1787,35 @@ const VideoRoom = () => {
     
     console.log('✅ Cleanup complete');
   };
+
+  // Show validating state
+  if (isValidating) {
+    return (
+      <LoadingScreen
+        onComplete={() => {}}
+        message="Validating meeting access..."
+      />
+    );
+  }
+
+  // Show access denied screen
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+        <div className="text-center bg-red-600/20 border border-red-600 rounded-lg p-8 max-w-md w-full">
+          <ShieldAlert className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-white text-xl font-semibold mb-3">Access Denied</h3>
+          <p className="text-red-200 mb-6 leading-relaxed">{accessDeniedReason}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
