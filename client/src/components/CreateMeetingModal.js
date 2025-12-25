@@ -170,7 +170,7 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto transition-colors duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create New Meeting</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Start Meeting</h2>
           <button
             onClick={handleClose}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -270,7 +270,7 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
               ) : (
                 <>
                   <Calendar className="w-4 h-4 mr-2" />
-                  Create Meeting
+                  Start Meeting
                 </>
               )}
             </button>
