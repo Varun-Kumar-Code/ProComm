@@ -291,7 +291,7 @@ const Home = () => {
                 className="w-full flex items-center justify-center space-x-3 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg transition-colors duration-200"
               >
                 <Plus className="w-5 h-5" />
-                <span className="font-medium">New Meeting</span>
+                <span className="font-medium">Start Meeting</span>
               </button>
               
               <button
