@@ -377,13 +377,19 @@ const VideoRoom = () => {
     };
   }, [localStream]); // Only depend on localStream
 
+  // Initialize video call ONLY after validation succeeds
   useEffect(() => {
+    // Don't initialize if still validating or access is denied
+    if (isValidating || accessDenied) {
+      return;
+    }
+    
     initializeVideoCall();
     return () => {
       cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isValidating, accessDenied]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
