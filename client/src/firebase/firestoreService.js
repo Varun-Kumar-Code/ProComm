@@ -375,3 +375,179 @@ export const getMeetingHistory = async (uid) => {
     ...doc.data()
   }));
 };
+
+// ============================================================
+// INSTANT MEETINGS FUNCTIONS (for Start Meeting with invites)
+// ============================================================
+
+/**
+ * Creates an instant meeting with invited participants
+ * Stores in a global 'meetings' collection for validation
+ * 
+ * @param {string} meetingId - The unique meeting ID (UUID)
+ * @param {Object} meetingData - Meeting details
+ * @param {string} meetingData.title - Meeting title
+ * @param {string} meetingData.description - Meeting description (optional)
+ * @param {Array<string>} meetingData.invitedEmails - Array of invited participant emails
+ * @param {string} meetingData.creatorUid - Creator's user ID
+ * @param {string} meetingData.creatorEmail - Creator's email
+ * @param {string} meetingData.creatorName - Creator's display name
+ * @param {string} meetingData.creatorProfilePic - Creator's profile picture URL
+ * @returns {Promise<Object>} - The created meeting object
+ */
+export const createInstantMeeting = async (meetingId, meetingData) => {
+  const meetingRef = doc(db, 'meetings', meetingId);
+  
+  const meeting = {
+    id: meetingId,
+    title: meetingData.title || 'Untitled Meeting',
+    description: meetingData.description || '',
+    invitedEmails: meetingData.invitedEmails || [],
+    creatorUid: meetingData.creatorUid,
+    creatorEmail: meetingData.creatorEmail,
+    creatorName: meetingData.creatorName || 'Host',
+    creatorProfilePic: meetingData.creatorProfilePic || '',
+    isActive: true,
+    createdAt: serverTimestamp(),
+    participants: [] // Will store joined participants
+  };
+
+  await setDoc(meetingRef, meeting);
+  console.log('✅ Instant meeting created:', meetingId);
+  
+  return meeting;
+};
+
+/**
+ * Gets meeting details by meeting ID
+ * 
+ * @param {string} meetingId - The meeting ID
+ * @returns {Promise<Object|null>} - The meeting data or null
+ */
+export const getMeetingById = async (meetingId) => {
+  const meetingRef = doc(db, 'meetings', meetingId);
+  const meetingSnap = await getDoc(meetingRef);
+  
+  if (meetingSnap.exists()) {
+    return { id: meetingSnap.id, ...meetingSnap.data() };
+  }
+  return null;
+};
+
+/**
+ * Validates if a user can join a meeting
+ * User must be either the creator or in the invited list
+ * 
+ * @param {string} meetingId - The meeting ID
+ * @param {string} userEmail - The user's email attempting to join
+ * @returns {Promise<Object>} - { isAllowed: boolean, reason: string, meeting: Object|null }
+ */
+export const validateMeetingParticipant = async (meetingId, userEmail) => {
+  const meeting = await getMeetingById(meetingId);
+  
+  if (!meeting) {
+    return {
+      isAllowed: false,
+      reason: 'Meeting not found. Please check the meeting ID.',
+      meeting: null
+    };
+  }
+
+  // Normalize email for comparison
+  const normalizedUserEmail = userEmail.toLowerCase().trim();
+  const normalizedCreatorEmail = meeting.creatorEmail?.toLowerCase().trim();
+  const normalizedInvitedEmails = (meeting.invitedEmails || []).map(e => e.toLowerCase().trim());
+
+  // Check if user is the creator
+  if (normalizedUserEmail === normalizedCreatorEmail) {
+    return {
+      isAllowed: true,
+      reason: 'You are the meeting host.',
+      meeting,
+      isHost: true
+    };
+  }
+
+  // Check if user is in the invited list
+  if (normalizedInvitedEmails.includes(normalizedUserEmail)) {
+    return {
+      isAllowed: true,
+      reason: 'You are invited to this meeting.',
+      meeting,
+      isHost: false
+    };
+  }
+
+  // Check if no participants were invited (open meeting)
+  if (normalizedInvitedEmails.length === 0 || (normalizedInvitedEmails.length === 1 && normalizedInvitedEmails[0] === '')) {
+    return {
+      isAllowed: true,
+      reason: 'This is an open meeting.',
+      meeting,
+      isHost: false
+    };
+  }
+
+  return {
+    isAllowed: false,
+    reason: 'You are not invited to this meeting. Please contact the host to get an invitation.',
+    meeting: null
+  };
+};
+
+/**
+ * Adds a participant to a meeting's participant list
+ * 
+ * @param {string} meetingId - The meeting ID
+ * @param {Object} participant - Participant details
+ * @param {string} participant.uid - Participant's user ID
+ * @param {string} participant.email - Participant's email
+ * @param {string} participant.displayName - Participant's display name
+ * @param {string} participant.profilePicUrl - Participant's profile picture URL
+ * @returns {Promise<void>}
+ */
+export const addParticipantToMeeting = async (meetingId, participant) => {
+  const meetingRef = doc(db, 'meetings', meetingId);
+  const meetingSnap = await getDoc(meetingRef);
+  
+  if (!meetingSnap.exists()) {
+    throw new Error('Meeting not found');
+  }
+
+  const currentParticipants = meetingSnap.data().participants || [];
+  
+  // Check if participant already exists
+  const existingIndex = currentParticipants.findIndex(p => p.uid === participant.uid);
+  
+  if (existingIndex === -1) {
+    // Add new participant
+    currentParticipants.push({
+      uid: participant.uid,
+      email: participant.email,
+      displayName: participant.displayName || 'Anonymous',
+      profilePicUrl: participant.profilePicUrl || '',
+      joinedAt: new Date().toISOString()
+    });
+    
+    await updateDoc(meetingRef, { participants: currentParticipants });
+    console.log('✅ Participant added to meeting:', participant.email);
+  }
+};
+
+/**
+ * Get user profile by email
+ * 
+ * @param {string} email - The user's email
+ * @returns {Promise<Object|null>} - The user profile or null
+ */
+export const getUserProfileByEmail = async (email) => {
+  const usersRef = collection(db, 'users');
+  const q = query(usersRef, where('email', '==', email.toLowerCase().trim()));
+  const snapshot = await getDocs(q);
+  
+  if (!snapshot.empty) {
+    const doc = snapshot.docs[0];
+    return { id: doc.id, ...doc.data() };
+  }
+  return null;
+};

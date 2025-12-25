@@ -1,13 +1,34 @@
-import React, { useState } from 'react';
-import { X, Users, Calendar, Plus, Trash2, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Users, Calendar, Plus, Trash2, Copy, Check, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { getUserProfile, createInstantMeeting } from '../firebase/firestoreService';
+import { v4 as uuidv4 } from 'uuid';
 
 const CreateMeetingModal = ({ isOpen, onClose }) => {
+  const { currentUser } = useAuth();
   const [meetingTitle, setMeetingTitle] = useState('');
   const [meetingDescription, setMeetingDescription] = useState('');
   const [participants, setParticipants] = useState(['']);
   const [isLoading, setIsLoading] = useState(false);
   const [createdMeeting, setCreatedMeeting] = useState(null);
   const [copiedToClipboard, setCopiedToClipboard] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [error, setError] = useState('');
+
+  // Fetch user profile when modal opens
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (currentUser && isOpen) {
+        try {
+          const profile = await getUserProfile(currentUser.uid);
+          setUserProfile(profile);
+        } catch (err) {
+          console.error('Error fetching user profile:', err);
+        }
+      }
+    };
+    fetchProfile();
+  }, [currentUser, isOpen]);
 
   const handleAddParticipant = () => {
     setParticipants([...participants, '']);
@@ -27,34 +48,44 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
+    // Check if user is authenticated
+    if (!currentUser) {
+      setError('You must be logged in to start a meeting. Please sign in first.');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       // Filter out empty participants
       const validParticipants = participants.filter(email => email.trim() !== '');
       
-      const response = await fetch('/api/meetings/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: meetingTitle || 'Untitled Meeting',
-          description: meetingDescription,
-          participants: validParticipants,
-          createdBy: 'Varun Kumar'
-        }),
+      // Generate unique meeting ID
+      const meetingId = uuidv4();
+      
+      // Create meeting in Firestore with creator info
+      const meeting = await createInstantMeeting(meetingId, {
+        title: meetingTitle || 'Untitled Meeting',
+        description: meetingDescription,
+        invitedEmails: validParticipants,
+        creatorUid: currentUser.uid,
+        creatorEmail: currentUser.email,
+        creatorName: userProfile?.displayName || currentUser.displayName || currentUser.email.split('@')[0],
+        creatorProfilePic: userProfile?.profilePicUrl || currentUser.photoURL || ''
       });
       
-      const result = await response.json();
-      
-      if (result.success) {
-        setCreatedMeeting(result.meeting);
-      } else {
-        console.error('Error creating meeting:', result.error);
-      }
+      setCreatedMeeting({
+        id: meetingId,
+        title: meeting.title,
+        description: meeting.description,
+        participants: validParticipants,
+        createdBy: userProfile?.displayName || currentUser.email
+      });
     } catch (error) {
       console.error('Error creating meeting:', error);
+      setError('Failed to create meeting. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -74,10 +105,45 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
     setParticipants(['']);
     setCreatedMeeting(null);
     setCopiedToClipboard(false);
+    setError('');
     onClose();
   };
 
   if (!isOpen) return null;
+
+  // Show login required message if not authenticated
+  if (!currentUser) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md transition-colors duration-300">
+          <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Sign In Required</h2>
+            <button
+              onClick={handleClose}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="flex items-center space-x-3 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
+              <AlertCircle className="w-6 h-6 flex-shrink-0" />
+              <div>
+                <p className="font-medium">Account Required</p>
+                <p className="text-sm mt-1">You need to sign in or create an account to start a meeting. This ensures that only invited participants can join your meetings.</p>
+              </div>
+            </div>
+            <button
+              onClick={handleClose}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show success screen if meeting is created
   if (createdMeeting) {
@@ -135,7 +201,7 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
               {createdMeeting.participants.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Participants ({createdMeeting.participants.length})
+                    Invited Participants ({createdMeeting.participants.length})
                   </label>
                   <div className="space-y-1">
                     {createdMeeting.participants.map((email, index) => (
@@ -144,6 +210,9 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
                       </div>
                     ))}
                   </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Only these invited users can join this meeting
+                  </p>
                 </div>
               )}
             </div>
@@ -152,7 +221,9 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
               <button
                 onClick={() => {
                   const title = encodeURIComponent(createdMeeting.title || 'Untitled Meeting');
-                  window.open(`/room/${createdMeeting.id}?title=${title}`, '_blank');
+                  const name = encodeURIComponent(userProfile?.displayName || currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Host');
+                  const email = encodeURIComponent(currentUser?.email || '');
+                  window.open(`/room/${createdMeeting.id}?title=${title}&name=${name}&email=${email}`, '_blank');
                 }}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200"
               >
@@ -249,7 +320,19 @@ const CreateMeetingModal = ({ isOpen, onClose }) => {
               <Plus className="w-4 h-4" />
               <span className="text-sm font-medium">Add Another Participant</span>
             </button>
+            
+            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+              Only invited participants with accounts can join. Leave empty for an open meeting.
+            </p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <span className="text-sm">{error}</span>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex space-x-3 pt-4">

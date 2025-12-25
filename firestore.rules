@@ -93,6 +93,26 @@ service cloud.firestore {
       }
     }
     
+    // ========== INSTANT MEETINGS COLLECTION ==========
+    match /meetings/{meetingId} {
+      // Read: Any authenticated user can read meeting details (for validation)
+      allow read: if isAuthenticated();
+      
+      // Create: Any authenticated user can create a meeting
+      allow create: if isAuthenticated() && 
+                      request.resource.data.creatorUid == request.auth.uid;
+      
+      // Update: Only meeting creator can update (add participants, etc.)
+      //         OR any authenticated user can add themselves to participants array
+      allow update: if isAuthenticated() && 
+                      (resource.data.creatorUid == request.auth.uid ||
+                       // Allow updating participants array only
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']));
+      
+      // Delete: Only creator can delete
+      allow delete: if isAuthenticated() && resource.data.creatorUid == request.auth.uid;
+    }
+    
     // ========== DEFAULT DENY ALL ==========
     // Any path not explicitly matched above is denied
     match /{document=**} {

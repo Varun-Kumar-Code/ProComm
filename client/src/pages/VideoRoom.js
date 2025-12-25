@@ -38,6 +38,7 @@ const VideoRoom = () => {
   const [searchParams] = useSearchParams();
   const userName = searchParams.get('name') || 'Anonymous';
   const userEmail = searchParams.get('email') || '';
+  const userProfilePic = searchParams.get('profilePic') || '';
 
   // Video states
   const [localStream, setLocalStream] = useState(null);
@@ -1853,9 +1854,13 @@ const VideoRoom = () => {
                   />
                   {(!isCameraOn || !localStream) && (
                     <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a1a]">
-                      <div className={`w-32 h-32 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
-                        <span className="text-5xl font-semibold text-white">{getUserInitials(userName)}</span>
-                      </div>
+                      {userProfilePic ? (
+                        <img src={decodeURIComponent(userProfilePic)} alt={userName} className="w-32 h-32 rounded-full object-cover shadow-lg" />
+                      ) : (
+                        <div className={`w-32 h-32 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
+                          <span className="text-5xl font-semibold text-white">{getUserInitials(userName)}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   {!localStream && (
@@ -1931,9 +1936,13 @@ const VideoRoom = () => {
                     />
                     {(!isCameraOn || !localStream) && (
                       <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a1a]">
-                        <div className={`w-10 h-10 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
-                          <span className="text-base font-semibold text-white">{getUserInitials(userName)}</span>
-                        </div>
+                        {userProfilePic ? (
+                          <img src={decodeURIComponent(userProfilePic)} alt={userName} className="w-10 h-10 rounded-full object-cover shadow-lg" />
+                        ) : (
+                          <div className={`w-10 h-10 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
+                            <span className="text-base font-semibold text-white">{getUserInitials(userName)}</span>
+                          </div>
+                        )}
                       </div>
                     )}
                     {!localStream && (
@@ -1992,9 +2001,13 @@ const VideoRoom = () => {
               {(!isCameraOn || !localStream) && (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a1a]">
                   <div className="text-center">
-                    <div className={`w-20 h-20 mx-auto rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
-                      <span className="text-2xl font-semibold text-white">{getUserInitials(userName)}</span>
-                    </div>
+                    {userProfilePic ? (
+                      <img src={decodeURIComponent(userProfilePic)} alt={userName} className="w-20 h-20 mx-auto rounded-full object-cover shadow-lg" />
+                    ) : (
+                      <div className={`w-20 h-20 mx-auto rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
+                        <span className="text-2xl font-semibold text-white">{getUserInitials(userName)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
