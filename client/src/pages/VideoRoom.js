@@ -1871,21 +1871,21 @@ const VideoRoom = () => {
   return (
     <div className="h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 text-white flex flex-col overflow-hidden">
       
-      {/* Premium Glassmorphism Header */}
-      <div className="bg-black/40 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 py-3 shadow-2xl relative overflow-hidden">
+      {/* Premium Glassmorphism Header - Fully Responsive */}
+      <div className="bg-black/40 backdrop-blur-xl border-b border-white/10 px-2 sm:px-4 lg:px-6 py-2 sm:py-3 shadow-2xl relative overflow-hidden">
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-pink-600/5"></div>
         
         <div className="flex items-center justify-between relative max-w-screen-2xl mx-auto z-10">
           {/* Left Section - Timer and Clock */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
             {/* Meeting Duration with Pulse */}
-            <div className="flex items-center gap-2 bg-gradient-to-br from-blue-600/20 to-blue-700/20 backdrop-blur-sm px-3 py-2 rounded-xl border border-blue-500/30 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-br from-blue-600/20 to-blue-700/20 backdrop-blur-sm px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-blue-500/30 shadow-lg active:scale-95 sm:hover:shadow-blue-500/20 transition-all duration-300 sm:hover:scale-105">
               <div className="relative">
-                <Timer className="w-4 h-4 text-blue-400" />
-                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <Timer className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
+                <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-red-500 rounded-full animate-pulse"></div>
               </div>
-              <span className="text-sm font-semibold text-white font-mono tracking-wider">{meetingDuration}</span>
+              <span className="text-xs sm:text-sm font-semibold text-white font-mono tracking-wider">{meetingDuration}</span>
             </div>
             {/* Current Time */}
             <div className="hidden md:flex items-center gap-2 bg-gradient-to-br from-emerald-600/20 to-emerald-700/20 backdrop-blur-sm px-3 py-2 rounded-xl border border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20 transition-all duration-300 hover:scale-105">
@@ -1907,31 +1907,31 @@ const VideoRoom = () => {
             </div>
           </div>
         
-          {/* Right Section - Premium Action Buttons */}
-          <div className="flex items-center space-x-2 sm:space-x-2.5">
+          {/* Right Section - Premium Action Buttons - Responsive */}
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
             <button
               onClick={() => setShowParticipants(!showParticipants)}
-              className="group flex items-center space-x-2 px-3 sm:px-4 py-2.5 bg-gradient-to-br from-purple-600/20 to-purple-700/20 hover:from-purple-600/30 hover:to-purple-700/30 backdrop-blur-sm rounded-xl transition-all duration-300 border border-purple-500/30 hover:border-purple-500/50 shadow-lg hover:shadow-purple-500/20 hover:scale-105"
+              className="group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2.5 bg-gradient-to-br from-purple-600/20 to-purple-700/20 hover:from-purple-600/30 hover:to-purple-700/30 backdrop-blur-sm rounded-lg sm:rounded-xl transition-all duration-300 border border-purple-500/30 hover:border-purple-500/50 shadow-lg active:scale-95 sm:hover:shadow-purple-500/20 sm:hover:scale-105"
             >
-              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300 group-hover:text-purple-200 transition-colors" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm sm:text-base font-bold text-white">{participants.length + 1}</span>
-                <span className="hidden sm:inline text-xs text-purple-200/80">participants</span>
+              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-purple-300 group-hover:text-purple-200 transition-colors" />
+              <div className="flex items-center gap-1">
+                <span className="text-xs sm:text-sm lg:text-base font-bold text-white">{participants.length + 1}</span>
+                <span className="hidden lg:inline text-xs text-purple-200/80">participants</span>
               </div>
             </button>
           
             <button
               onClick={() => setShowChat(!showChat)}
-              className={`group relative flex items-center space-x-2 px-3 sm:px-4 py-2.5 rounded-xl transition-all duration-300 border shadow-lg hover:scale-105 ${
+              className={`group relative flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-300 border shadow-lg active:scale-95 sm:hover:scale-105 ${
                 showChat 
                   ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500/50 text-white shadow-blue-500/30' 
                   : 'bg-gradient-to-br from-gray-700/40 to-gray-800/40 hover:from-gray-700/60 hover:to-gray-800/60 backdrop-blur-sm border-white/10 hover:border-white/20'
               }`}
             >
-              <MessageSquare className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors ${showChat ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
-              <span className="text-sm font-semibold hidden sm:inline">Chat</span>
+              <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 transition-colors ${showChat ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
+              <span className="text-xs sm:text-sm font-semibold hidden md:inline">Chat</span>
               {messages.length > 0 && !showChat && (
-                <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-red-500 to-red-600 text-xs rounded-full w-5 h-5 flex items-center justify-center text-white font-bold shadow-lg shadow-red-500/50 animate-bounce">
+                <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 bg-gradient-to-br from-red-500 to-red-600 text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-white font-bold shadow-lg shadow-red-500/50 animate-bounce">
                   {messages.length > 9 ? '9+' : messages.length}
                 </span>
               )}
@@ -1939,15 +1939,15 @@ const VideoRoom = () => {
           
             <button
               onClick={toggleRaiseHand}
-              className={`group flex items-center space-x-2 px-3 sm:px-4 py-2.5 rounded-xl transition-all duration-300 border shadow-lg hover:scale-105 ${
+              className={`group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl transition-all duration-300 border shadow-lg active:scale-95 sm:hover:scale-105 ${
                 isHandRaised 
                   ? 'bg-gradient-to-br from-yellow-500 to-orange-500 border-yellow-400/50 text-white shadow-yellow-500/30 animate-pulse' 
                   : 'bg-gradient-to-br from-gray-700/40 to-gray-800/40 hover:from-gray-700/60 hover:to-gray-800/60 backdrop-blur-sm border-white/10 hover:border-white/20'
               }`}
               title="Raise hand"
             >
-              <Hand className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors ${isHandRaised ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
-              <span className="text-sm font-semibold hidden sm:inline">
+              <Hand className={`w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 transition-colors ${isHandRaised ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
+              <span className="text-xs sm:text-sm font-semibold hidden lg:inline">
                 {isHandRaised ? 'Lower' : 'Raise'}
               </span>
             </button>
@@ -2543,20 +2543,20 @@ const VideoRoom = () => {
         )}
       </div>
 
-    {/* Premium Floating Control Bar - Modern & Responsive */}
-    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-      <div className="bg-black/70 backdrop-blur-2xl border border-white/20 rounded-3xl p-3 sm:p-4 shadow-2xl shadow-black/50">
-        <div className="flex items-center justify-center space-x-3 sm:space-x-4">
+    {/* Premium Floating Control Bar - Fully Mobile Responsive */}
+    <div className="fixed bottom-3 sm:bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-2 sm:px-0 w-full sm:w-auto max-w-[95vw] sm:max-w-none">
+      <div className="bg-black/70 backdrop-blur-2xl border border-white/20 rounded-2xl sm:rounded-3xl p-2 sm:p-3 lg:p-4 shadow-2xl shadow-black/50">
+        <div className="flex items-center justify-center space-x-2 sm:space-x-3 lg:space-x-4">
           <button
             onClick={toggleMic}
-            className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg ${
+            className={`group relative p-3 sm:p-3.5 lg:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 transform active:scale-90 sm:hover:scale-110 shadow-lg ${
               isMicOn 
                 ? 'bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20' 
                 : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border border-red-500/50 shadow-red-500/50'
             }`}
             title={isMicOn ? 'Mute microphone' : 'Unmute microphone'}
           >
-            {isMicOn ? <Mic className="w-6 h-6 text-white" /> : <MicOff className="w-6 h-6 text-white" />}
+            {isMicOn ? <Mic className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <MicOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
             <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
               <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                 {isMicOn ? 'Mute' : 'Unmute'}
@@ -2567,14 +2567,14 @@ const VideoRoom = () => {
           
           <button
             onClick={toggleCamera}
-            className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg ${
+            className={`group relative p-3 sm:p-3.5 lg:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 transform active:scale-90 sm:hover:scale-110 shadow-lg ${
               isCameraOn 
                 ? 'bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20' 
                 : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border border-red-500/50 shadow-red-500/50'
             }`}
             title={isCameraOn ? 'Turn off camera' : 'Turn on camera'}
           >
-            {isCameraOn ? <VideoIcon className="w-6 h-6 text-white" /> : <VideoOff className="w-6 h-6 text-white" />}
+            {isCameraOn ? <VideoIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <VideoOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
             <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
               <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                 {isCameraOn ? 'Stop video' : 'Start video'}
@@ -2585,14 +2585,14 @@ const VideoRoom = () => {
           
           <button
             onClick={toggleScreenShare}
-            className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg ${
+            className={`group relative p-3 sm:p-3.5 lg:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 transform active:scale-90 sm:hover:scale-110 shadow-lg ${
               isScreenSharing 
                 ? 'bg-gradient-to-br from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 border border-green-500/50 shadow-green-500/50' 
                 : 'bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20'
             }`}
             title={isScreenSharing ? 'Stop sharing' : 'Share screen'}
           >
-            {isScreenSharing ? <MonitorOff className="w-6 h-6 text-white" /> : <Monitor className="w-6 h-6 text-white" />}
+            {isScreenSharing ? <MonitorOff className="w-5 h-5 sm:w-6 sm:h-6 text-white" /> : <Monitor className="w-5 h-5 sm:w-6 sm:h-6 text-white" />}
             <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
               <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                 {isScreenSharing ? 'Stop sharing' : 'Share screen'}
@@ -2614,12 +2614,12 @@ const VideoRoom = () => {
               onMouseDown={(e) => {
                 console.log('😀 Reactions button mouse down event');
               }}
-              className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20 ${
+              className={`group relative p-3 sm:p-3.5 lg:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 transform active:scale-90 sm:hover:scale-110 shadow-lg bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20 ${
                 showReactionsMenu ? 'ring-2 ring-yellow-400/50' : ''
               }`}
               title="Reactions"
             >
-              <Smile className="w-6 h-6 text-white" />
+              <Smile className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
                 <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                   Reactions
@@ -2632,7 +2632,7 @@ const VideoRoom = () => {
             {showReactionsMenu && (
               <div 
                 data-reactions-menu="true"
-                className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 bg-black/95 backdrop-blur-2xl rounded-2xl p-3 border border-white/20 flex space-x-2 shadow-2xl animate-fade-in"
+                className="absolute bottom-full mb-2 sm:mb-3 left-1/2 transform -translate-x-1/2 bg-black/95 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-2 sm:p-3 border border-white/20 flex space-x-1.5 sm:space-x-2 shadow-2xl animate-fade-in"
               >
                 {['👍', '❤️', '😂', '👏', '🎉', '😮', '😢', '🔥'].map((emoji) => (
                   <button
@@ -2643,10 +2643,10 @@ const VideoRoom = () => {
                       setShowReactionsMenu(false);
                       console.log('😀 Reactions menu closed after sending reaction');
                     }}
-                    className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 transform hover:scale-125 active:scale-110 hover:shadow-lg"
+                    className="p-2 sm:p-2.5 hover:bg-white/20 rounded-lg sm:rounded-xl transition-all duration-200 transform active:scale-110 sm:hover:scale-125 hover:shadow-lg"
                     title={`React with ${emoji}`}
                   >
-                    <span className="text-2xl">{emoji}</span>
+                    <span className="text-xl sm:text-2xl">{emoji}</span>
                   </button>
                 ))}
               </div>
@@ -2666,12 +2666,12 @@ const VideoRoom = () => {
               onMouseDown={(e) => {
                 console.log('⚙️ More Tools button mouse down event');
               }}
-              className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20 ${
+              className={`group relative p-3 sm:p-3.5 lg:p-4 rounded-xl sm:rounded-2xl transition-all duration-300 transform active:scale-90 sm:hover:scale-110 shadow-lg bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20 ${
                 showToolsMenu ? 'ring-2 ring-blue-400/50' : ''
               }`}
               title="More Tools"
             >
-              <MoreVertical className="w-6 h-6 text-white" />
+              <MoreVertical className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
                 <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                   More Tools
@@ -2684,7 +2684,7 @@ const VideoRoom = () => {
             {showToolsMenu && (
               <div 
                 data-tools-menu="true"
-                className="absolute bottom-full mb-3 right-0 bg-black/95 backdrop-blur-2xl rounded-2xl p-2 border border-white/20 min-w-56 shadow-2xl animate-fade-in"
+                className="absolute bottom-full mb-2 sm:mb-3 right-0 bg-black/95 backdrop-blur-2xl rounded-xl sm:rounded-2xl p-1.5 sm:p-2 border border-white/20 min-w-48 sm:min-w-56 shadow-2xl animate-fade-in"
               >
                 <button
                   onClick={() => {
@@ -2767,14 +2767,14 @@ const VideoRoom = () => {
             )}
           </div>
           
-          <div className="w-px h-10 sm:h-12 bg-gradient-to-b from-transparent via-white/30 to-transparent"></div>
+          <div className="w-px h-8 sm:h-10 lg:h-12 bg-gradient-to-b from-transparent via-white/30 to-transparent"></div>
           
           <button
             onClick={leaveMeeting}
-            className="group relative p-4 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 border border-red-500/50 shadow-lg shadow-red-500/50"
+            className="group relative p-3 sm:p-3.5 lg:p-4 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-xl sm:rounded-2xl transition-all duration-300 transform active:scale-90 sm:hover:scale-110 border border-red-500/50 shadow-lg shadow-red-500/50"
             title="Leave meeting"
           >
-            <Phone className="w-6 h-6 text-white transform rotate-[135deg]" />
+            <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-white transform rotate-[135deg]" />
             <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
               <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                 Leave meeting
