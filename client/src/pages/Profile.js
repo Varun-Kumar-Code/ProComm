@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Monitor, Edit3, X, Check, Loader2, Calendar, Clock, Trash2, Users, Video, TrendingUp, Award } from 'lucide-react';
+import { Camera, Monitor, Edit3, X, Check, Loader2, Calendar, Clock, Trash2, Users, Video, Award } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { 
   getUserProfile, 
