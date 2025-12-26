@@ -1869,79 +1869,99 @@ const VideoRoom = () => {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 text-white flex flex-col overflow-hidden">
       
-      {/* Professional Premium Header */}
-      <div className="bg-[#1a1a1a] border-b border-gray-800 px-4 sm:px-6 py-3">
-        <div className="flex items-center justify-between relative max-w-screen-2xl mx-auto">
+      {/* Premium Glassmorphism Header */}
+      <div className="bg-black/40 backdrop-blur-xl border-b border-white/10 px-4 sm:px-6 py-3 shadow-2xl relative overflow-hidden">
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-pink-600/5"></div>
+        
+        <div className="flex items-center justify-between relative max-w-screen-2xl mx-auto z-10">
           {/* Left Section - Timer and Clock */}
-          <div className="flex items-center gap-3 z-10">
-            {/* Meeting Duration */}
-            <div className="flex items-center gap-2 bg-[#2a2a2a] px-3 py-1.5 rounded-lg border border-gray-700">
-              <Timer className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-sm font-medium text-white font-mono">{meetingDuration}</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Meeting Duration with Pulse */}
+            <div className="flex items-center gap-2 bg-gradient-to-br from-blue-600/20 to-blue-700/20 backdrop-blur-sm px-3 py-2 rounded-xl border border-blue-500/30 shadow-lg hover:shadow-blue-500/20 transition-all duration-300 hover:scale-105">
+              <div className="relative">
+                <Timer className="w-4 h-4 text-blue-400" />
+                <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              </div>
+              <span className="text-sm font-semibold text-white font-mono tracking-wider">{meetingDuration}</span>
             </div>
             {/* Current Time */}
-            <div className="hidden md:flex items-center gap-2 bg-[#2a2a2a] px-3 py-1.5 rounded-lg border border-gray-700">
-              <Clock className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-sm font-medium text-white font-mono">
+            <div className="hidden md:flex items-center gap-2 bg-gradient-to-br from-emerald-600/20 to-emerald-700/20 backdrop-blur-sm px-3 py-2 rounded-xl border border-emerald-500/30 shadow-lg hover:shadow-emerald-500/20 transition-all duration-300 hover:scale-105">
+              <Clock className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm font-semibold text-white font-mono tracking-wider">
                 {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
           </div>
           
-          {/* Center Section - Meeting Name */}
-          <div className="absolute left-1/2 transform -translate-x-1/2 hidden lg:flex items-center gap-2 px-4 py-2 bg-[#2a2a2a] rounded-lg border border-gray-700">
+          {/* Center Section - Meeting Name with Live Indicator */}
+          <div className="absolute left-1/2 transform -translate-x-1/2 hidden lg:flex items-center gap-3 px-5 py-2.5 bg-gradient-to-r from-gray-800/80 to-gray-900/80 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <span className="text-sm font-semibold text-white">{meetingTitle}</span>
+              <div className="relative flex items-center justify-center">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <div className="absolute w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+              </div>
+              <span className="text-sm font-bold text-white tracking-wide">{meetingTitle || 'Meeting Room'}</span>
             </div>
           </div>
         
-          {/* Right Section - Action Buttons */}
-          <div className="flex items-center space-x-1 sm:space-x-3 z-10">
-          <button
-            onClick={() => setShowParticipants(!showParticipants)}
-            className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 bg-[#2a2a2a] hover:bg-[#333333] rounded-lg transition-colors duration-200 border border-gray-700"
-          >
-            <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-xs sm:text-sm font-medium">{participants.length + 1}</span>
-          </button>
+          {/* Right Section - Premium Action Buttons */}
+          <div className="flex items-center space-x-2 sm:space-x-2.5">
+            <button
+              onClick={() => setShowParticipants(!showParticipants)}
+              className="group flex items-center space-x-2 px-3 sm:px-4 py-2.5 bg-gradient-to-br from-purple-600/20 to-purple-700/20 hover:from-purple-600/30 hover:to-purple-700/30 backdrop-blur-sm rounded-xl transition-all duration-300 border border-purple-500/30 hover:border-purple-500/50 shadow-lg hover:shadow-purple-500/20 hover:scale-105"
+            >
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-300 group-hover:text-purple-200 transition-colors" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm sm:text-base font-bold text-white">{participants.length + 1}</span>
+                <span className="hidden sm:inline text-xs text-purple-200/80">participants</span>
+              </div>
+            </button>
           
-          <button
-            onClick={() => setShowChat(!showChat)}
-            className={`relative flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-lg transition-colors duration-200 border ${
-              showChat 
-                ? 'bg-blue-600 border-blue-500 text-white' 
-                : 'bg-[#2a2a2a] hover:bg-[#333333] border-gray-700'
-            }`}
-          >
-            <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-xs sm:text-sm font-medium hidden sm:inline">Chat</span>
-            {messages.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-white font-semibold">
-                {messages.length > 9 ? '9+' : messages.length}
+            <button
+              onClick={() => setShowChat(!showChat)}
+              className={`group relative flex items-center space-x-2 px-3 sm:px-4 py-2.5 rounded-xl transition-all duration-300 border shadow-lg hover:scale-105 ${
+                showChat 
+                  ? 'bg-gradient-to-br from-blue-600 to-blue-700 border-blue-500/50 text-white shadow-blue-500/30' 
+                  : 'bg-gradient-to-br from-gray-700/40 to-gray-800/40 hover:from-gray-700/60 hover:to-gray-800/60 backdrop-blur-sm border-white/10 hover:border-white/20'
+              }`}
+            >
+              <MessageSquare className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors ${showChat ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
+              <span className="text-sm font-semibold hidden sm:inline">Chat</span>
+              {messages.length > 0 && !showChat && (
+                <span className="absolute -top-1.5 -right-1.5 bg-gradient-to-br from-red-500 to-red-600 text-xs rounded-full w-5 h-5 flex items-center justify-center text-white font-bold shadow-lg shadow-red-500/50 animate-bounce">
+                  {messages.length > 9 ? '9+' : messages.length}
+                </span>
+              )}
+            </button>
+          
+            <button
+              onClick={toggleRaiseHand}
+              className={`group flex items-center space-x-2 px-3 sm:px-4 py-2.5 rounded-xl transition-all duration-300 border shadow-lg hover:scale-105 ${
+                isHandRaised 
+                  ? 'bg-gradient-to-br from-yellow-500 to-orange-500 border-yellow-400/50 text-white shadow-yellow-500/30 animate-pulse' 
+                  : 'bg-gradient-to-br from-gray-700/40 to-gray-800/40 hover:from-gray-700/60 hover:to-gray-800/60 backdrop-blur-sm border-white/10 hover:border-white/20'
+              }`}
+              title="Raise hand"
+            >
+              <Hand className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors ${isHandRaised ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
+              <span className="text-sm font-semibold hidden sm:inline">
+                {isHandRaised ? 'Lower' : 'Raise'}
               </span>
-            )}
-          </button>
-          
-          <button
-            onClick={toggleRaiseHand}
-            className={`flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-lg transition-colors duration-200 border ${
-              isHandRaised 
-                ? 'bg-yellow-600 border-yellow-500 text-white' 
-                : 'bg-[#2a2a2a] hover:bg-[#333333] border-gray-700'
-            }`}
-            title="Raise hand"
-          >
-            <Hand className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-xs sm:text-sm font-medium hidden sm:inline">Raise Hand</span>
-          </button>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Content - Premium Responsive Video Grid */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      {/* Main Content - Premium Video Grid with Subtle Pattern */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-gradient-to-br from-gray-950 via-slate-900 to-gray-950 relative">
+        {/* Subtle grid pattern overlay */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgb(255 255 255) 1px, transparent 0)`,
+          backgroundSize: '40px 40px'
+        }}></div>
         
         {/* Video Grid Container - Responsive & Centered */}
         <div className={`${containerClass} h-full flex items-center justify-center`}>
@@ -2525,57 +2545,61 @@ const VideoRoom = () => {
 
     </div>
 
-    {/* Fixed Bottom Control Bar - Mobile Responsive - OUTSIDE main container */}
-    <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 p-3 sm:p-4 z-50">
-      <div className="flex items-center justify-center space-x-2 sm:space-x-4 max-w-2xl mx-auto">
+    {/* Premium Floating Control Bar - Modern & Responsive */}
+    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+      <div className="bg-black/70 backdrop-blur-2xl border border-white/20 rounded-3xl p-3 sm:p-4 shadow-2xl shadow-black/50">
+        <div className="flex items-center justify-center space-x-3 sm:space-x-4">
           <button
             onClick={toggleMic}
-            className={`group relative p-3 sm:p-4 rounded-2xl transition-all duration-300 transform active:scale-95 hover:scale-105 ${
+            className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg ${
               isMicOn 
-                ? 'bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30' 
-                : 'bg-red-500/80 hover:bg-red-500 backdrop-blur-sm border border-red-400/50'
+                ? 'bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20' 
+                : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border border-red-500/50 shadow-red-500/50'
             }`}
             title={isMicOn ? 'Mute microphone' : 'Unmute microphone'}
           >
-            {isMicOn ? <Mic className="w-6 h-6" /> : <MicOff className="w-6 h-6" />}
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
-              <div className="bg-black/90 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap">
+            {isMicOn ? <Mic className="w-6 h-6 text-white" /> : <MicOff className="w-6 h-6 text-white" />}
+            <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+              <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                 {isMicOn ? 'Mute' : 'Unmute'}
               </div>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-black/95 rotate-45 border-r border-b border-white/10"></div>
             </div>
           </button>
           
           <button
             onClick={toggleCamera}
-            className={`group relative p-3 sm:p-4 rounded-2xl transition-all duration-300 transform active:scale-95 hover:scale-105 ${
+            className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg ${
               isCameraOn 
-                ? 'bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30' 
-                : 'bg-red-500/80 hover:bg-red-500 backdrop-blur-sm border border-red-400/50'
+                ? 'bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20' 
+                : 'bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 border border-red-500/50 shadow-red-500/50'
             }`}
             title={isCameraOn ? 'Turn off camera' : 'Turn on camera'}
           >
-            {isCameraOn ? <VideoIcon className="w-6 h-6" /> : <VideoOff className="w-6 h-6" />}
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
-              <div className="bg-black/90 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap">
+            {isCameraOn ? <VideoIcon className="w-6 h-6 text-white" /> : <VideoOff className="w-6 h-6 text-white" />}
+            <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+              <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                 {isCameraOn ? 'Stop video' : 'Start video'}
               </div>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-black/95 rotate-45 border-r border-b border-white/10"></div>
             </div>
           </button>
           
           <button
             onClick={toggleScreenShare}
-            className={`group relative p-3 sm:p-4 rounded-2xl transition-all duration-300 transform active:scale-95 hover:scale-105 ${
+            className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg ${
               isScreenSharing 
-                ? 'bg-green-500/80 hover:bg-green-500 backdrop-blur-sm border border-green-400/50' 
-                : 'bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30'
+                ? 'bg-gradient-to-br from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 border border-green-500/50 shadow-green-500/50' 
+                : 'bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20'
             }`}
             title={isScreenSharing ? 'Stop sharing' : 'Share screen'}
           >
-            {isScreenSharing ? <MonitorOff className="w-6 h-6" /> : <Monitor className="w-6 h-6" />}
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
-              <div className="bg-black/90 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap">
+            {isScreenSharing ? <MonitorOff className="w-6 h-6 text-white" /> : <Monitor className="w-6 h-6 text-white" />}
+            <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+              <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                 {isScreenSharing ? 'Stop sharing' : 'Share screen'}
               </div>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-black/95 rotate-45 border-r border-b border-white/10"></div>
             </div>
           </button>
           
@@ -2584,7 +2608,7 @@ const VideoRoom = () => {
             <button
               data-reactions-button="true"
               onClick={(e) => {
-                e.stopPropagation(); // Prevent event bubbling
+                e.stopPropagation();
                 console.log('😀 Reactions button clicked, current state:', showReactionsMenu);
                 setShowReactionsMenu(!showReactionsMenu);
                 console.log('😀 Reactions menu toggled to:', !showReactionsMenu);
@@ -2592,22 +2616,25 @@ const VideoRoom = () => {
               onMouseDown={(e) => {
                 console.log('😀 Reactions button mouse down event');
               }}
-              className="group relative p-3 sm:p-4 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 transform active:scale-95 hover:scale-105 backdrop-blur-sm border border-white/30"
+              className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20 ${
+                showReactionsMenu ? 'ring-2 ring-yellow-400/50' : ''
+              }`}
               title="Reactions"
             >
-              <Smile className="w-6 h-6" />
-              <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
-                <div className="bg-black/90 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap">
+              <Smile className="w-6 h-6 text-white" />
+              <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+                <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                   Reactions
                 </div>
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-black/95 rotate-45 border-r border-b border-white/10"></div>
               </div>
             </button>
             
-            {/* Reactions Menu */}
+            {/* Premium Reactions Menu */}
             {showReactionsMenu && (
               <div 
                 data-reactions-menu="true"
-                className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-black/90 backdrop-blur-xl rounded-2xl p-3 border border-white/20 flex space-x-2"
+                className="absolute bottom-full mb-3 left-1/2 transform -translate-x-1/2 bg-black/95 backdrop-blur-2xl rounded-2xl p-3 border border-white/20 flex space-x-2 shadow-2xl animate-fade-in"
               >
                 {['👍', '❤️', '😂', '👏', '🎉', '😮', '😢', '🔥'].map((emoji) => (
                   <button
@@ -2618,10 +2645,10 @@ const VideoRoom = () => {
                       setShowReactionsMenu(false);
                       console.log('😀 Reactions menu closed after sending reaction');
                     }}
-                    className="p-2 hover:bg-white/20 rounded-xl transition-all duration-200 transform hover:scale-110"
+                    className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 transform hover:scale-125 active:scale-110 hover:shadow-lg"
                     title={`React with ${emoji}`}
                   >
-                    <span className="text-xl">{emoji}</span>
+                    <span className="text-2xl">{emoji}</span>
                   </button>
                 ))}
               </div>
@@ -2633,7 +2660,7 @@ const VideoRoom = () => {
             <button
               data-tools-button="true"
               onClick={(e) => {
-                e.stopPropagation(); // Prevent event bubbling
+                e.stopPropagation();
                 console.log('⚙️ More Tools button clicked, current state:', showToolsMenu);
                 setShowToolsMenu(!showToolsMenu);
                 console.log('⚙️ Tools menu toggled to:', !showToolsMenu);
@@ -2641,22 +2668,25 @@ const VideoRoom = () => {
               onMouseDown={(e) => {
                 console.log('⚙️ More Tools button mouse down event');
               }}
-              className="group relative p-3 sm:p-4 bg-white/20 hover:bg-white/30 rounded-2xl transition-all duration-300 transform active:scale-95 hover:scale-105 backdrop-blur-sm border border-white/30"
+              className={`group relative p-4 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 shadow-lg bg-gradient-to-br from-slate-700/60 to-slate-800/60 hover:from-slate-600/70 hover:to-slate-700/70 border border-white/20 ${
+                showToolsMenu ? 'ring-2 ring-blue-400/50' : ''
+              }`}
               title="More Tools"
             >
-              <MoreVertical className="w-6 h-6" />
-              <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
-                <div className="bg-black/90 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap">
+              <MoreVertical className="w-6 h-6 text-white" />
+              <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+                <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                   More Tools
                 </div>
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-black/95 rotate-45 border-r border-b border-white/10"></div>
               </div>
             </button>
             
-            {/* Tools Menu */}
+            {/* Premium Tools Menu */}
             {showToolsMenu && (
               <div 
                 data-tools-menu="true"
-                className="absolute bottom-full mb-2 right-0 bg-black/90 backdrop-blur-xl rounded-2xl p-3 border border-white/20 min-w-48"
+                className="absolute bottom-full mb-3 right-0 bg-black/95 backdrop-blur-2xl rounded-2xl p-2 border border-white/20 min-w-56 shadow-2xl animate-fade-in"
               >
                 <button
                   onClick={() => {
@@ -2664,15 +2694,16 @@ const VideoRoom = () => {
                     setShowWhiteboard(true);
                     setShowToolsMenu(false);
                     console.log('🖊️ Whiteboard state set to true, new state should be:', true);
-                    // Force a re-render check
                     setTimeout(() => {
                       console.log('🖊️ Whiteboard state after timeout:', showWhiteboard);
                     }, 100);
                   }}
-                  className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10"
+                  className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10 group"
                 >
-                  <Edit3 className="w-5 h-5" />
-                  <span className="text-sm font-medium">Whiteboard</span>
+                  <div className="p-2 bg-gradient-to-br from-blue-600/20 to-blue-700/20 rounded-lg border border-blue-500/30 group-hover:border-blue-500/50 transition-colors">
+                    <Edit3 className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <span className="text-sm font-semibold text-white">Whiteboard</span>
                 </button>
                 
                 <button
@@ -2682,12 +2713,18 @@ const VideoRoom = () => {
                     setShowToolsMenu(false);
                     console.log('🔴 Recording state toggled to:', !isRecording);
                   }}
-                  className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10 ${
-                    isRecording ? 'bg-red-500/20 text-red-300' : ''
+                  className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10 group ${
+                    isRecording ? 'bg-red-500/10' : ''
                   }`}
                 >
-                  <Circle className={`w-5 h-5 ${isRecording ? 'fill-current animate-pulse' : ''}`} />
-                  <span className="text-sm font-medium">
+                  <div className={`p-2 rounded-lg border transition-colors ${
+                    isRecording 
+                      ? 'bg-gradient-to-br from-red-600/30 to-red-700/30 border-red-500/50 animate-pulse' 
+                      : 'bg-gradient-to-br from-red-600/20 to-red-700/20 border-red-500/30 group-hover:border-red-500/50'
+                  }`}>
+                    <Circle className={`w-5 h-5 text-red-400 ${isRecording ? 'fill-current' : ''}`} />
+                  </div>
+                  <span className="text-sm font-semibold text-white">
                     {isRecording ? 'Stop Recording' : 'Start Recording'}
                   </span>
                 </button>
@@ -2701,15 +2738,16 @@ const VideoRoom = () => {
                     setActiveTab('notepad');
                     setShowToolsMenu(false);
                     console.log('📝 Chat panel state set to:', true, 'activeTab set to: notepad');
-                    // Force a re-render check
                     setTimeout(() => {
                       console.log('📝 After timeout - showChat:', showChat, 'activeTab:', activeTab);
                     }, 100);
                   }}
-                  className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10"
+                  className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10 group"
                 >
-                  <FileText className="w-5 h-5" />
-                  <span className="text-sm font-medium">Notepad</span>
+                  <div className="p-2 bg-gradient-to-br from-purple-600/20 to-purple-700/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-colors">
+                    <FileText className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <span className="text-sm font-semibold text-white">Notepad</span>
                 </button>
                 
                 <button
@@ -2720,31 +2758,35 @@ const VideoRoom = () => {
                     setShowToolsMenu(false);
                     console.log('📊 Chat panel opened with polls tab');
                   }}
-                  className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10"
+                  className="w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10 group"
                 >
-                  <BarChart3 className="w-5 h-5" />
-                  <span className="text-sm font-medium">Polls</span>
+                  <div className="p-2 bg-gradient-to-br from-orange-600/20 to-orange-700/20 rounded-lg border border-orange-500/30 group-hover:border-orange-500/50 transition-colors">
+                    <BarChart3 className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <span className="text-sm font-semibold text-white">Polls</span>
                 </button>
               </div>
             )}
           </div>
           
-          <div className="w-px h-8 bg-white/20 mx-2"></div>
+          <div className="w-px h-10 sm:h-12 bg-gradient-to-b from-transparent via-white/30 to-transparent"></div>
           
           <button
             onClick={leaveMeeting}
-            className="group relative p-3 sm:p-4 bg-red-500/80 hover:bg-red-500 rounded-2xl transition-all duration-300 transform active:scale-95 hover:scale-105 backdrop-blur-sm border border-red-400/50"
+            className="group relative p-4 bg-gradient-to-br from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-2xl transition-all duration-300 transform active:scale-90 hover:scale-110 border border-red-500/50 shadow-lg shadow-red-500/50"
             title="Leave meeting"
           >
-            <Phone className="w-6 h-6 transform rotate-[135deg]" />
-            <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:block">
-              <div className="bg-black/90 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap">
+            <Phone className="w-6 h-6 text-white transform rotate-[135deg]" />
+            <div className="absolute -top-14 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none hidden sm:block">
+              <div className="bg-black/95 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap shadow-xl border border-white/10">
                 Leave meeting
               </div>
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 w-2 h-2 bg-black/95 rotate-45 border-r border-b border-white/10"></div>
             </div>
           </button>
         </div>
       </div>
+    </div>
 
       {/* Whiteboard Modal */}
       <Whiteboard 
@@ -2824,9 +2866,9 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
   }, [stream]);
 
   if (isThumbnail) {
-    // Thumbnail mode in pinned layout
+    // Premium Thumbnail mode in pinned layout
     return (
-      <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out aspect-video">
+      <div className="relative bg-gradient-to-br from-gray-900 to-slate-900 rounded-2xl overflow-hidden shadow-xl border border-white/10 group hover:border-blue-500/50 transition-all duration-300 ease-in-out aspect-video hover:shadow-2xl hover:shadow-blue-500/20">
         <video
           ref={videoRef}
           autoPlay
@@ -2834,25 +2876,25 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
           className={`w-full h-full object-cover bg-black transition-opacity duration-300 ${!hasVideo ? 'opacity-0' : 'opacity-100'}`}
           style={{ transform: 'scaleX(-1)' }}
         />        {!hasVideo && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a1a]">
-            <div className={`w-12 h-12 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
-              <span className="text-lg font-semibold text-white">{getUserInitials(userName)}</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-gray-900">
+            <div className={`w-14 h-14 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-2 border-white/20`}>
+              <span className="text-xl font-bold text-white">{getUserInitials(userName)}</span>
             </div>
           </div>
         )}
-        <div className="absolute bottom-1.5 left-1.5 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-md">
-          <span className="text-xs font-medium text-white truncate max-w-[calc(100%-3rem)]">{userName}</span>
+        <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+          <span className="text-xs font-semibold text-white truncate max-w-[calc(100%-3rem)]">{userName}</span>
         </div>
         <button
           onClick={onPin}
-          className="absolute top-1.5 right-1.5 bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute top-2 right-2 bg-black/70 hover:bg-gradient-to-br hover:from-blue-600 hover:to-blue-700 backdrop-blur-md p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 border border-white/10 hover:border-blue-500/50 hover:scale-110 active:scale-95"
           title="Pin"
         >
-          <Pin className="w-3 h-3 text-white" />
+          <Pin className="w-3.5 h-3.5 text-white" />
         </button>
         {isHandRaised && (
-          <div className="absolute top-1.5 left-1.5 bg-gradient-to-br from-yellow-400 to-orange-500 p-1 rounded-full">
-            <Hand className="w-3 h-3 text-white" />
+          <div className="absolute top-2 left-2 bg-gradient-to-br from-yellow-400 to-orange-500 p-1.5 rounded-xl animate-pulse shadow-lg border border-yellow-300/50">
+            <Hand className="w-3.5 h-3.5 text-white" />
           </div>
         )}
       </div>
@@ -2860,9 +2902,9 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
   }
 
   if (isPinned) {
-    // Pinned mode - large video view with proper aspect ratio
+    // Premium Pinned mode - large video view with glassmorphism
     return (
-      <div className={`relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-blue-500/50 group transition-all duration-300 ease-in-out w-full max-w-6xl aspect-video mx-auto`}>
+      <div className={`relative bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 rounded-3xl overflow-hidden shadow-2xl border-2 border-blue-500/50 group transition-all duration-300 ease-in-out w-full max-w-6xl aspect-video mx-auto hover:border-blue-400/70 hover:shadow-blue-500/30`}>
         <video
           ref={videoRef}
           autoPlay
@@ -2871,41 +2913,44 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
           style={{ transform: 'scaleX(-1)' }}
         />
         
-        {/* Avatar when camera is off */}
+        {/* Premium Avatar when camera is off */}
         {!hasVideo && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a1a]">
-            <div className={`w-32 h-32 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
-              <span className="text-5xl font-semibold text-white">{getUserInitials(userName)}</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-gray-900 to-slate-900">
+            <div className={`w-40 h-40 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-4 border-white/20 backdrop-blur-lg`}>
+              <span className="text-6xl font-bold text-white drop-shadow-2xl">{getUserInitials(userName)}</span>
             </div>
           </div>
         )}
         
-        {/* Hand Raised Indicator */}
+        {/* Hand Raised Indicator with Premium Glow */}
         {isHandRaised && (
-          <div className="absolute top-3 left-3 bg-gradient-to-br from-yellow-400 to-orange-500 p-2 rounded-full">
-            <Hand className="w-5 h-5 text-white" />
+          <div className="absolute top-4 left-4 bg-gradient-to-br from-yellow-400 to-orange-500 p-3 rounded-2xl shadow-xl animate-pulse border-2 border-yellow-300/50">
+            <Hand className="w-6 h-6 text-white drop-shadow-lg" />
           </div>
         )}
         
-        {/* User Name Badge */}
-        <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-md">
-          <span className="text-sm font-medium text-white">{userName} (Pinned)</span>
+        {/* Premium Name Badge with Glassmorphism */}
+        <div className="absolute bottom-4 left-4 bg-black/70 backdrop-blur-2xl px-5 py-2.5 rounded-2xl border border-white/20 shadow-xl">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+            <span className="text-base font-bold text-white">{userName} <span className="text-blue-400 font-semibold">(Pinned)</span></span>
+          </div>
         </div>
         
-        {/* Unpin Button - Top Right */}
+        {/* Premium Unpin Button - Top Right */}
         <button
           onClick={onPin}
-          className="absolute top-3 right-3 bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+          className="absolute top-4 right-4 bg-gradient-to-br from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 p-3 rounded-2xl transition-all duration-300 opacity-0 group-hover:opacity-100 shadow-xl border border-blue-500/50 hover:scale-110 active:scale-95"
           title="Unpin"
         >
-          <PinOff className="w-4 h-4 text-white" />
+          <PinOff className="w-5 h-5 text-white" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="relative bg-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-700/30 group hover:border-gray-600/50 transition-all duration-300 ease-in-out aspect-video">
+    <div className="relative bg-gradient-to-br from-gray-900 to-slate-900 rounded-2xl overflow-hidden shadow-xl border border-white/10 group hover:border-purple-500/50 transition-all duration-300 ease-in-out aspect-video hover:shadow-2xl hover:shadow-purple-500/20 hover:scale-[1.02]">
       <video
         ref={videoRef}
         autoPlay
@@ -2914,34 +2959,34 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
         style={{ transform: 'scaleX(-1)' }}
       />
       
-      {/* Avatar when camera is off */}
+      {/* Premium Avatar when camera is off */}
       {!hasVideo && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a1a]">
-          <div className={`w-20 h-20 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-lg`}>
-            <span className="text-2xl font-semibold text-white">{getUserInitials(userName)}</span>
+        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-gray-900">
+          <div className={`w-24 h-24 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-2 border-white/20`}>
+            <span className="text-3xl font-bold text-white drop-shadow-lg">{getUserInitials(userName)}</span>
           </div>
         </div>
       )}
       
-      {/* Hand Raised Indicator */}
+      {/* Hand Raised Indicator with Pulse */}
       {isHandRaised && (
-        <div className="absolute top-3 left-3 bg-gradient-to-br from-yellow-400 to-orange-500 p-2 rounded-full">
-          <Hand className="w-4 h-4 text-white" />
+        <div className="absolute top-3 left-3 bg-gradient-to-br from-yellow-400 to-orange-500 p-2.5 rounded-xl shadow-lg animate-pulse border border-yellow-300/50">
+          <Hand className="w-5 h-5 text-white drop-shadow-md" />
         </div>
       )}
       
-      {/* User Name Badge */}
-      <div className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm px-3 py-1.5 rounded-md">
-        <span className="text-sm font-medium text-white truncate max-w-[120px]">{userName}</span>
+      {/* Premium Name Badge */}
+      <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-xl px-4 py-2 rounded-xl border border-white/20 shadow-lg">
+        <span className="text-sm font-bold text-white truncate max-w-[140px]">{userName}</span>
       </div>
       
-      {/* Pin Button - Top Right */}
+      {/* Premium Pin Button with Gradient */}
       <button
         onClick={onPin}
-        className="absolute top-3 right-3 bg-black/60 hover:bg-blue-500 backdrop-blur-sm p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+        className="absolute top-3 right-3 bg-black/70 hover:bg-gradient-to-br hover:from-purple-600 hover:to-purple-700 backdrop-blur-md p-2.5 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 border border-white/10 hover:border-purple-500/50 hover:scale-110 active:scale-95 shadow-lg"
         title="Pin participant"
       >
-        <Pin className="w-4 h-4 text-white" />
+        <Pin className="w-5 h-5 text-white" />
       </button>
     </div>
   );
