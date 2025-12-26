@@ -463,9 +463,9 @@ const Login = () => {
                 {isSignUp && (
                   <p className="mt-4 text-xs text-center text-gray-500 dark:text-gray-400">
                     By signing up, you agree to our{' '}
-                    <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">Terms of Service</a>
+                    <span className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Terms of Service</span>
                     {' '}and{' '}
-                    <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">Privacy Policy</a>
+                    <span className="text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">Privacy Policy</span>
                   </p>
                 )}
               </>
