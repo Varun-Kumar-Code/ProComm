@@ -2543,8 +2543,6 @@ const VideoRoom = () => {
         )}
       </div>
 
-    </div>
-
     {/* Premium Floating Control Bar - Modern & Responsive */}
     <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
       <div className="bg-black/70 backdrop-blur-2xl border border-white/20 rounded-3xl p-3 sm:p-4 shadow-2xl shadow-black/50">
