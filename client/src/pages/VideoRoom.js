@@ -1292,8 +1292,8 @@ const VideoRoom = () => {
   };
 
   const addPeer = (userId, stream, userName) => {
-    console.log('➕ Adding peer:', userName, 'userId:', userId);
-    console.log('➕ Stream details:', {
+    console.log('[+] Adding peer:', userName, 'userId:', userId);
+    console.log('[+] Stream details:', {
       active: stream.active,
       id: stream.id,
       videoTracks: stream.getVideoTracks().length,
@@ -1307,7 +1307,7 @@ const VideoRoom = () => {
     setPeers(prevPeers => {
       const newPeers = new Map(prevPeers);
       newPeers.set(userId, { stream, userName, isMicOn });
-      console.log('➕ Peers count:', newPeers.size);
+      console.log('[+] Peers count:', newPeers.size);
       return newPeers;
     });
     
