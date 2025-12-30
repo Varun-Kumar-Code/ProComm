@@ -2228,7 +2228,110 @@ const VideoRoom = () => {
           ))}
         </div>
 
-        {/* Participants Panel */}\n        {showParticipants && (\n          <div className=\"fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4\" onClick={() => setShowParticipants(false)}>\n            <div className=\"bg-gradient-to-br from-gray-900 to-gray-950 border border-white/20 rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden\" onClick={(e) => e.stopPropagation()}>\n              {/* Header */}\n              <div className=\"bg-gradient-to-r from-purple-600/20 to-purple-700/20 border-b border-white/10 p-4 flex items-center justify-between\">\n                <div className=\"flex items-center space-x-3\">\n                  <div className=\"p-2 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg\">\n                    <Users className=\"w-5 h-5 text-white\" />\n                  </div>\n                  <div>\n                    <h3 className=\"font-semibold text-white text-lg\">Participants</h3>\n                    <p className=\"text-sm text-purple-200\">{participants.length + 1} in meeting</p>\n                  </div>\n                </div>\n                <button\n                  onClick={() => setShowParticipants(false)}\n                  className=\"p-2 hover:bg-white/10 rounded-lg transition-colors\"\n                >\n                  <X className=\"w-5 h-5 text-gray-400 hover:text-white\" />\n                </button>\n              </div>\n              \n              {/* Participants List */}\n              <div className=\"p-4 space-y-2 overflow-y-auto max-h-[calc(80vh-80px)]\">\n                {/* Local User */}\n                <div className=\"bg-gradient-to-r from-blue-600/20 to-blue-700/20 border border-blue-500/30 rounded-xl p-3 flex items-center justify-between\">\n                  <div className=\"flex items-center space-x-3\">\n                    {userProfilePic ? (\n                      <img src={userProfilePic} alt={userName} className=\"w-10 h-10 rounded-full object-cover border-2 border-blue-400\" />\n                    ) : (\n                      <div className={`w-10 h-10 rounded-full ${getAvatarColor(userName)} flex items-center justify-center text-white font-bold border-2 border-blue-400`}>\n                        {getUserInitials(userName)}\n                      </div>\n                    )}\n                    <div className=\"flex-1 min-w-0\">\n                      <div className=\"flex items-center space-x-2\">\n                        <span className=\"font-semibold text-white truncate\">{userName}</span>\n                        <span className=\"text-xs bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded-full\">You</span>\n                      </div>\n                      <p className=\"text-xs text-blue-200 truncate\">{userEmail}</p>\n                    </div>\n                  </div>\n                  <div className=\"flex items-center space-x-2\">\n                    {isMicOn ? (\n                      <div className=\"p-2 bg-green-500/20 rounded-lg\" title=\"Unmuted\">\n                        <Mic className=\"w-4 h-4 text-green-400\" />\n                      </div>\n                    ) : (\n                      <div className=\"p-2 bg-red-500/20 rounded-lg\" title=\"Muted\">\n                        <MicOff className=\"w-4 h-4 text-red-400\" />\n                      </div>\n                    )}\n                  </div>\n                </div>\n                \n                {/* Remote Participants */}\n                {Array.from(peers.entries()).map(([peerId, peerData]) => {\n                  const audioTrack = peerData.stream?.getAudioTracks()[0];\n                  const isMicEnabled = audioTrack ? audioTrack.enabled : false;\n                  \n                  return (\n                    <div key={peerId} className=\"bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 flex items-center justify-between transition-colors\">\n                      <div className=\"flex items-center space-x-3\">\n                        <div className={`w-10 h-10 rounded-full ${getAvatarColor(peerData.userName)} flex items-center justify-center text-white font-bold`}>\n                          {getUserInitials(peerData.userName)}\n                        </div>\n                        <div className=\"flex-1 min-w-0\">\n                          <span className=\"font-medium text-white truncate block\">{peerData.userName}</span>\n                          {handsRaised.has(peerId) && (\n                            <span className=\"text-xs text-yellow-400 flex items-center space-x-1\">\n                              <Hand className=\"w-3 h-3\" />\n                              <span>Hand raised</span>\n                            </span>\n                          )}\n                        </div>\n                      </div>\n                      <div className=\"flex items-center space-x-2\">\n                        {isMicEnabled ? (\n                          <div className=\"p-2 bg-green-500/20 rounded-lg\" title=\"Unmuted\">\n                            <Mic className=\"w-4 h-4 text-green-400\" />\n                          </div>\n                        ) : (\n                          <div className=\"p-2 bg-red-500/20 rounded-lg\" title=\"Muted\">\n                            <MicOff className=\"w-4 h-4 text-red-400\" />\n                          </div>\n                        )}\n                      </div>\n                    </div>\n                  );\n                })}\n                \n                {participants.length === 0 && (\n                  <div className=\"text-center py-8 text-gray-400\">\n                    <Users className=\"w-12 h-12 mx-auto mb-2 opacity-30\" />\n                    <p className=\"text-sm\">Waiting for others to join...</p>\n                  </div>\n                )}\n              </div>\n            </div>\n          </div>\n        )}\n\n        {/* Enhanced Meeting Sidebar */}
+        {/* Participants Panel */}
+        {showParticipants && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowParticipants(false)}>
+            <div className="bg-gradient-to-br from-gray-900 to-gray-950 border border-white/20 rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="bg-gradient-to-r from-purple-600/20 to-purple-700/20 border-b border-white/10 p-4 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white text-lg">Participants</h3>
+                    <p className="text-sm text-purple-200">{participants.length + 1} in meeting</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowParticipants(false)}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-400 hover:text-white" />
+                </button>
+              </div>
+              
+              {/* Participants List */}
+              <div className="p-4 space-y-2 overflow-y-auto max-h-[calc(80vh-80px)]">
+                {/* Local User */}
+                <div className="bg-gradient-to-r from-blue-600/20 to-blue-700/20 border border-blue-500/30 rounded-xl p-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {userProfilePic ? (
+                      <img src={userProfilePic} alt={userName} className="w-10 h-10 rounded-full object-cover border-2 border-blue-400" />
+                    ) : (
+                      <div className={`w-10 h-10 rounded-full ${getAvatarColor(userName)} flex items-center justify-center text-white font-bold border-2 border-blue-400`}>
+                        {getUserInitials(userName)}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-semibold text-white truncate">{userName}</span>
+                        <span className="text-xs bg-blue-500/30 text-blue-200 px-2 py-0.5 rounded-full">You</span>
+                      </div>
+                      <p className="text-xs text-blue-200 truncate">{userEmail}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {isMicOn ? (
+                      <div className="p-2 bg-green-500/20 rounded-lg" title="Unmuted">
+                        <Mic className="w-4 h-4 text-green-400" />
+                      </div>
+                    ) : (
+                      <div className="p-2 bg-red-500/20 rounded-lg" title="Muted">
+                        <MicOff className="w-4 h-4 text-red-400" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Remote Participants */}
+                {Array.from(peers.entries()).map(([peerId, peerData]) => {
+                  const audioTrack = peerData.stream?.getAudioTracks()[0];
+                  const isMicEnabled = audioTrack ? audioTrack.enabled : false;
+                  
+                  return (
+                    <div key={peerId} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 flex items-center justify-between transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-full ${getAvatarColor(peerData.userName)} flex items-center justify-center text-white font-bold`}>
+                          {getUserInitials(peerData.userName)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-white truncate block">{peerData.userName}</span>
+                          {handsRaised.has(peerId) && (
+                            <span className="text-xs text-yellow-400 flex items-center space-x-1">
+                              <Hand className="w-3 h-3" />
+                              <span>Hand raised</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {isMicEnabled ? (
+                          <div className="p-2 bg-green-500/20 rounded-lg" title="Unmuted">
+                            <Mic className="w-4 h-4 text-green-400" />
+                          </div>
+                        ) : (
+                          <div className="p-2 bg-red-500/20 rounded-lg" title="Muted">
+                            <MicOff className="w-4 h-4 text-red-400" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {participants.length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    <Users className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Waiting for others to join...</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Meeting Sidebar */}
         {showChat && (
           <div className="fixed lg:relative top-0 lg:top-0 bottom-0 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col h-full lg:h-[calc(100vh-60px)] z-40">
             {/* Header with Close Button for Mobile */}
