@@ -110,9 +110,6 @@ const VideoRoom = () => {
   
   // Active tab in chat panel
   const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'polls', 'whiteboard', 'notepad'
-  
-  // Force re-render for track state changes (mic/camera)
-  const [, forceUpdate] = useState({});
 
   // Refs
   const localVideoRef = useRef(null);
