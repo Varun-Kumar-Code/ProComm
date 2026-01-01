@@ -2157,6 +2157,8 @@ const VideoRoom = () => {
               ) : (
                 getSortedParticipants().map(([peerId, peerData]) => {
                   if (peerId === pinnedParticipant) {
+                    const mediaState = peerMediaStates.get(peerId);
+                    const isCameraEnabled = mediaState?.video ?? true;
                     return (
                       <RemoteVideo
                         key={peerId}
@@ -2164,6 +2166,7 @@ const VideoRoom = () => {
                         stream={peerData.stream}
                         userName={peerData.userName}
                         profilePicUrl={peerData.profilePicUrl}
+                        isCameraOn={isCameraEnabled}
                         handsRaised={handsRaised}
                         isPinned={true}
                         isThumbnail={false}
@@ -2225,6 +2228,8 @@ const VideoRoom = () => {
                 )}
                 {getSortedParticipants().map(([peerId, peerData]) => {
                   if (peerId === pinnedParticipant) return null;
+                  const mediaState = peerMediaStates.get(peerId);
+                  const isCameraEnabled = mediaState?.video ?? true;
                   return (
                     <RemoteVideo
                       key={peerId}
@@ -2232,6 +2237,7 @@ const VideoRoom = () => {
                       stream={peerData.stream}
                       userName={peerData.userName}
                       profilePicUrl={peerData.profilePicUrl}
+                      isCameraOn={isCameraEnabled}
                       handsRaised={handsRaised}
                       isPinned={false}
                       isThumbnail={true}
@@ -2316,19 +2322,24 @@ const VideoRoom = () => {
             </div>
 
               {/* Remote Videos */}
-              {getSortedParticipants().map(([peerId, peerData]) => (
-                <RemoteVideo 
-                  key={peerId}
-                  peerId={peerId}
-                  stream={peerData.stream}
-                  userName={peerData.userName}
-                  profilePicUrl={peerData.profilePicUrl}
-                  handsRaised={handsRaised}
-                  isPinned={false}
-                  isThumbnail={false}
-                  onPin={() => setPinnedParticipant(peerId)}
-                />
-              ))}
+              {getSortedParticipants().map(([peerId, peerData]) => {
+                const mediaState = peerMediaStates.get(peerId);
+                const isCameraEnabled = mediaState?.video ?? true;
+                return (
+                  <RemoteVideo 
+                    key={peerId}
+                    peerId={peerId}
+                    stream={peerData.stream}
+                    userName={peerData.userName}
+                    profilePicUrl={peerData.profilePicUrl}
+                    isCameraOn={isCameraEnabled}
+                    handsRaised={handsRaised}
+                    isPinned={false}
+                    isThumbnail={false}
+                    onPin={() => setPinnedParticipant(peerId)}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
@@ -3034,9 +3045,9 @@ const VideoRoom = () => {
   );
 };
 
-const RemoteVideo = ({ stream, userName, peerId, profilePicUrl = '', handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin, pinnedClass = '' }) => {
+const RemoteVideo = ({ stream, userName, peerId, profilePicUrl = '', isCameraOn = true, handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin, pinnedClass = '' }) => {
   const videoRef = useRef(null);
-  const [hasVideo, setHasVideo] = useState(true);
+  const hasVideo = isCameraOn; // Use the camera state from API polling
   const isHandRaised = handsRaised.has(peerId);
   
   // Helper function to get user initials for avatar
@@ -3070,30 +3081,6 @@ const RemoteVideo = ({ stream, userName, peerId, profilePicUrl = '', handsRaised
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
-      
-      // Check if video track exists and is enabled
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack) {
-        setHasVideo(videoTrack.enabled && videoTrack.readyState === 'live');
-        
-        // Listen for track enabled/disabled events
-        const handleTrackChange = () => {
-          setHasVideo(videoTrack.enabled && videoTrack.readyState === 'live');
-        };
-        
-        videoTrack.addEventListener('ended', () => setHasVideo(false));
-        videoTrack.addEventListener('mute', () => setHasVideo(false));
-        videoTrack.addEventListener('unmute', handleTrackChange);
-        
-        return () => {
-          videoTrack.removeEventListener('ended', () => setHasVideo(false));
-          videoTrack.removeEventListener('mute', () => setHasVideo(false));
-          videoTrack.removeEventListener('unmute', handleTrackChange);
-        };
-      } else {
-        // No video track means camera is off
-        setHasVideo(false);
-      }
     }
   }, [stream]);
 
