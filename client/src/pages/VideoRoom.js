@@ -1917,7 +1917,7 @@ const VideoRoom = () => {
               onClick={() => setShowParticipants(!showParticipants)}
               className="group flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2.5 bg-gradient-to-br from-purple-600/20 to-purple-700/20 hover:from-purple-600/30 hover:to-purple-700/30 backdrop-blur-sm rounded-lg sm:rounded-xl transition-all duration-300 border border-purple-500/30 hover:border-purple-500/50 shadow-lg active:scale-95 sm:hover:shadow-purple-500/20 sm:hover:scale-105"
             >
-              <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 text-purple-300 group-hover:text-purple-200 transition-colors" />
+              <Users className="w-5 h-5 sm:w-5 sm:h-5 lg:w-5 lg:h-5 text-purple-300 group-hover:text-purple-200 transition-colors" />
               <div className="flex items-center gap-1">
                 <span className="text-xs sm:text-sm lg:text-base font-bold text-white">{participants.length + 1}</span>
                 <span className="hidden lg:inline text-xs text-purple-200/80">participants</span>
@@ -1932,7 +1932,7 @@ const VideoRoom = () => {
                   : 'bg-gradient-to-br from-gray-700/40 to-gray-800/40 hover:from-gray-700/60 hover:to-gray-800/60 backdrop-blur-sm border-white/10 hover:border-white/20'
               }`}
             >
-              <MessageSquare className={`w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 transition-colors ${showChat ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
+              <MessageSquare className={`w-5 h-5 sm:w-5 sm:h-5 lg:w-5 lg:h-5 transition-colors ${showChat ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
               <span className="text-xs sm:text-sm font-semibold hidden md:inline">Chat</span>
               {messages.length > 0 && !showChat && (
                 <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 bg-gradient-to-br from-red-500 to-red-600 text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-white font-bold shadow-lg shadow-red-500/50 animate-bounce">
@@ -1950,7 +1950,7 @@ const VideoRoom = () => {
               }`}
               title="Raise hand"
             >
-              <Hand className={`w-3.5 h-3.5 sm:w-4 sm:h-4 lg:w-5 lg:h-5 transition-colors ${isHandRaised ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
+              <Hand className={`w-5 h-5 sm:w-5 sm:h-5 lg:w-5 lg:h-5 transition-colors ${isHandRaised ? 'text-white' : 'text-gray-300 group-hover:text-white'}`} />
               <span className="text-xs sm:text-sm font-semibold hidden lg:inline">
                 {isHandRaised ? 'Lower' : 'Raise'}
               </span>
