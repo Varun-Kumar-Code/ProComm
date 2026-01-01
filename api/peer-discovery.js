@@ -42,10 +42,10 @@ export default function handler(req, res) {
         lastSeen: Date.now()
       });
 
-      // Clean up old peers (older than 30 seconds - more aggressive cleanup)
-      const thirtySecondsAgo = Date.now() - (30 * 1000);
+      // Clean up old peers (older than 15 seconds - aggressive cleanup for stale connections)
+      const fifteenSecondsAgo = Date.now() - (15 * 1000);
       for (const [peerId, peerData] of meetingPeers.entries()) {
-        if (peerData.lastSeen < thirtySecondsAgo) {
+        if (peerData.lastSeen < fifteenSecondsAgo) {
           console.log('Removing stale peer:', peerId);
           meetingPeers.delete(peerId);
         }
@@ -88,10 +88,10 @@ export default function handler(req, res) {
         });
       }
 
-      // Clean up old peers
-      const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+      // Clean up old peers (same 15 second timeout as POST for consistency)
+      const fifteenSecondsAgo = Date.now() - (15 * 1000);
       for (const [peerId, peerData] of meetingPeers.entries()) {
-        if (peerData.lastSeen < fiveMinutesAgo) {
+        if (peerData.lastSeen < fifteenSecondsAgo) {
           meetingPeers.delete(peerId);
         }
       }

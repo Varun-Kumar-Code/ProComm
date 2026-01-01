@@ -385,7 +385,17 @@ const VideoRoom = () => {
     }
     
     initializeVideoCall();
+    
+    // Cleanup on unmount
+    const handleBeforeUnload = () => {
+      console.log('📴 Page unloading, cleaning up...');
+      cleanup();
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1032,15 +1042,6 @@ const VideoRoom = () => {
                   };
                   
                   attemptCall();
-                });
-                        });
-                      } else {
-                        console.error('❌ Failed to create call to:', peerData.userName);
-                      }
-                    } catch (callError) {
-                      console.error('❌ Exception calling peer:', peerData.userName, callError);
-                    }
-                  }, 1000);
                 });
               }
             } catch (error) {
@@ -1837,8 +1838,10 @@ const VideoRoom = () => {
     // Clean up peer data from API
     if (roomId && peerRef.current && peerRef.current.id) {
       try {
-        fetch(`/api/peer-discovery?meetingId=${roomId}&userId=${peerRef.current.id}`, {
-          method: 'DELETE'
+        fetch(`/api/peer-discovery?meetingId=${roomId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: peerRef.current.id })
         }).catch(err => console.error('Error removing peer from API:', err));
       } catch (e) {
         console.error('Error cleaning up peer data:', e);
