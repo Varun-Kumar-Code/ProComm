@@ -2333,7 +2333,7 @@ const VideoRoom = () => {
 
         {/* Enhanced Meeting Sidebar */}
         {showChat && (
-          <div className="fixed lg:relative top-0 lg:top-0 bottom-0 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col h-full lg:h-[calc(100vh-60px)] z-40">
+          <div className="fixed lg:relative top-0 lg:top-0 bottom-0 lg:bottom-0 left-0 right-0 lg:w-96 bg-gray-900/95 backdrop-blur-sm border-l lg:border-l border-t lg:border-t-0 border-white/10 flex flex-col h-full lg:h-[calc(100vh-60px)] z-40 pb-24 sm:pb-28 lg:pb-0">
             {/* Header with Close Button for Mobile */}
             <div className="lg:hidden flex items-center justify-between p-2.5 border-b border-white/10 flex-shrink-0 bg-gray-900">
               <h3 className="font-semibold text-white text-sm">Meeting Chat</h3>
@@ -2429,7 +2429,7 @@ const VideoRoom = () => {
                   </div>
                   
                   {/* Input area - Fixed at bottom */}
-                  <div className="p-2 lg:p-4 border-t border-white/10 bg-gray-900 flex-shrink-0">
+                  <div className="p-2 lg:p-4 border-t border-white/10 bg-gray-900 flex-shrink-0 mb-safe">
                     {/* Reply preview */}
                     {replyTo && (
                       <div className="mb-2 flex items-start justify-between bg-blue-500/10 border-l-2 border-blue-500 p-2 rounded">
@@ -2481,7 +2481,7 @@ const VideoRoom = () => {
                     </button>
                   </div>
                   
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
+                  <div className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0 pb-safe">
                     {showCreatePoll && (
                       <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
                         <h4 className="text-sm font-medium text-white mb-3">Create New Poll</h4>
@@ -2635,7 +2635,7 @@ const VideoRoom = () => {
                     </div>
                   </div>
                   
-                  <div className="flex-1 p-4">
+                  <div className="flex-1 p-4 pb-safe">
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
