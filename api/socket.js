@@ -3,7 +3,7 @@
 // WORKAROUND: Store both in same Map since Vercel serverless instances are short-lived (~30s)
 // Hand raises now use peer IDs instead of userNames to support duplicate names
 
-const roomData = new Map(); // Map<roomId, { reactions: Array, handsRaised: Map<peerId, userName>, messages: Array, polls: Array }>
+const roomData = new Map(); // Map<roomId, { reactions: Array, handsRaised: Map<peerId, userName>, messages: Array, polls: Array, mediaStates: Map<userId, {audio: boolean, video: boolean}> }>
 
 // Log when module initializes to track cold starts
 console.log('[INIT] API handler module loaded at', new Date().toISOString());
@@ -27,7 +27,7 @@ const ioHandler = (req, res) => {
       return;
     }
     
-    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [] };
+    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [], mediaStates: new Map() };
     
     if (type === 'hands') {
       // Get hand raises - return array of peer IDs
@@ -51,6 +51,14 @@ const ioHandler = (req, res) => {
       return;
     }
     
+    if (type === 'media-states') {
+      // Get media states (mic/camera status)
+      const mediaStatesObj = Object.fromEntries(data.mediaStates);
+      console.log(`[GET MEDIA] Room ${roomId}: ${data.mediaStates.size} peer states`);
+      res.status(200).json({ mediaStates: mediaStatesObj });
+      return;
+    }
+    
     // Default: Get reactions
     const now = Date.now();
     const freshReactions = data.reactions.filter(r => now - r.timestamp < 5000);
@@ -64,9 +72,26 @@ const ioHandler = (req, res) => {
 
   // Handle POST - add new reaction, raise hand, or send message
   if (req.method === 'POST') {
-    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName, previousVote } = req.body;
+    const { roomId, reaction, handRaise, message, type, poll, pollId, optionId, userName, previousVote, userId, mediaType, enabled } = req.body;
     
-    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [] };
+    const data = roomData.get(roomId) || { reactions: [], handsRaised: new Map(), messages: [], polls: [], mediaStates: new Map() };
+    
+    if (type === 'media-state') {
+      // Handle media state update (mic/camera status)
+      if (!roomId || !userId || !mediaType) {
+        res.status(400).json({ error: 'roomId, userId, and mediaType required' });
+        return;
+      }
+      
+      const currentState = data.mediaStates.get(userId) || { audio: true, video: true };
+      currentState[mediaType] = enabled;
+      data.mediaStates.set(userId, currentState);
+      roomData.set(roomId, data);
+      
+      console.log(`[MEDIA STATE] User ${userId} set ${mediaType} to ${enabled} in room ${roomId}`);
+      res.status(200).json({ success: true });
+      return;
+    }
     
     if (type === 'pollHeartbeat') {
       // Handle poll heartbeat - merge/restore poll data

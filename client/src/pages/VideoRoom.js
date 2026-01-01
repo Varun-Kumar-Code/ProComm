@@ -73,6 +73,9 @@ const VideoRoom = () => {
   const [replyTo, setReplyTo] = useState(null);
   const [participants, setParticipants] = useState([]);
   
+  // Media states for remote participants (tracks mic/camera status)
+  const [peerMediaStates, setPeerMediaStates] = useState(new Map()); // Map<userId, {audio: boolean, video: boolean}>
+  
   // Poll states
   const [polls, setPolls] = useState([]);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
@@ -634,6 +637,19 @@ const VideoRoom = () => {
                 return prev;
               });
             }
+          }
+        }
+        
+        // Poll for media states (mic/camera status)
+        const mediaResponse = await fetch(`${serverUrl}/api/socket?roomId=${roomId}&type=media-states`);
+        if (mediaResponse.ok) {
+          const mediaData = await mediaResponse.json();
+          if (mediaData.mediaStates) {
+            const newMediaStates = new Map();
+            Object.entries(mediaData.mediaStates).forEach(([userId, state]) => {
+              newMediaStates.set(userId, state);
+            });
+            setPeerMediaStates(newMediaStates);
           }
         }
       } catch (error) {
@@ -1420,7 +1436,28 @@ const VideoRoom = () => {
         setIsMicOn(newState);
         console.log('🎤 Microphone toggled to:', newState, 'track enabled:', audioTrack.enabled);
         
-        // Notify other participants
+        // Broadcast mic state to other participants via API
+        const broadcastMicState = async () => {
+          try {
+            await fetch('/api/socket', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                roomId,
+                type: 'media-state',
+                userId: peerRef.current?.id,
+                userName,
+                mediaType: 'audio',
+                enabled: newState
+              })
+            });
+          } catch (err) {
+            console.error('❌ Error broadcasting mic state:', err);
+          }
+        };
+        broadcastMicState();
+        
+        // Also notify via Socket.IO if available
         if (socketRef.current) {
           socketRef.current.emit('media-state-change', {
             roomId,
@@ -1454,7 +1491,28 @@ const VideoRoom = () => {
         setIsCameraOn(newState);
         console.log('📹 Camera toggled to:', newState, 'track enabled:', videoTrack.enabled);
         
-        // Notify other participants
+        // Broadcast camera state to other participants via API
+        const broadcastCameraState = async () => {
+          try {
+            await fetch('/api/socket', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                roomId,
+                type: 'media-state',
+                userId: peerRef.current?.id,
+                userName,
+                mediaType: 'video',
+                enabled: newState
+              })
+            });
+          } catch (err) {
+            console.error('❌ Error broadcasting camera state:', err);
+          }
+        };
+        broadcastCameraState();
+        
+        // Also notify via Socket.IO if available
         if (socketRef.current) {
           socketRef.current.emit('media-state-change', {
             roomId,
@@ -2348,8 +2406,10 @@ const VideoRoom = () => {
                 
                 {/* Remote Participants */}
                 {Array.from(peers.entries()).map(([peerId, peerData]) => {
+                  // Use polled media state if available, otherwise fall back to track state
+                  const mediaState = peerMediaStates.get(peerId);
                   const audioTrack = peerData.stream?.getAudioTracks()[0];
-                  const isMicEnabled = audioTrack ? audioTrack.enabled : false;
+                  const isMicEnabled = mediaState?.audio ?? (audioTrack ? audioTrack.enabled : false);
                   
                   return (
                     <div key={peerId} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 flex items-center justify-between transition-colors">
