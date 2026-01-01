@@ -1004,7 +1004,7 @@ const VideoRoom = () => {
                         }
                         
                         const call = peer.call(peerData.userId, stream, {
-                          metadata: { userName, userEmail },
+                          metadata: { userName, userEmail, userProfilePic },
                           sdpTransform: (sdp) => {
                             // Increase bandwidth for 1080p60
                             return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
@@ -1025,7 +1025,7 @@ const VideoRoom = () => {
                               video: remoteStream.getVideoTracks().length,
                               audio: remoteStream.getAudioTracks().length
                             });
-                            addPeer(peerData.userId, remoteStream, peerData.userName);
+                            addPeer(peerData.userId, remoteStream, peerData.userName, peerData.profilePicUrl);
                           });
                           
                           call.on('close', () => {
@@ -1085,7 +1085,7 @@ const VideoRoom = () => {
                 newPeers.forEach(peerData => {
                   console.log('📞 New peer detected via polling:', peerData.userName);
                   const call = peer.call(peerData.userId, stream, {
-                    metadata: { userName, userEmail },
+                    metadata: { userName, userEmail, userProfilePic },
                     sdpTransform: (sdp) => {
                       // Increase bandwidth for 1080p60
                       return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
@@ -1210,7 +1210,7 @@ const VideoRoom = () => {
               console.log('📹 Video track enabled:', videoTrack.enabled, 'readyState:', videoTrack.readyState);
             }
             
-            addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown');
+            addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown', call.metadata?.userProfilePic || '');
           });
           
           call.on('close', () => {
@@ -1370,8 +1370,8 @@ const VideoRoom = () => {
     }
   };
 
-  const addPeer = (userId, stream, userName) => {
-    console.log('[+] Adding peer:', userName, 'userId:', userId);
+  const addPeer = (userId, stream, userName, profilePicUrl = '') => {
+    console.log('[+] Adding peer:', userName, 'userId:', userId, 'profilePic:', !!profilePicUrl);
     console.log('[+] Stream details:', {
       active: stream.active,
       id: stream.id,
@@ -1385,14 +1385,14 @@ const VideoRoom = () => {
     
     setPeers(prevPeers => {
       const newPeers = new Map(prevPeers);
-      newPeers.set(userId, { stream, userName, isMicOn });
+      newPeers.set(userId, { stream, userName, profilePicUrl, isMicOn });
       console.log('[+] Peers count:', newPeers.size);
       return newPeers;
     });
     
     setParticipants(prev => {
       if (!prev.find(p => p.userId === userId)) {
-        return [...prev, { userId, userName, userEmail: '', isMicOn }];
+        return [...prev, { userId, userName, userEmail: '', profilePicUrl, isMicOn }];
       }
       return prev;
     });
@@ -2163,6 +2163,7 @@ const VideoRoom = () => {
                         peerId={peerId}
                         stream={peerData.stream}
                         userName={peerData.userName}
+                        profilePicUrl={peerData.profilePicUrl}
                         handsRaised={handsRaised}
                         isPinned={true}
                         isThumbnail={false}
@@ -2230,6 +2231,7 @@ const VideoRoom = () => {
                       peerId={peerId}
                       stream={peerData.stream}
                       userName={peerData.userName}
+                      profilePicUrl={peerData.profilePicUrl}
                       handsRaised={handsRaised}
                       isPinned={false}
                       isThumbnail={true}
@@ -2318,8 +2320,9 @@ const VideoRoom = () => {
                 <RemoteVideo 
                   key={peerId}
                   peerId={peerId}
-                  stream={peerData.stream} 
-                  userName={peerData.userName} 
+                  stream={peerData.stream}
+                  userName={peerData.userName}
+                  profilePicUrl={peerData.profilePicUrl}
                   handsRaised={handsRaised}
                   isPinned={false}
                   isThumbnail={false}
@@ -3031,7 +3034,7 @@ const VideoRoom = () => {
   );
 };
 
-const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin, pinnedClass = '' }) => {
+const RemoteVideo = ({ stream, userName, peerId, profilePicUrl = '', handsRaised = new Set(), isPinned = false, isThumbnail = false, onPin, pinnedClass = '' }) => {
   const videoRef = useRef(null);
   const [hasVideo, setHasVideo] = useState(true);
   const isHandRaised = handsRaised.has(peerId);
@@ -3106,9 +3109,13 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
           style={{ transform: 'scaleX(-1)' }}
         />        {!hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-gray-900">
-            <div className={`w-14 h-14 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-2 border-white/20`}>
-              <span className="text-xl font-bold text-white">{getUserInitials(userName)}</span>
-            </div>
+            {profilePicUrl ? (
+              <img src={decodeURIComponent(profilePicUrl)} alt={userName} className="w-14 h-14 rounded-full object-cover shadow-2xl border-2 border-white/20" />
+            ) : (
+              <div className={`w-14 h-14 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-2 border-white/20`}>
+                <span className="text-xl font-bold text-white">{getUserInitials(userName)}</span>
+              </div>
+            )}
           </div>
         )}
         <div className="absolute bottom-2 left-2 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
@@ -3145,9 +3152,13 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
         {/* Premium Avatar when camera is off */}
         {!hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-gray-900 to-slate-900">
-            <div className={`w-40 h-40 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-4 border-white/20 backdrop-blur-lg`}>
-              <span className="text-6xl font-bold text-white drop-shadow-2xl">{getUserInitials(userName)}</span>
-            </div>
+            {profilePicUrl ? (
+              <img src={decodeURIComponent(profilePicUrl)} alt={userName} className="w-40 h-40 rounded-full object-cover shadow-2xl border-4 border-white/20 backdrop-blur-lg" />
+            ) : (
+              <div className={`w-40 h-40 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-4 border-white/20 backdrop-blur-lg`}>
+                <span className="text-6xl font-bold text-white drop-shadow-2xl">{getUserInitials(userName)}</span>
+              </div>
+            )}
           </div>
         )}
         
@@ -3191,9 +3202,13 @@ const RemoteVideo = ({ stream, userName, peerId, handsRaised = new Set(), isPinn
       {/* Premium Avatar when camera is off */}
       {!hasVideo && (
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 to-gray-900">
-          <div className={`w-24 h-24 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-2 border-white/20`}>
-            <span className="text-3xl font-bold text-white drop-shadow-lg">{getUserInitials(userName)}</span>
-          </div>
+          {profilePicUrl ? (
+            <img src={decodeURIComponent(profilePicUrl)} alt={userName} className="w-24 h-24 rounded-full object-cover shadow-2xl border-2 border-white/20" />
+          ) : (
+            <div className={`w-24 h-24 rounded-full ${getAvatarColor(userName)} flex items-center justify-center shadow-2xl border-2 border-white/20`}>
+              <span className="text-3xl font-bold text-white drop-shadow-lg">{getUserInitials(userName)}</span>
+            </div>
+          )}
         </div>
       )}
       
