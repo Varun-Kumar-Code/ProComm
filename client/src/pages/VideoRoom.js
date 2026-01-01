@@ -73,9 +73,6 @@ const VideoRoom = () => {
   const [replyTo, setReplyTo] = useState(null);
   const [participants, setParticipants] = useState([]);
   
-  // Media states for remote participants (tracks mic/camera status)
-  const [peerMediaStates, setPeerMediaStates] = useState(new Map()); // Map<userId, {audio: boolean, video: boolean}>
-  
   // Poll states
   const [polls, setPolls] = useState([]);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
@@ -110,6 +107,9 @@ const VideoRoom = () => {
   
   // Active tab in chat panel
   const [activeTab, setActiveTab] = useState('chat'); // 'chat', 'polls', 'whiteboard', 'notepad'
+  
+  // Force re-render for track state changes (mic/camera)
+  const [, forceUpdate] = useState({});
 
   // Refs
   const localVideoRef = useRef(null);
@@ -639,19 +639,6 @@ const VideoRoom = () => {
             }
           }
         }
-        
-        // Poll for media states (mic/camera status)
-        const mediaResponse = await fetch(`${serverUrl}/api/socket?roomId=${roomId}&type=media-states`);
-        if (mediaResponse.ok) {
-          const mediaData = await mediaResponse.json();
-          if (mediaData.mediaStates) {
-            const newMediaStates = new Map();
-            Object.entries(mediaData.mediaStates).forEach(([userId, state]) => {
-              newMediaStates.set(userId, state);
-            });
-            setPeerMediaStates(newMediaStates);
-          }
-        }
       } catch (error) {
         // Silently fail - don't spam console
       }
@@ -662,6 +649,38 @@ const VideoRoom = () => {
     
     return () => clearInterval(interval);
   }, [roomId, userName, peers]);
+  
+  // Listen to track changes for all peers to update mic/camera status in real-time
+  useEffect(() => {
+    const trackListeners = new Map();
+    
+    peers.forEach((peerData, peerId) => {
+      if (peerData.stream) {
+        const audioTrack = peerData.stream.getAudioTracks()[0];
+        
+        if (audioTrack && !trackListeners.has(peerId)) {
+          const handleTrackChange = () => {
+            // Force re-render when audio track enabled state changes
+            forceUpdate({});
+          };
+          
+          // Listen to mute/unmute events (these fire when track.enabled changes)
+          audioTrack.addEventListener('mute', handleTrackChange);
+          audioTrack.addEventListener('unmute', handleTrackChange);
+          
+          trackListeners.set(peerId, { audioTrack, handleTrackChange });
+        }
+      }
+    });
+    
+    // Cleanup
+    return () => {
+      trackListeners.forEach(({ audioTrack, handleTrackChange }) => {
+        audioTrack.removeEventListener('mute', handleTrackChange);
+        audioTrack.removeEventListener('unmute', handleTrackChange);
+      });
+    };
+  }, [peers]);
 
   // Hide loading screen when initialization is complete and no errors
   useEffect(() => {
@@ -2406,10 +2425,8 @@ const VideoRoom = () => {
                 
                 {/* Remote Participants */}
                 {Array.from(peers.entries()).map(([peerId, peerData]) => {
-                  // Use polled media state if available, otherwise fall back to track state
-                  const mediaState = peerMediaStates.get(peerId);
                   const audioTrack = peerData.stream?.getAudioTracks()[0];
-                  const isMicEnabled = mediaState?.audio ?? (audioTrack ? audioTrack.enabled : false);
+                  const isMicEnabled = audioTrack ? audioTrack.enabled : false;
                   
                   return (
                     <div key={peerId} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 flex items-center justify-between transition-colors">
