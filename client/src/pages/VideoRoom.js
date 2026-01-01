@@ -73,6 +73,9 @@ const VideoRoom = () => {
   const [replyTo, setReplyTo] = useState(null);
   const [participants, setParticipants] = useState([]);
   
+  // Track media states for remote participants (userId -> {audio: boolean, video: boolean})
+  const [peerMediaStates, setPeerMediaStates] = useState(new Map());
+  
   // Poll states
   const [polls, setPolls] = useState([]);
   const [showCreatePoll, setShowCreatePoll] = useState(false);
@@ -639,31 +642,32 @@ const VideoRoom = () => {
             }
           }
         }
+        
+        // Poll for media states (mic/camera status) - every 3 seconds for stability
+        const mediaResponse = await fetch(`${serverUrl}/api/socket?roomId=${roomId}&type=media-states`);
+        if (mediaResponse.ok) {
+          const mediaData = await mediaResponse.json();
+          if (mediaData.mediaStates && typeof mediaData.mediaStates === 'object') {
+            setPeerMediaStates(prevStates => {
+              const newStates = new Map(prevStates);
+              // Update with new data from server
+              Object.entries(mediaData.mediaStates).forEach(([userId, state]) => {
+                newStates.set(userId, state);
+              });
+              return newStates;
+            });
+          }
+        }
       } catch (error) {
         // Silently fail - don't spam console
       }
     };
     
-    // Poll every 1 second
-    const interval = setInterval(pollReactionsHandsAndChat, 1000);
+    // Poll every 3 seconds for better stability
+    const interval = setInterval(pollReactionsHandsAndChat, 3000);
     
     return () => clearInterval(interval);
   }, [roomId, userName, peers]);
-  
-  // Poll audio track state for participants to update mic status
-  // Note: WebRTC doesn't fire mute/unmute events when track.enabled changes
-  // We need to poll the actual track state every few seconds
-  useEffect(() => {
-    const pollTrackStates = () => {
-      // Force re-render to check all track states
-      forceUpdate({});
-    };
-    
-    // Poll every 2 seconds - balanced between responsiveness and performance
-    const interval = setInterval(pollTrackStates, 2000);
-    
-    return () => clearInterval(interval);
-  }, [peers]);
 
   // Hide loading screen when initialization is complete and no errors
   useEffect(() => {
@@ -2408,8 +2412,9 @@ const VideoRoom = () => {
                 
                 {/* Remote Participants */}
                 {Array.from(peers.entries()).map(([peerId, peerData]) => {
-                  const audioTrack = peerData.stream?.getAudioTracks()[0];
-                  const isMicEnabled = audioTrack ? audioTrack.enabled : false;
+                  // Get media state from our tracked states (updated via API polling)
+                  const mediaState = peerMediaStates.get(peerId);
+                  const isMicEnabled = mediaState?.audio ?? true; // Default to true if unknown
                   
                   return (
                     <div key={peerId} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-3 flex items-center justify-between transition-colors">
