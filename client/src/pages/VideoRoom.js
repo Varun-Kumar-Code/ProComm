@@ -53,7 +53,9 @@ const VideoRoom = () => {
 
   // Video states
   const [localStream, setLocalStream] = useState(null);
+  const [screenStream, setScreenStream] = useState(null);
   const [peers, setPeers] = useState(new Map());
+  const [screenShares, setScreenShares] = useState(new Map()); // Map of peerId -> {stream, userName}
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -1192,37 +1194,87 @@ const VideoRoom = () => {
       // Function to answer a call
       const answerCall = (call, localStream) => {
         try {
-          call.answer(localStream);
-          activeCallsRef.current.set(call.peer, call);
-          console.log('✅ Answered call from:', call.metadata?.userName || call.peer);
+          const callType = call.metadata?.type || 'video';
           
-          call.on('stream', (remoteStream) => {
-            console.log('📹 Received stream from incoming call:', call.peer);
-            console.log('📹 Stream tracks:', {
-              video: remoteStream.getVideoTracks().length,
-              audio: remoteStream.getAudioTracks().length,
-              active: remoteStream.active
+          if (callType === 'screen') {
+            // For screen share, don't answer with our stream, just receive
+            call.answer(new MediaStream());
+            activeCallsRef.current.set(`screen-${call.peer}`, call);
+            console.log('✅ Answered screen share call from:', call.metadata?.userName || call.peer);
+            
+            call.on('stream', (remoteStream) => {
+              console.log('🖥️ Received screen share stream from:', call.peer);
+              console.log('🖥️ Stream tracks:', {
+                video: remoteStream.getVideoTracks().length,
+                audio: remoteStream.getAudioTracks().length,
+                active: remoteStream.active
+              });
+              
+              // Add to screen shares map
+              setScreenShares(prev => {
+                const newScreenShares = new Map(prev);
+                newScreenShares.set(call.peer, {
+                  stream: remoteStream,
+                  userName: call.metadata?.userName || 'Unknown'
+                });
+                console.log('🖥️ Screen shares count:', newScreenShares.size);
+                return newScreenShares;
+              });
+              
+              // Auto-pin the screen share
+              setPinnedParticipant(`screen-${call.peer}`);
             });
             
-            // Log video track details
-            const videoTrack = remoteStream.getVideoTracks()[0];
-            if (videoTrack) {
-              console.log('📹 Video track enabled:', videoTrack.enabled, 'readyState:', videoTrack.readyState);
-            }
+            call.on('close', () => {
+              console.log('🖥️ Screen share call closed:', call.peer);
+              activeCallsRef.current.delete(`screen-${call.peer}`);
+              setScreenShares(prev => {
+                const newScreenShares = new Map(prev);
+                newScreenShares.delete(call.peer);
+                return newScreenShares;
+              });
+              // Unpin if this screen was pinned
+              setPinnedParticipant(prev => prev === `screen-${call.peer}` ? null : prev);
+            });
             
-            addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown', call.metadata?.userProfilePic || '');
-          });
-          
-          call.on('close', () => {
-            console.log('📞 Incoming call closed:', call.peer);
-            activeCallsRef.current.delete(call.peer);
-            removePeer(call.peer);
-          });
-          
-          call.on('error', (err) => {
-            console.error('❌ Incoming call error:', err);
-            activeCallsRef.current.delete(call.peer);
-          });
+            call.on('error', (err) => {
+              console.error('❌ Screen share call error:', err);
+              activeCallsRef.current.delete(`screen-${call.peer}`);
+            });
+          } else {
+            // Regular video/audio call
+            call.answer(localStream);
+            activeCallsRef.current.set(call.peer, call);
+            console.log('✅ Answered call from:', call.metadata?.userName || call.peer);
+            
+            call.on('stream', (remoteStream) => {
+              console.log('📹 Received stream from incoming call:', call.peer);
+              console.log('📹 Stream tracks:', {
+                video: remoteStream.getVideoTracks().length,
+                audio: remoteStream.getAudioTracks().length,
+                active: remoteStream.active
+              });
+              
+              // Log video track details
+              const videoTrack = remoteStream.getVideoTracks()[0];
+              if (videoTrack) {
+                console.log('📹 Video track enabled:', videoTrack.enabled, 'readyState:', videoTrack.readyState);
+              }
+              
+              addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown', call.metadata?.profilePicUrl || '');
+            });
+            
+            call.on('close', () => {
+              console.log('📞 Incoming call closed:', call.peer);
+              activeCallsRef.current.delete(call.peer);
+              removePeer(call.peer);
+            });
+            
+            call.on('error', (err) => {
+              console.error('❌ Incoming call error:', err);
+              activeCallsRef.current.delete(call.peer);
+            });
+          }
         } catch (error) {
           console.error('❌ Error answering call:', error);
         }
@@ -1536,32 +1588,83 @@ const VideoRoom = () => {
   const toggleScreenShare = async () => {
     try {
       if (!isScreenSharing) {
+        console.log('🖥️ Starting screen share...');
         // Start screen sharing
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: true,
-          audio: true
+        const screenMediaStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            cursor: 'always',
+            displaySurface: 'monitor'
+          },
+          audio: false
         });
         
+        console.log('🖥️ Screen stream obtained:', screenMediaStream.id);
+        setScreenStream(screenMediaStream);
         setIsScreenSharing(true);
         
-        // Replace video track for all peer connections
-        screenStream.getVideoTracks()[0].onended = () => {
-          setIsScreenSharing(false);
-          // Switch back to camera
-          if (localStream) {
-            // This would need to be implemented to switch back
-          }
+        // Handle when user stops sharing via browser UI
+        screenMediaStream.getVideoTracks()[0].onended = () => {
+          console.log('🖥️ Screen share ended by user');
+          stopScreenShare();
         };
         
-        socketRef.current?.emit('start-screen-share');
+        // Share screen to all existing peers
+        console.log('🖥️ Sharing screen to', peers.size, 'peers');
+        peers.forEach((peerData, peerId) => {
+          try {
+            console.log('🖥️ Calling peer', peerId, 'with screen share');
+            const call = peerRef.current.call(peerId, screenMediaStream, {
+              metadata: {
+                userName,
+                userEmail,
+                userId: currentUser?.uid || userEmail,
+                profilePicUrl: encodeURIComponent(userProfilePic || ''),
+                type: 'screen' // Mark as screen share
+              }
+            });
+            
+            if (call) {
+              activeCallsRef.current.set(`screen-${peerId}`, call);
+              console.log('🖥️ Screen share call initiated to peer:', peerId);
+            }
+          } catch (err) {
+            console.error('🖥️ Error calling peer with screen:', peerId, err);
+          }
+        });
+        
       } else {
-        // Stop screen sharing
-        setIsScreenSharing(false);
-        socketRef.current?.emit('stop-screen-share');
+        stopScreenShare();
       }
     } catch (error) {
-      console.error('Error toggling screen share:', error);
+      console.error('❌ Error toggling screen share:', error);
+      if (error.name === 'NotAllowedError') {
+        alert('Screen sharing permission denied. Please allow screen sharing and try again.');
+      }
     }
+  };
+
+  const stopScreenShare = () => {
+    console.log('🖥️ Stopping screen share');
+    
+    if (screenStream) {
+      screenStream.getTracks().forEach(track => {
+        track.stop();
+        console.log('🖥️ Stopped screen track:', track.kind);
+      });
+      setScreenStream(null);
+    }
+    
+    // Close all screen share calls
+    activeCallsRef.current.forEach((call, key) => {
+      if (key.startsWith('screen-')) {
+        call.close();
+        activeCallsRef.current.delete(key);
+        console.log('🖥️ Closed screen share call:', key);
+      }
+    });
+    
+    setIsScreenSharing(false);
+    console.log('🖥️ Screen sharing stopped');
   };
 
   const sendMessage = async () => {
@@ -1863,6 +1966,11 @@ const VideoRoom = () => {
   const cleanup = () => {
     console.log('🧹 Cleaning up connections...');
     
+    // Stop screen sharing if active
+    if (isScreenSharing) {
+      stopScreenShare();
+    }
+    
     // Close all active calls first
     activeCallsRef.current.forEach((call, userId) => {
       try {
@@ -1878,6 +1986,13 @@ const VideoRoom = () => {
     peers.forEach((peerData) => {
       if (peerData.stream) {
         peerData.stream.getTracks().forEach(track => track.stop());
+      }
+    });
+    
+    // Stop all screen share streams
+    screenShares.forEach((screenData) => {
+      if (screenData.stream) {
+        screenData.stream.getTracks().forEach(track => track.stop());
       }
     });
     
@@ -2154,6 +2269,39 @@ const VideoRoom = () => {
                     )}
                   </div>
                 </div>
+              ) : pinnedParticipant && pinnedParticipant.startsWith('screen-') ? (
+                // Screen share pinned
+                (() => {
+                  const screenPeerId = pinnedParticipant.replace('screen-', '');
+                  const screenShare = screenShares.get(screenPeerId);
+                  if (!screenShare) return null;
+                  
+                  return (
+                    <div className="relative bg-black rounded-xl overflow-hidden shadow-lg border border-green-500/50 group transition-all duration-200 w-full max-w-6xl aspect-video mx-auto">
+                      <video
+                        ref={(videoEl) => {
+                          if (videoEl && screenShare.stream) {
+                            videoEl.srcObject = screenShare.stream;
+                          }
+                        }}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-contain bg-black"
+                      />
+                      <div className="absolute top-3 left-3 bg-green-600/90 backdrop-blur-sm px-3 py-1.5 rounded-md flex items-center gap-2">
+                        <Monitor className="w-4 h-4 text-white" />
+                        <span className="text-sm font-medium text-white">{screenShare.userName}'s screen</span>
+                      </div>
+                      <button
+                        onClick={() => setPinnedParticipant(null)}
+                        className="absolute top-3 right-3 bg-green-600 hover:bg-green-700 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        title="Unpin"
+                      >
+                        <PinOff className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+                  );
+                })()
               ) : (
                 getSortedParticipants().map(([peerId, peerData]) => {
                   if (peerId === pinnedParticipant) {
@@ -2243,6 +2391,42 @@ const VideoRoom = () => {
                       isThumbnail={true}
                       onPin={() => setPinnedParticipant(peerId)}
                     />
+                  );
+                })}
+                {/* Screen Share Thumbnails */}
+                {Array.from(screenShares.entries()).map(([peerId, screenData]) => {
+                  if (`screen-${peerId}` === pinnedParticipant) return null;
+                  return (
+                    <div
+                      key={`screen-${peerId}`}
+                      className="relative bg-black rounded-lg overflow-hidden border-2 border-green-500/50 shadow-lg group cursor-pointer hover:border-green-500 transition-all"
+                      onClick={() => setPinnedParticipant(`screen-${peerId}`)}
+                    >
+                      <video
+                        ref={(videoEl) => {
+                          if (videoEl && screenData.stream) {
+                            videoEl.srcObject = screenData.stream;
+                          }
+                        }}
+                        autoPlay
+                        playsInline
+                        className="w-full h-full object-contain bg-black"
+                      />
+                      <div className="absolute bottom-1.5 left-1.5 bg-green-600/90 backdrop-blur-sm px-2 py-0.5 rounded-md flex items-center gap-1">
+                        <Monitor className="w-3 h-3 text-white" />
+                        <span className="text-xs font-medium text-white">{screenData.userName}</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPinnedParticipant(`screen-${peerId}`);
+                        }}
+                        className="absolute top-1.5 right-1.5 bg-green-600/80 hover:bg-green-600 backdrop-blur-sm p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Pin screen share"
+                      >
+                        <Pin className="w-3 h-3 text-white" />
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -2340,6 +2524,41 @@ const VideoRoom = () => {
                   />
                 );
               })}
+              
+              {/* Screen Shares in Grid */}
+              {Array.from(screenShares.entries()).map(([peerId, screenData]) => (
+                <div
+                  key={`screen-${peerId}`}
+                  className={`relative bg-black rounded-2xl overflow-hidden border-2 border-green-500/50 shadow-xl group hover:border-green-500 transition-all duration-300 ease-in-out cursor-pointer ${singleVideoClass || ''} ${totalParticipants === 2 ? 'w-[48%] aspect-[4/3]' : totalParticipants === 3 ? 'w-[30%] aspect-[4/3]' : totalParticipants === 4 ? 'w-[48%] aspect-[4/3]' : totalParticipants <= 6 ? 'w-[31%] aspect-[4/3]' : 'aspect-video'}`}
+                  onClick={() => setPinnedParticipant(`screen-${peerId}`)}
+                >
+                  <video
+                    ref={(videoEl) => {
+                      if (videoEl && screenData.stream) {
+                        videoEl.srcObject = screenData.stream;
+                      }
+                    }}
+                    autoPlay
+                    playsInline
+                    className="w-full h-full object-contain bg-black"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute bottom-3 left-3 bg-green-600/90 backdrop-blur-sm px-3 py-1.5 rounded-md flex items-center gap-2">
+                    <Monitor className="w-4 h-4 text-white" />
+                    <span className="text-sm font-medium text-white truncate max-w-[150px]">{screenData.userName}'s screen</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPinnedParticipant(`screen-${peerId}`);
+                    }}
+                    className="absolute top-3 right-3 bg-green-600/80 hover:bg-green-600 backdrop-blur-sm p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+                    title="Pin screen share"
+                  >
+                    <Pin className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
