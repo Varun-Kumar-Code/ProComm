@@ -650,36 +650,19 @@ const VideoRoom = () => {
     return () => clearInterval(interval);
   }, [roomId, userName, peers]);
   
-  // Listen to track changes for all peers to update mic/camera status in real-time
+  // Poll audio track state for participants to update mic status
+  // Note: WebRTC doesn't fire mute/unmute events when track.enabled changes
+  // We need to poll the actual track state every few seconds
   useEffect(() => {
-    const trackListeners = new Map();
-    
-    peers.forEach((peerData, peerId) => {
-      if (peerData.stream) {
-        const audioTrack = peerData.stream.getAudioTracks()[0];
-        
-        if (audioTrack && !trackListeners.has(peerId)) {
-          const handleTrackChange = () => {
-            // Force re-render when audio track enabled state changes
-            forceUpdate({});
-          };
-          
-          // Listen to mute/unmute events (these fire when track.enabled changes)
-          audioTrack.addEventListener('mute', handleTrackChange);
-          audioTrack.addEventListener('unmute', handleTrackChange);
-          
-          trackListeners.set(peerId, { audioTrack, handleTrackChange });
-        }
-      }
-    });
-    
-    // Cleanup
-    return () => {
-      trackListeners.forEach(({ audioTrack, handleTrackChange }) => {
-        audioTrack.removeEventListener('mute', handleTrackChange);
-        audioTrack.removeEventListener('unmute', handleTrackChange);
-      });
+    const pollTrackStates = () => {
+      // Force re-render to check all track states
+      forceUpdate({});
     };
+    
+    // Poll every 2 seconds - balanced between responsiveness and performance
+    const interval = setInterval(pollTrackStates, 2000);
+    
+    return () => clearInterval(interval);
   }, [peers]);
 
   // Hide loading screen when initialization is complete and no errors
