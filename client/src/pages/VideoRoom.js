@@ -964,40 +964,75 @@ const VideoRoom = () => {
                   }
                   
                   console.log('📞 Calling existing peer via API:', peerData.userName, 'peerId:', peerData.userId);
-                  setTimeout(() => {
-                    try {
-                      const call = peer.call(peerData.userId, stream, {
-                        metadata: { userName, userEmail },
-                        sdpTransform: (sdp) => {
-                          // Increase bandwidth for 1080p60
-                          return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
-                                    .replace(/b=TIAS:(\d+)/g, 'b=TIAS:5000000');
+                  
+                  // Add delay and retry logic for more reliable connections
+                  const attemptCall = (retryCount = 0) => {
+                    setTimeout(() => {
+                      try {
+                        if (!stream) {
+                          console.error('❌ Cannot call peer - no local stream');
+                          return;
                         }
-                      });
-                      
-                      if (call) {
-                        activeCallsRef.current.set(peerData.userId, call);
-                        console.log('✅ Call initiated to:', peerData.userName);
                         
-                        call.on('stream', (remoteStream) => {
-                          console.log('📹 Received stream from:', peerData.userName);
-                          console.log('📹 Stream tracks:', {
-                            video: remoteStream.getVideoTracks().length,
-                            audio: remoteStream.getAudioTracks().length
+                        const call = peer.call(peerData.userId, stream, {
+                          metadata: { userName, userEmail },
+                          sdpTransform: (sdp) => {
+                            // Increase bandwidth for 1080p60
+                            return sdp.replace(/b=AS:(\d+)/g, 'b=AS:5000')
+                                      .replace(/b=TIAS:(\d+)/g, 'b=TIAS:5000000');
+                          }
+                        });
+                        
+                        if (call) {
+                          activeCallsRef.current.set(peerData.userId, call);
+                          console.log('✅ Call initiated to:', peerData.userName);
+                          
+                          let streamReceived = false;
+                          
+                          call.on('stream', (remoteStream) => {
+                            streamReceived = true;
+                            console.log('📹 Received stream from:', peerData.userName);
+                            console.log('📹 Stream tracks:', {
+                              video: remoteStream.getVideoTracks().length,
+                              audio: remoteStream.getAudioTracks().length
+                            });
+                            addPeer(peerData.userId, remoteStream, peerData.userName);
                           });
-                          addPeer(peerData.userId, remoteStream, peerData.userName);
-                        });
-                        
-                        call.on('close', () => {
-                          console.log('📞 Call closed:', peerData.userName);
-                          activeCallsRef.current.delete(peerData.userId);
-                          removePeer(peerData.userId);
-                        });
-                        
-                        call.on('error', (err) => {
-                          console.error('❌ Call error with', peerData.userName, ':', err);
-                          activeCallsRef.current.delete(peerData.userId);
-                          // Don't remove peer immediately, they might reconnect
+                          
+                          call.on('close', () => {
+                            console.log('📞 Call closed:', peerData.userName);
+                            activeCallsRef.current.delete(peerData.userId);
+                            removePeer(peerData.userId);
+                          });
+                          
+                          call.on('error', (err) => {
+                            console.error('❌ Call error with', peerData.userName, ':', err);
+                            activeCallsRef.current.delete(peerData.userId);
+                            
+                            // Retry on peer-unavailable error (up to 2 times)
+                            if (err.type === 'peer-unavailable' && retryCount < 2) {
+                              console.log(`🔄 Retrying call to ${peerData.userName} (attempt ${retryCount + 2}/3)`);
+                              attemptCall(retryCount + 1);
+                            }
+                          });
+                          
+                          // Timeout check - if no stream after 10 seconds, something is wrong
+                          setTimeout(() => {
+                            if (!streamReceived && activeCallsRef.current.has(peerData.userId)) {
+                              console.warn('⏱️ No stream received from', peerData.userName, 'after 10s');
+                            }
+                          }, 10000);
+                        } else {
+                          console.error('❌ Failed to create call to:', peerData.userName);
+                        }
+                      } catch (callError) {
+                        console.error('❌ Exception calling peer:', peerData.userName, callError);
+                      }
+                    }, 1000 + (retryCount * 2000)); // Increase delay for retries
+                  };
+                  
+                  attemptCall();
+                });
                         });
                       } else {
                         console.error('❌ Failed to create call to:', peerData.userName);
@@ -1111,43 +1146,67 @@ const VideoRoom = () => {
       // Handle incoming calls
       peer.on('call', (call) => {
         console.log('📞 Incoming call from:', call.peer, 'metadata:', call.metadata);
+        console.log('🎥 Local stream available:', !!stream, 'Stream active:', stream?.active);
         
-        if (!stream) {
-          console.error('❌ Cannot answer call - no local stream available');
+        if (!stream || !stream.active) {
+          console.error('❌ Cannot answer call - no active local stream');
+          console.log('🔄 Will retry answering when stream becomes available');
+          
+          // Wait a bit for stream to be ready, then try again
+          const checkStreamInterval = setInterval(() => {
+            if (stream && stream.active) {
+              clearInterval(checkStreamInterval);
+              console.log('✅ Stream now available, answering call');
+              answerCall(call, stream);
+            }
+          }, 500);
+          
+          // Timeout after 5 seconds
+          setTimeout(() => clearInterval(checkStreamInterval), 5000);
           return;
         }
         
-        call.answer(stream);
-        activeCallsRef.current.set(call.peer, call);
-        console.log('✅ Answered call from:', call.metadata?.userName || call.peer);
-        
-        call.on('stream', (remoteStream) => {
-          console.log('📹 Received stream from incoming call:', call.peer);
-          console.log('📹 Stream tracks:', {
-            video: remoteStream.getVideoTracks().length,
-            audio: remoteStream.getAudioTracks().length
+        answerCall(call, stream);
+      });
+      
+      // Function to answer a call
+      const answerCall = (call, localStream) => {
+        try {
+          call.answer(localStream);
+          activeCallsRef.current.set(call.peer, call);
+          console.log('✅ Answered call from:', call.metadata?.userName || call.peer);
+          
+          call.on('stream', (remoteStream) => {
+            console.log('📹 Received stream from incoming call:', call.peer);
+            console.log('📹 Stream tracks:', {
+              video: remoteStream.getVideoTracks().length,
+              audio: remoteStream.getAudioTracks().length,
+              active: remoteStream.active
+            });
+            
+            // Log video track details
+            const videoTrack = remoteStream.getVideoTracks()[0];
+            if (videoTrack) {
+              console.log('📹 Video track enabled:', videoTrack.enabled, 'readyState:', videoTrack.readyState);
+            }
+            
+            addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown');
           });
           
-          // Log video track details
-          const videoTrack = remoteStream.getVideoTracks()[0];
-          if (videoTrack) {
-            console.log('📹 Video track enabled:', videoTrack.enabled, 'readyState:', videoTrack.readyState);
-          }
+          call.on('close', () => {
+            console.log('📞 Incoming call closed:', call.peer);
+            activeCallsRef.current.delete(call.peer);
+            removePeer(call.peer);
+          });
           
-          addPeer(call.peer, remoteStream, call.metadata?.userName || 'Unknown');
-        });
-        
-        call.on('close', () => {
-          console.log('📞 Incoming call closed:', call.peer);
-          activeCallsRef.current.delete(call.peer);
-          removePeer(call.peer);
-        });
-        
-        call.on('error', (err) => {
-          console.error('❌ Incoming call error:', err);
-          activeCallsRef.current.delete(call.peer);
-        });
-      });
+          call.on('error', (err) => {
+            console.error('❌ Incoming call error:', err);
+            activeCallsRef.current.delete(call.peer);
+          });
+        } catch (error) {
+          console.error('❌ Error answering call:', error);
+        }
+      };
 
       /* Socket.IO event listeners DISABLED - using HTTP polling
       // Socket event listeners (only if Socket.IO is available)
