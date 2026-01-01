@@ -2277,24 +2277,16 @@ const VideoRoom = () => {
                   if (!screenShare) return null;
                   
                   return (
-                    <div className="relative bg-black rounded-xl overflow-hidden shadow-lg border border-green-500/50 group transition-all duration-200 w-full max-w-6xl aspect-video mx-auto">
-                      <video
-                        ref={(videoEl) => {
-                          if (videoEl && screenShare.stream) {
-                            videoEl.srcObject = screenShare.stream;
-                          }
-                        }}
-                        autoPlay
-                        playsInline
-                        className="w-full h-full object-contain bg-black"
+                    <div className="relative w-full max-w-6xl mx-auto">
+                      <ScreenShare
+                        stream={screenShare.stream}
+                        userName={screenShare.userName}
+                        peerId={screenPeerId}
+                        isPinned={true}
                       />
-                      <div className="absolute top-3 left-3 bg-green-600/90 backdrop-blur-sm px-3 py-1.5 rounded-md flex items-center gap-2">
-                        <Monitor className="w-4 h-4 text-white" />
-                        <span className="text-sm font-medium text-white">{screenShare.userName}'s screen</span>
-                      </div>
                       <button
                         onClick={() => setPinnedParticipant(null)}
-                        className="absolute top-3 right-3 bg-green-600 hover:bg-green-700 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                        className="absolute top-3 right-3 bg-green-600 hover:bg-green-700 p-2 rounded-lg transition-colors z-10"
                         title="Unpin"
                       >
                         <PinOff className="w-4 h-4 text-white" />
@@ -2529,34 +2521,15 @@ const VideoRoom = () => {
               {Array.from(screenShares.entries()).map(([peerId, screenData]) => (
                 <div
                   key={`screen-${peerId}`}
-                  className={`relative bg-black rounded-2xl overflow-hidden border-2 border-green-500/50 shadow-xl group hover:border-green-500 transition-all duration-300 ease-in-out cursor-pointer ${singleVideoClass || ''} ${totalParticipants === 2 ? 'w-[48%] aspect-[4/3]' : totalParticipants === 3 ? 'w-[30%] aspect-[4/3]' : totalParticipants === 4 ? 'w-[48%] aspect-[4/3]' : totalParticipants <= 6 ? 'w-[31%] aspect-[4/3]' : 'aspect-video'}`}
+                  className={`${singleVideoClass || ''} ${totalParticipants === 2 ? 'w-[48%] aspect-[4/3]' : totalParticipants === 3 ? 'w-[30%] aspect-[4/3]' : totalParticipants === 4 ? 'w-[48%] aspect-[4/3]' : totalParticipants <= 6 ? 'w-[31%] aspect-[4/3]' : 'aspect-video'}`}
                   onClick={() => setPinnedParticipant(`screen-${peerId}`)}
                 >
-                  <video
-                    ref={(videoEl) => {
-                      if (videoEl && screenData.stream) {
-                        videoEl.srcObject = screenData.stream;
-                      }
-                    }}
-                    autoPlay
-                    playsInline
-                    className="w-full h-full object-contain bg-black"
+                  <ScreenShare
+                    stream={screenData.stream}
+                    userName={screenData.userName}
+                    peerId={peerId}
+                    isPinned={false}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute bottom-3 left-3 bg-green-600/90 backdrop-blur-sm px-3 py-1.5 rounded-md flex items-center gap-2">
-                    <Monitor className="w-4 h-4 text-white" />
-                    <span className="text-sm font-medium text-white truncate max-w-[150px]">{screenData.userName}'s screen</span>
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPinnedParticipant(`screen-${peerId}`);
-                    }}
-                    className="absolute top-3 right-3 bg-green-600/80 hover:bg-green-600 backdrop-blur-sm p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
-                    title="Pin screen share"
-                  >
-                    <Pin className="w-4 h-4 text-white" />
-                  </button>
                 </div>
               ))}
             </div>
@@ -3260,6 +3233,70 @@ const VideoRoom = () => {
         initialData={whiteboardData}
         onSave={saveWhiteboardData}
       />
+    </div>
+  );
+};
+
+const ScreenShare = ({ stream, userName, peerId, isPinned = false }) => {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      console.log('🖥️ Setting screen share stream to video element:', stream.id);
+      videoRef.current.srcObject = stream;
+      
+      // Try to play the video
+      videoRef.current.play()
+        .then(() => console.log('✅ Screen share video playing'))
+        .catch(err => console.error('❌ Error playing screen share:', err));
+    }
+  }, [stream]);
+
+  if (isPinned) {
+    return (
+      <div className="relative bg-black rounded-xl overflow-hidden shadow-lg border border-green-500/50 group transition-all duration-200 w-full max-w-6xl aspect-video mx-auto">
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          className="w-full h-full object-contain bg-black"
+        />
+        <div className="absolute top-3 left-3 bg-green-600/90 backdrop-blur-sm px-3 py-1.5 rounded-md flex items-center gap-2">
+          <Monitor className="w-4 h-4 text-white" />
+          <span className="text-sm font-medium text-white">{userName}'s screen</span>
+        </div>
+        <button
+          onClick={() => {}}
+          className="absolute top-3 right-3 bg-green-600 hover:bg-green-700 p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+          title="Unpin"
+        >
+          <PinOff className="w-4 h-4 text-white" />
+        </button>
+      </div>
+    );
+  }
+
+  // Grid view (non-pinned)
+  return (
+    <div className="relative bg-black rounded-2xl overflow-hidden border-2 border-green-500/50 shadow-xl group hover:border-green-500 transition-all duration-300 ease-in-out aspect-video">
+      <video
+        ref={videoRef}
+        autoPlay
+        playsInline
+        className="w-full h-full object-contain bg-black"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute bottom-3 left-3 bg-green-600/90 backdrop-blur-sm px-3 py-1.5 rounded-md flex items-center gap-2">
+        <Monitor className="w-4 h-4 text-white" />
+        <span className="text-sm font-medium text-white truncate max-w-[150px]">{userName}'s screen</span>
+      </div>
+      <button
+        onClick={() => {}}
+        className="absolute top-3 right-3 bg-green-600/80 hover:bg-green-600 backdrop-blur-sm p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200"
+        title="Pin screen share"
+      >
+        <Pin className="w-4 h-4 text-white" />
+      </button>
     </div>
   );
 };
