@@ -245,14 +245,28 @@ const VideoRoom = () => {
     }
     
     console.log('🎥 Video element mounted! Attaching stream...');
+    
+    // Pause and reset before changing srcObject to prevent interruption
+    if (videoElement.srcObject) {
+      videoElement.pause();
+    }
+    
     videoElement.srcObject = localStream;
     
-    const playPromise = videoElement.play();
-    if (playPromise) {
-      playPromise
-        .then(() => console.log('✅ Local video playing'))
-        .catch(err => console.warn('⚠️ Play failed:', err.message));
-    }
+    // Wait for loadedmetadata before playing
+    videoElement.onloadedmetadata = () => {
+      const playPromise = videoElement.play();
+      if (playPromise) {
+        playPromise
+          .then(() => console.log('✅ Local video playing'))
+          .catch(err => {
+            // Ignore interruption errors as they're expected during stream changes
+            if (err.name !== 'AbortError') {
+              console.warn('⚠️ Play failed:', err.message);
+            }
+          });
+      }
+    };
   }, [localStream]);
 
   // Validate user access and get user profile on mount
@@ -330,6 +344,11 @@ const VideoRoom = () => {
     console.log('🎥 Attaching local stream to video element');
     console.log('📹 Stream tracks:', localStream.getTracks().map(t => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState })));
     
+    // Pause and reset before changing srcObject to prevent interruption
+    if (videoElement.srcObject) {
+      videoElement.pause();
+    }
+    
     // Set srcObject
     videoElement.srcObject = localStream;
     console.log('✅ srcObject set successfully');
@@ -345,8 +364,11 @@ const VideoRoom = () => {
             console.log('✅ Local video is now playing');
           })
           .catch(err => {
-            console.error('❌ Video play failed:', err);
-            console.log('💡 Try clicking on your video box');
+            // Ignore AbortError during stream changes
+            if (err.name !== 'AbortError') {
+              console.error('❌ Video play failed:', err);
+              console.log('💡 Try clicking on your video box');
+            }
           });
       }
     };
@@ -2637,6 +2659,10 @@ const VideoRoom = () => {
                       <video
                         ref={(videoEl) => {
                           if (videoEl && screenData.stream) {
+                            // Pause before changing srcObject to prevent interruption
+                            if (videoEl.srcObject && videoEl.srcObject !== screenData.stream) {
+                              videoEl.pause();
+                            }
                             videoEl.srcObject = screenData.stream;
                           }
                         }}
@@ -3568,12 +3594,23 @@ const ScreenShare = ({ stream, userName, peerId, isPinned = false }) => {
   useEffect(() => {
     if (videoRef.current && stream) {
       console.log('🖥️ Setting screen share stream to video element:', stream.id);
+      
+      // Pause before changing srcObject to prevent interruption
+      if (videoRef.current.srcObject) {
+        videoRef.current.pause();
+      }
+      
       videoRef.current.srcObject = stream;
       
       // Try to play the video
       videoRef.current.play()
         .then(() => console.log('✅ Screen share video playing'))
-        .catch(err => console.error('❌ Error playing screen share:', err));
+        .catch(err => {
+          // Ignore AbortError during stream changes
+          if (err.name !== 'AbortError') {
+            console.error('❌ Error playing screen share:', err);
+          }
+        });
     }
   }, [stream]);
 
@@ -3661,6 +3698,10 @@ const RemoteVideo = ({ stream, userName, peerId, profilePicUrl = '', isCameraOn 
 
   useEffect(() => {
     if (videoRef.current && stream) {
+      // Pause before changing srcObject to prevent interruption
+      if (videoRef.current.srcObject) {
+        videoRef.current.pause();
+      }
       videoRef.current.srcObject = stream;
     }
   }, [stream]);
