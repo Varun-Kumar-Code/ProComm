@@ -1,6 +1,6 @@
-# ProComm Video Conference Application
-
 # ProComm - Professional Video Conference Application
+
+⚠️ **IMPORTANT: This repository is PRIVATE** - Contains sensitive configuration files and API keys.
 
 A modern, feature-rich video conferencing application built with React, Node.js, Socket.IO, and WebRTC.
 
@@ -127,6 +127,8 @@ procomm-app/
 ### Prerequisites
 - Node.js (v16 or higher)
 - npm or yarn
+- Firebase account (for authentication and database)
+- Cloudinary account (for image uploads)
 
 ### Installation
 
@@ -141,7 +143,32 @@ cd procomm-app
 npm run install-all
 ```
 
-3. **Start the development environment**
+3. **⚠️ IMPORTANT: Set up environment variables**
+
+Create a `.env` file in the `client` directory:
+
+```env
+# Firebase Configuration
+REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your_project_id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+REACT_APP_FIREBASE_APP_ID=your_app_id
+REACT_APP_FIREBASE_MEASUREMENT_ID=your_measurement_id
+
+# Cloudinary Configuration
+REACT_APP_CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+REACT_APP_CLOUDINARY_UPLOAD_PRESET=your_upload_preset
+```
+
+**How to get these credentials:**
+- **Firebase**: Go to [Firebase Console](https://console.firebase.google.com/) → Your Project → Project Settings → General → Your apps
+- **Cloudinary**: Sign up at [Cloudinary](https://cloudinary.com/) → Settings → Upload → Create unsigned upload preset
+
+⚠️ **NEVER commit the `.env` file to Git!** It's already in `.gitignore`.
+
+4. **Start the development environment**
 ```bash
 npm run dev
 ```
@@ -197,10 +224,41 @@ PEER_PORT=3002
 
 ## 🔒 Security Features
 
-- **Email-based meeting access control**
-- **Helmet.js** for security headers
-- **CORS configuration** for controlled access
-- **Input validation** and sanitization
+### ✅ Security Audit Completed (January 2, 2026)
+
+**No credentials were found exposed in:**
+- ✅ Current codebase
+- ✅ Git commit history
+- ✅ Configuration files
+
+**For complete security documentation, see [SECURITY.md](./SECURITY.md)**
+
+**Security measures implemented:**
+- **Environment Variables**: All sensitive data (Firebase config, Cloudinary keys) stored in `.env` files
+- **`.gitignore` Protection**: All `.env` files are ignored and never committed to Git
+- **Email-based Access Control**: Meeting access requires email validation
+- **Helmet.js**: Security headers for HTTP protection
+- **CORS Configuration**: Controlled cross-origin access
+- **Input Validation**: Sanitization of user inputs
+- **Private Repository**: This repository is set to PRIVATE to protect sensitive configurations
+
+### 🔐 Security Best Practices
+
+1. **Never commit `.env` files** - They contain sensitive API keys
+2. **Rotate credentials regularly** - Update Firebase and Cloudinary keys periodically
+3. **Use Firebase Security Rules** - Configure proper read/write rules in Firestore
+4. **Enable 2FA on Firebase** - Add extra security to your Firebase account
+5. **Monitor API Usage** - Check Firebase and Cloudinary dashboards for unusual activity
+6. **Keep dependencies updated** - Run `npm audit` regularly
+
+### 🚨 If You Suspect a Credential Leak
+
+1. **Immediately rotate all API keys**:
+   - Firebase: Generate new config in Firebase Console
+   - Cloudinary: Regenerate API credentials
+2. **Check Firebase Console** → Usage for unusual activity
+3. **Review Cloudinary Dashboard** for unauthorized uploads
+4. **Contact support if needed**
 
 ## 🎨 Design System
 
@@ -242,7 +300,19 @@ This project is licensed as **All Rights Reserved** © 2025 Varun Kumar R.
 You may not use, copy, modify, or distribute this project without prior permission.  
 For permission requests, please contact me: enquiretovarun@gmail.com  
 
-See the [LICENSE](./LICENSE) file for details. 
+See the [LICENSE](./LICENSE) file for details.
+
+---
+
+## 🔒 Repository Status
+
+**⚠️ PRIVATE REPOSITORY** - This repository contains sensitive configuration files and should remain private.
+
+**Security Documents**:
+- [SECURITY.md](./SECURITY.md) - Complete security policy and guidelines
+- [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) - Detailed security audit findings
+
+**Last Security Audit**: January 2, 2026 - ✅ No exposed credentials found 
 
 
 ## 👨‍💻 Author
