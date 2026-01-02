@@ -75,6 +75,7 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
         saveToHistory();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialData]);
 
   // Draw grid helper
