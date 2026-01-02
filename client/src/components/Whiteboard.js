@@ -19,6 +19,18 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
   const [textInput, setTextInput] = useState('');
   const [textPosition, setTextPosition] = useState({ x: 0, y: 0 });
   const [fontSize, setFontSize] = useState(16);
+  const [showMobileToolbar, setShowMobileToolbar] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const colors = [
     '#1F2937', '#EF4444', '#10B981', '#F59E0B',
@@ -99,22 +111,27 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
     }
   };
 
-  // Get precise mouse coordinates relative to canvas
+  // Get precise mouse/touch coordinates relative to canvas
   const getMousePos = (e) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
+    
+    // Handle both mouse and touch events
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     
     // Calculate scale factors
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY
+      x: (clientX - rect.left) * scaleX,
+      y: (clientY - rect.top) * scaleY
     };
   };
 
   const startDrawing = (e) => {
+    e.preventDefault(); // Prevent scrolling on touch
     const pos = getMousePos(e);
     setIsDrawing(true);
     setStartPos(pos);
@@ -141,6 +158,7 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
 
   const draw = (e) => {
     if (!isDrawing) return;
+    e.preventDefault(); // Prevent scrolling on touch
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -292,25 +310,25 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
   console.log('🖊️ Whiteboard rendering modal');
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl shadow-2xl w-full max-w-7xl h-full max-h-[90vh] flex flex-col overflow-hidden border-2 border-gray-700">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-2 md:p-4 animate-fadeIn">
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-7xl h-full max-h-[95vh] md:max-h-[90vh] flex flex-col overflow-hidden border-2 border-gray-700">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white p-5 flex items-center justify-between shadow-lg">
-          <div className="flex items-center space-x-4">
-            <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm shadow-inner">
-              <Edit3 className="w-6 h-6" />
+        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white p-3 md:p-5 flex items-center justify-between shadow-lg">
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <div className="bg-white/20 p-2 md:p-3 rounded-lg md:rounded-xl backdrop-blur-sm shadow-inner">
+              <Edit3 className="w-4 h-4 md:w-6 md:h-6" />
             </div>
             <div>
-              <h2 className="font-bold text-xl">Professional Whiteboard</h2>
-              <p className="text-blue-100 text-sm font-medium">Collaborate • Create • Innovate</p>
+              <h2 className="font-bold text-base md:text-xl">Professional Whiteboard</h2>
+              <p className="text-blue-100 text-xs md:text-sm font-medium hidden sm:block">Collaborate • Create • Innovate</p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
-            {/* Save button */}
+          <div className="flex items-center space-x-2">
+            {/* Save button - hidden on mobile, accessible via toolbar */}
             <button
               onClick={saveCanvas}
-              className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium"
+              className="hidden md:flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2.5 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 font-medium"
               title="Save Whiteboard"
             >
               <Save className="w-4 h-4" />
@@ -323,205 +341,369 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
                 saveCanvas();
                 onClose();
               }}
-              className="p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm hover:rotate-90 transform"
+              className="p-2 md:p-2.5 hover:bg-white/20 rounded-lg md:rounded-xl transition-all duration-200 backdrop-blur-sm hover:rotate-90 transform"
               title="Close"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5 md:w-6 md:h-6" />
             </button>
           </div>
         </div>
 
-        {/* Toolbar */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-700 border-b-2 border-gray-600 p-4 flex items-center justify-between shadow-md">
-          <div className="flex items-center space-x-6 flex-wrap gap-y-3">
-            {/* Drawing Tools */}
-            <div className="flex items-center space-x-2 bg-gray-900/50 p-2 rounded-xl backdrop-blur-sm">
+        {/* Toolbar - Desktop */}
+        <div className="hidden md:block bg-gradient-to-r from-gray-800 to-gray-700 border-b-2 border-gray-600 p-4 shadow-md">
+          <div className="flex items-center justify-between flex-wrap gap-y-3">
+            <div className="flex items-center space-x-6 flex-wrap gap-y-3">
+              {/* Drawing Tools */}
+              <div className="flex items-center space-x-2 bg-gray-900/50 p-2 rounded-xl backdrop-blur-sm">
+                <button
+                  onClick={() => setCurrentTool('pen')}
+                  className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                    currentTool === 'pen'
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-110'
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                  }`}
+                  title="Pen Tool"
+                >
+                  <Pen className="w-5 h-5" />
+                </button>
+                
+                <button
+                  onClick={() => setCurrentTool('highlighter')}
+                  className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                    currentTool === 'highlighter'
+                      ? 'bg-gradient-to-br from-yellow-500 to-yellow-600 text-white shadow-lg scale-110'
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                  }`}
+                  title="Highlighter"
+                >
+                  <Minus className="w-5 h-5" style={{ transform: 'rotate(-45deg)' }} />
+                </button>
+                
+                <button
+                  onClick={() => setCurrentTool('eraser')}
+                  className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                    currentTool === 'eraser'
+                      ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg scale-110'
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                  }`}
+                  title="Eraser"
+                >
+                  <Eraser className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Shape Tools */}
+              <div className="flex items-center space-x-2 bg-gray-900/50 p-2 rounded-xl backdrop-blur-sm">
+                <button
+                  onClick={() => setCurrentTool('line')}
+                  className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                    currentTool === 'line'
+                      ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110'
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                  }`}
+                  title="Line"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                
+                <button
+                  onClick={() => setCurrentTool('rectangle')}
+                  className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                    currentTool === 'rectangle'
+                      ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110'
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                  }`}
+                  title="Rectangle"
+                >
+                  <Square className="w-5 h-5" />
+                </button>
+                
+                <button
+                  onClick={() => setCurrentTool('circle')}
+                  className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                    currentTool === 'circle'
+                      ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110'
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                  }`}
+                  title="Circle"
+                >
+                  <Circle className="w-5 h-5" />
+                </button>
+                
+                <button
+                  onClick={() => setCurrentTool('text')}
+                  className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                    currentTool === 'text'
+                      ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110'
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                  }`}
+                  title="Text"
+                >
+                  <Type className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Size Control */}
+              <div className="flex items-center space-x-3 bg-gray-900/50 p-3 rounded-xl backdrop-blur-sm">
+                <span className="text-sm text-gray-300 font-medium">Size:</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="30"
+                  value={brushSize}
+                  onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                  className="w-24 h-2 bg-gray-600 rounded-lg outline-none appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(brushSize / 30) * 100}%, #4B5563 ${(brushSize / 30) * 100}%, #4B5563 100%)`
+                  }}
+                />
+                <span className="text-sm text-blue-400 w-10 font-bold">{brushSize}px</span>
+              </div>
+
+              {/* Color Palette */}
+              <div className="flex items-center space-x-3 bg-gray-900/50 p-3 rounded-xl backdrop-blur-sm">
+                <Palette className="w-5 h-5 text-gray-300" />
+                <div className="flex flex-wrap gap-1.5 max-w-xs">
+                  {colors.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setCurrentColor(color)}
+                      className={`w-7 h-7 rounded-lg transition-all duration-300 transform hover:scale-125 shadow-md ${
+                        currentColor === color 
+                          ? 'ring-3 ring-blue-400 ring-offset-2 ring-offset-gray-800 scale-110' 
+                          : 'hover:shadow-lg'
+                      }`}
+                      style={{ 
+                        backgroundColor: color,
+                        border: color === '#FFFFFF' ? '2px solid #4B5563' : 'none'
+                      }}
+                      title={`Color: ${color}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-2">
               <button
-                onClick={() => setCurrentTool('pen')}
-                className={`p-3 rounded-lg transition-all duration-300 font-medium ${
-                  currentTool === 'pen'
-                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg scale-110'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                onClick={undo}
+                disabled={historyStep <= 0}
+                className={`p-3 rounded-xl transition-all duration-300 ${
+                  historyStep > 0
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white hover:scale-110'
+                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                 }`}
-                title="Pen Tool"
+                title="Undo"
               >
-                <Pen className="w-5 h-5" />
+                <Undo2 className="w-5 h-5" />
               </button>
               
               <button
-                onClick={() => setCurrentTool('highlighter')}
-                className={`p-3 rounded-lg transition-all duration-300 font-medium ${
-                  currentTool === 'highlighter'
-                    ? 'bg-gradient-to-br from-yellow-500 to-yellow-600 text-white shadow-lg scale-110'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                onClick={redo}
+                disabled={historyStep >= history.length - 1}
+                className={`p-3 rounded-xl transition-all duration-300 ${
+                  historyStep < history.length - 1
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white hover:scale-110'
+                    : 'bg-gray-800 text-gray-500 cursor-not-allowed'
                 }`}
-                title="Highlighter"
+                title="Redo"
               >
-                <Minus className="w-5 h-5" style={{ transform: 'rotate(-45deg)' }} />
+                <Redo2 className="w-5 h-5" />
+              </button>
+              
+              <button
+                onClick={downloadCanvas}
+                className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 font-medium"
+                title="Download as PNG"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export</span>
+              </button>
+              
+              <button
+                onClick={clearCanvas}
+                className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 font-medium"
+                title="Clear Canvas"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Clear</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Toolbar - Mobile */}
+        <div className="md:hidden bg-gradient-to-r from-gray-800 to-gray-700 border-b-2 border-gray-600 shadow-md">
+          {/* Quick Tools Bar */}
+          <div className="flex items-center justify-between p-2">
+            <div className="flex items-center space-x-1 flex-1 overflow-x-auto">
+              <button
+                onClick={() => setCurrentTool('pen')}
+                className={`p-2 rounded-lg transition-all ${
+                  currentTool === 'pen'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-700 text-gray-300'
+                }`}
+              >
+                <Pen className="w-4 h-4" />
               </button>
               
               <button
                 onClick={() => setCurrentTool('eraser')}
-                className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                className={`p-2 rounded-lg transition-all ${
                   currentTool === 'eraser'
-                    ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg scale-110'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                    ? 'bg-red-500 text-white'
+                    : 'bg-gray-700 text-gray-300'
                 }`}
-                title="Eraser"
               >
-                <Eraser className="w-5 h-5" />
+                <Eraser className="w-4 h-4" />
               </button>
-            </div>
-
-            {/* Shape Tools */}
-            <div className="flex items-center space-x-2 bg-gray-900/50 p-2 rounded-xl backdrop-blur-sm">
+              
               <button
                 onClick={() => setCurrentTool('line')}
-                className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                className={`p-2 rounded-lg transition-all ${
                   currentTool === 'line'
-                    ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-gray-700 text-gray-300'
                 }`}
-                title="Line"
               >
-                <Minus className="w-5 h-5" />
+                <Minus className="w-4 h-4" />
               </button>
               
               <button
                 onClick={() => setCurrentTool('rectangle')}
-                className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                className={`p-2 rounded-lg transition-all ${
                   currentTool === 'rectangle'
-                    ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-gray-700 text-gray-300'
                 }`}
-                title="Rectangle"
               >
-                <Square className="w-5 h-5" />
+                <Square className="w-4 h-4" />
               </button>
               
               <button
                 onClick={() => setCurrentTool('circle')}
-                className={`p-3 rounded-lg transition-all duration-300 font-medium ${
+                className={`p-2 rounded-lg transition-all ${
                   currentTool === 'circle'
-                    ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                    ? 'bg-purple-500 text-white'
+                    : 'bg-gray-700 text-gray-300'
                 }`}
-                title="Circle"
               >
-                <Circle className="w-5 h-5" />
+                <Circle className="w-4 h-4" />
               </button>
               
               <button
-                onClick={() => setCurrentTool('text')}
-                className={`p-3 rounded-lg transition-all duration-300 font-medium ${
-                  currentTool === 'text'
-                    ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg scale-110'
-                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:scale-105'
+                onClick={undo}
+                disabled={historyStep <= 0}
+                className={`p-2 rounded-lg ${
+                  historyStep > 0
+                    ? 'bg-gray-700 text-white'
+                    : 'bg-gray-800 text-gray-500'
                 }`}
-                title="Text"
               >
-                <Type className="w-5 h-5" />
+                <Undo2 className="w-4 h-4" />
+              </button>
+              
+              <button
+                onClick={redo}
+                disabled={historyStep >= history.length - 1}
+                className={`p-2 rounded-lg ${
+                  historyStep < history.length - 1
+                    ? 'bg-gray-700 text-white'
+                    : 'bg-gray-800 text-gray-500'
+                }`}
+              >
+                <Redo2 className="w-4 h-4" />
               </button>
             </div>
-
-            {/* Size Control */}
-            <div className="flex items-center space-x-3 bg-gray-900/50 p-3 rounded-xl backdrop-blur-sm">
-              <span className="text-sm text-gray-300 font-medium">Size:</span>
-              <input
-                type="range"
-                min="1"
-                max="30"
-                value={brushSize}
-                onChange={(e) => setBrushSize(parseInt(e.target.value))}
-                className="w-24 h-2 bg-gray-600 rounded-lg outline-none appearance-none cursor-pointer"
-                style={{
-                  background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${(brushSize / 30) * 100}%, #4B5563 ${(brushSize / 30) * 100}%, #4B5563 100%)`
-                }}
-              />
-              <span className="text-sm text-blue-400 w-10 font-bold">{brushSize}px</span>
-            </div>
-
-            {/* Color Palette */}
-            <div className="flex items-center space-x-3 bg-gray-900/50 p-3 rounded-xl backdrop-blur-sm">
-              <Palette className="w-5 h-5 text-gray-300" />
-              <div className="flex flex-wrap gap-1.5 max-w-xs">
+            
+            <button
+              onClick={() => setShowMobileToolbar(!showMobileToolbar)}
+              className="p-2 bg-blue-600 text-white rounded-lg ml-2"
+            >
+              <Palette className="w-4 h-4" />
+            </button>
+          </div>
+          
+          {/* Expandable Options */}
+          {showMobileToolbar && (
+            <div className="p-3 bg-gray-900 border-t border-gray-600 space-y-3">
+              {/* Color Palette */}
+              <div className="flex flex-wrap gap-2">
                 {colors.map((color) => (
                   <button
                     key={color}
                     onClick={() => setCurrentColor(color)}
-                    className={`w-7 h-7 rounded-lg transition-all duration-300 transform hover:scale-125 shadow-md ${
+                    className={`w-8 h-8 rounded-lg ${
                       currentColor === color 
-                        ? 'ring-3 ring-blue-400 ring-offset-2 ring-offset-gray-800 scale-110' 
-                        : 'hover:shadow-lg'
+                        ? 'ring-2 ring-blue-400 scale-110' 
+                        : ''
                     }`}
                     style={{ 
                       backgroundColor: color,
                       border: color === '#FFFFFF' ? '2px solid #4B5563' : 'none'
                     }}
-                    title={`Color: ${color}`}
                   />
                 ))}
               </div>
+              
+              {/* Brush Size */}
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-300 font-medium">Size:</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="30"
+                  value={brushSize}
+                  onChange={(e) => setBrushSize(parseInt(e.target.value))}
+                  className="flex-1 h-2 bg-gray-600 rounded-lg"
+                />
+                <span className="text-sm text-blue-400 w-10 font-bold">{brushSize}px</span>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={saveCanvas}
+                  className="flex-1 flex items-center justify-center space-x-2 bg-green-500 text-white px-3 py-2 rounded-lg"
+                >
+                  <Save className="w-4 h-4" />
+                  <span className="text-sm">Save</span>
+                </button>
+                
+                <button
+                  onClick={downloadCanvas}
+                  className="flex-1 flex items-center justify-center space-x-2 bg-blue-600 text-white px-3 py-2 rounded-lg"
+                >
+                  <Download className="w-4 h-4" />
+                  <span className="text-sm">Export</span>
+                </button>
+                
+                <button
+                  onClick={clearCanvas}
+                  className="flex-1 flex items-center justify-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span className="text-sm">Clear</span>
+                </button>
+              </div>
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={undo}
-              disabled={historyStep <= 0}
-              className={`p-3 rounded-xl transition-all duration-300 ${
-                historyStep > 0
-                  ? 'bg-gray-700 hover:bg-gray-600 text-white hover:scale-110'
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-              }`}
-              title="Undo"
-            >
-              <Undo2 className="w-5 h-5" />
-            </button>
-            
-            <button
-              onClick={redo}
-              disabled={historyStep >= history.length - 1}
-              className={`p-3 rounded-xl transition-all duration-300 ${
-                historyStep < history.length - 1
-                  ? 'bg-gray-700 hover:bg-gray-600 text-white hover:scale-110'
-                  : 'bg-gray-800 text-gray-500 cursor-not-allowed'
-              }`}
-              title="Redo"
-            >
-              <Redo2 className="w-5 h-5" />
-            </button>
-            
-            <button
-              onClick={downloadCanvas}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 font-medium"
-              title="Download as PNG"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export</span>
-            </button>
-            
-            <button
-              onClick={clearCanvas}
-              className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105 font-medium"
-              title="Clear Canvas"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Clear</span>
-            </button>
-          </div>
+          )}
         </div>
 
         {/* Canvas Container */}
-        <div className="flex-1 p-6 bg-gradient-to-br from-gray-800 to-gray-900 relative">
-          <div className="w-full h-full rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-600">
+        <div className="flex-1 p-2 md:p-6 bg-gradient-to-br from-gray-800 to-gray-900 relative">
+          <div className="w-full h-full rounded-lg md:rounded-2xl overflow-hidden shadow-2xl ring-2 ring-gray-600">
             <canvas
               ref={canvasRef}
               onMouseDown={startDrawing}
               onMouseMove={draw}
               onMouseUp={stopDrawing}
               onMouseLeave={stopDrawing}
+              onTouchStart={startDrawing}
+              onTouchMove={draw}
+              onTouchEnd={stopDrawing}
               className="w-full h-full cursor-crosshair bg-white"
               style={{ 
                 touchAction: 'none',
@@ -533,11 +715,10 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
           {/* Text Input Overlay */}
           {showTextInput && (
             <div 
-              className="absolute bg-white border-2 border-blue-500 rounded-lg shadow-xl p-2"
+              className="absolute bg-white border-2 border-blue-500 rounded-lg shadow-xl p-2 z-10"
               style={{ 
                 left: `${textPosition.x}px`, 
-                top: `${textPosition.y}px`,
-                zIndex: 10 
+                top: `${textPosition.y}px`
               }}
             >
               <input
@@ -547,7 +728,7 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
                 onKeyPress={(e) => e.key === 'Enter' && handleTextSubmit()}
                 placeholder="Type text..."
                 autoFocus
-                className="px-3 py-2 border-none outline-none text-gray-800 bg-transparent"
+                className="px-3 py-2 border-none outline-none text-gray-800 bg-transparent w-full md:w-auto"
                 style={{ fontSize: `${fontSize}px` }}
               />
               <div className="flex items-center space-x-2 mt-2 border-t pt-2">
@@ -577,30 +758,45 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
         </div>
 
         {/* Footer */}
-        <div className="bg-gradient-to-r from-gray-800 to-gray-700 border-t-2 border-gray-600 p-4 flex items-center justify-between text-sm shadow-inner">
-          <div className="flex items-center space-x-6 text-gray-300">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">Tool:</span>
-              <span className="text-blue-400 capitalize font-bold">{currentTool}</span>
+        <div className="bg-gradient-to-r from-gray-800 to-gray-700 border-t-2 border-gray-600 p-2 md:p-4 shadow-inner">
+          <div className="hidden md:flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-6 text-gray-300">
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400">Tool:</span>
+                <span className="text-blue-400 capitalize font-bold">{currentTool}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400">Color:</span>
+                <span 
+                  className="inline-block w-5 h-5 rounded-md border-2 border-gray-500 shadow-sm" 
+                  style={{ backgroundColor: currentColor }}
+                ></span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400">Size:</span>
+                <span className="text-blue-400 font-bold">{brushSize}px</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-400">History:</span>
+                <span className="text-blue-400 font-bold">{historyStep + 1}/{history.length}</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">Color:</span>
-              <span 
-                className="inline-block w-5 h-5 rounded-md border-2 border-gray-500 shadow-sm" 
-                style={{ backgroundColor: currentColor }}
-              ></span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">Size:</span>
-              <span className="text-blue-400 font-bold">{brushSize}px</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-400">History:</span>
-              <span className="text-blue-400 font-bold">{historyStep + 1}/{history.length}</span>
+            <div className="text-gray-400 font-medium">
+              ✨ Click & drag to draw • Shapes preview in real-time • Auto-save enabled
             </div>
           </div>
-          <div className="text-gray-400 font-medium">
-            ✨ Click & drag to draw • Shapes preview in real-time • Auto-save enabled
+          
+          {/* Mobile Footer */}
+          <div className="md:hidden flex items-center justify-between text-xs text-gray-300">
+            <span className="capitalize font-bold text-blue-400">{currentTool}</span>
+            <span className="flex items-center space-x-1">
+              <span 
+                className="inline-block w-4 h-4 rounded border border-gray-500" 
+                style={{ backgroundColor: currentColor }}
+              ></span>
+              <span className="text-blue-400 font-bold">{brushSize}px</span>
+            </span>
+            <span className="text-gray-400">{historyStep + 1}/{history.length}</span>
           </div>
         </div>
       </div>
