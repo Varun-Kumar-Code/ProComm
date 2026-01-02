@@ -2082,7 +2082,23 @@ const VideoRoom = () => {
             retryTimeout = setTimeout(() => {
               if (showCaptions && recognitionRef.current) {
                 try {
-                  recognitionRef.current.start();
+                  // Stop first to ensure clean restart
+                  try {
+                    recognitionRef.current.stop();
+                  } catch (stopError) {
+                    // Ignore if already stopped
+                  }
+                  
+                  // Wait a bit before starting again
+                  setTimeout(() => {
+                    if (showCaptions && recognitionRef.current) {
+                      try {
+                        recognitionRef.current.start();
+                      } catch (startError) {
+                        console.log('Could not restart recognition:', startError.message);
+                      }
+                    }
+                  }, 200);
                 } catch (e) {
                   console.log('Could not restart recognition:', e.message);
                 }
@@ -2115,11 +2131,27 @@ const VideoRoom = () => {
           if (showCaptions && recognitionRef.current) {
             setTimeout(() => {
               try {
-                recognition.start();
+                // Stop first to ensure clean restart
+                try {
+                  recognition.stop();
+                } catch (stopError) {
+                  // Ignore if already stopped
+                }
+                
+                // Wait before restarting
+                setTimeout(() => {
+                  if (showCaptions && recognitionRef.current) {
+                    try {
+                      recognition.start();
+                    } catch (startError) {
+                      console.log('Recognition restart failed:', startError.message);
+                    }
+                  }
+                }, 200);
               } catch (e) {
                 console.log('Recognition restart failed:', e.message);
               }
-            }, 1000);
+            }, 500);
           }
           break;
 
@@ -2145,12 +2177,28 @@ const VideoRoom = () => {
       // Auto-restart if captions are still enabled and no error occurred
       if (showCaptions && retryCount < maxRetries) {
         retryTimeout = setTimeout(() => {
-          try {
-            if (showCaptions && recognitionRef.current) {
-              recognition.start();
+          if (showCaptions && recognitionRef.current) {
+            try {
+              // Ensure it's stopped before restarting
+              try {
+                recognition.stop();
+              } catch (stopError) {
+                // Ignore if already stopped
+              }
+              
+              // Wait before starting
+              setTimeout(() => {
+                if (showCaptions && recognitionRef.current) {
+                  try {
+                    recognition.start();
+                  } catch (startError) {
+                    console.log('Recognition restart failed:', startError.message);
+                  }
+                }
+              }, 200);
+            } catch (e) {
+              console.log('Recognition restart failed:', e.message);
             }
-          } catch (e) {
-            console.log('Recognition restart failed:', e.message);
           }
         }, 500);
       }
