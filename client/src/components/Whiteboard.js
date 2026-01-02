@@ -20,17 +20,6 @@ const Whiteboard = ({ isOpen, onClose, initialData, onSave }) => {
   const [textPosition, setTextPosition] = useState({ x: 0, y: 0 });
   const [fontSize, setFontSize] = useState(16);
   const [showMobileToolbar, setShowMobileToolbar] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Detect mobile device
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   const colors = [
     '#1F2937', '#EF4444', '#10B981', '#F59E0B',
