@@ -1953,17 +1953,46 @@ const VideoRoom = () => {
     
     if (!SpeechRecognition) {
       console.warn('⚠️ Speech recognition not supported in this browser');
+      setCaptions([{
+        id: 'error',
+        text: 'Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.',
+        timestamp: new Date(),
+        isFinal: true,
+        isError: true
+      }]);
       return;
     }
+
+    // Check for HTTPS (required for speech recognition in production)
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+      console.warn('⚠️ Speech recognition requires HTTPS');
+      setCaptions([{
+        id: 'error',
+        text: 'Live captions require a secure connection (HTTPS). Please access this site via HTTPS.',
+        timestamp: new Date(),
+        isFinal: true,
+        isError: true
+      }]);
+      return;
+    }
+
+    let retryCount = 0;
+    const maxRetries = 3;
+    let retryTimeout = null;
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
+      retryCount = 0; // Reset retry count on successful start
       console.log('🎤 Speech recognition started');
+      
+      // Clear error messages
+      setCaptions(prev => prev.filter(c => !c.isError));
     };
 
     recognition.onresult = (event) => {
@@ -1988,14 +2017,15 @@ const VideoRoom = () => {
         };
         
         setCaptions(prev => {
-          const updated = [...prev, newCaption];
+          const withoutInterim = prev.filter(c => c.isFinal && !c.isError);
+          const updated = [...withoutInterim, newCaption];
           // Keep only last 10 captions
           return updated.slice(-10);
         });
       } else if (interimTranscript) {
         // Update interim caption
         setCaptions(prev => {
-          const withoutInterim = prev.filter(c => c.isFinal);
+          const withoutInterim = prev.filter(c => (c.isFinal && !c.isError));
           return [...withoutInterim, {
             id: 'interim',
             text: interimTranscript.trim(),
@@ -2008,29 +2038,97 @@ const VideoRoom = () => {
 
     recognition.onerror = (event) => {
       console.error('❌ Speech recognition error:', event.error);
-      if (event.error === 'no-speech') {
-        // Auto-restart on no-speech
-        setTimeout(() => {
-          if (showCaptions && recognitionRef.current) {
-            try {
-              recognition.start();
-            } catch (e) {
-              console.log('Recognition already started');
-            }
+      setIsListening(false);
+
+      // Handle different error types
+      switch (event.error) {
+        case 'network':
+          setCaptions([{
+            id: 'network-error',
+            text: 'Network error. Please check your internet connection and try again.',
+            timestamp: new Date(),
+            isFinal: true,
+            isError: true
+          }]);
+          
+          // Retry with exponential backoff
+          if (retryCount < maxRetries && showCaptions) {
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+            console.log(`🔄 Retrying in ${delay}ms... (Attempt ${retryCount + 1}/${maxRetries})`);
+            retryCount++;
+            
+            retryTimeout = setTimeout(() => {
+              if (showCaptions && recognitionRef.current) {
+                try {
+                  recognitionRef.current.start();
+                } catch (e) {
+                  console.log('Could not restart recognition:', e.message);
+                }
+              }
+            }, delay);
+          } else {
+            setCaptions(prev => [...prev.filter(c => !c.isError), {
+              id: 'retry-failed',
+              text: 'Unable to connect to speech service. Please try again later.',
+              timestamp: new Date(),
+              isFinal: true,
+              isError: true
+            }]);
           }
-        }, 1000);
+          break;
+
+        case 'not-allowed':
+        case 'service-not-allowed':
+          setCaptions([{
+            id: 'permission-error',
+            text: 'Microphone access denied. Please allow microphone permissions and try again.',
+            timestamp: new Date(),
+            isFinal: true,
+            isError: true
+          }]);
+          break;
+
+        case 'no-speech':
+          // Just restart, don't show error
+          if (showCaptions && recognitionRef.current) {
+            setTimeout(() => {
+              try {
+                recognition.start();
+              } catch (e) {
+                console.log('Recognition restart failed:', e.message);
+              }
+            }, 1000);
+          }
+          break;
+
+        case 'aborted':
+          // Don't auto-restart on abort
+          break;
+
+        default:
+          setCaptions([{
+            id: 'unknown-error',
+            text: `An error occurred: ${event.error}. Please try again.`,
+            timestamp: new Date(),
+            isFinal: true,
+            isError: true
+          }]);
       }
     };
 
     recognition.onend = () => {
       setIsListening(false);
-      // Auto-restart if captions are still enabled
-      if (showCaptions) {
-        setTimeout(() => {
+      console.log('🎤 Speech recognition ended');
+      
+      // Auto-restart if captions are still enabled and no error occurred
+      if (showCaptions && retryCount < maxRetries) {
+        retryTimeout = setTimeout(() => {
           try {
-            recognition.start();
+            if (showCaptions && recognitionRef.current) {
+              recognition.start();
+            }
           } catch (e) {
-            console.log('Recognition already started or stopped');
+            console.log('Recognition restart failed:', e.message);
           }
         }, 500);
       }
@@ -2038,14 +2136,28 @@ const VideoRoom = () => {
 
     recognitionRef.current = recognition;
 
-    // Start recognition
-    try {
-      recognition.start();
-    } catch (e) {
-      console.log('Recognition already started');
-    }
+    // Start recognition with initial delay to ensure proper setup
+    setTimeout(() => {
+      try {
+        if (showCaptions && recognitionRef.current) {
+          recognition.start();
+        }
+      } catch (e) {
+        console.error('Failed to start recognition:', e.message);
+        setCaptions([{
+          id: 'start-error',
+          text: 'Failed to start speech recognition. Please try again.',
+          timestamp: new Date(),
+          isFinal: true,
+          isError: true
+        }]);
+      }
+    }, 100);
 
     return () => {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -3412,19 +3524,35 @@ const VideoRoom = () => {
               {captions.map((caption) => (
                 <div 
                   key={caption.id}
-                  className={`text-white text-sm sm:text-base md:text-lg leading-relaxed ${
-                    caption.isFinal ? 'opacity-100' : 'opacity-70 italic'
+                  className={`text-sm sm:text-base md:text-lg leading-relaxed ${
+                    caption.isError 
+                      ? 'text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/30' 
+                      : caption.isFinal 
+                        ? 'text-white opacity-100' 
+                        : 'text-white opacity-70 italic'
                   }`}
                 >
+                  {caption.isError && (
+                    <span className="font-semibold block mb-1">⚠️ Error</span>
+                  )}
                   {caption.text}
                 </div>
               ))}
             </div>
 
-            {captions.length === 0 && (
-              <div className="text-gray-400 text-sm sm:text-base text-center py-4 sm:py-6">
-                <Subtitles className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 opacity-50" />
-                <p>Waiting for speech...</p>
+            {/* Show retry button if there's an error */}
+            {captions.some(c => c.isError) && (
+              <div className="mt-3 sm:mt-4 flex justify-center">
+                <button
+                  onClick={() => {
+                    setCaptions([]);
+                    setShowCaptions(false);
+                    setTimeout(() => setShowCaptions(true), 300);
+                  }}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-all transform hover:scale-105"
+                >
+                  🔄 Retry
+                </button>
               </div>
             )}
           </div>
