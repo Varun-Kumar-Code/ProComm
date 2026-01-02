@@ -2060,11 +2060,21 @@ const VideoRoom = () => {
 
     recognition.onerror = (event) => {
       console.error('❌ Speech recognition error:', event.error);
+      console.log('📊 Error details:', {
+        error: event.error,
+        message: event.message,
+        type: event.type,
+        retryCount,
+        maxRetries,
+        isOnline: navigator.onLine,
+        protocol: window.location.protocol
+      });
       setIsListening(false);
 
       // Handle different error types
       switch (event.error) {
         case 'network':
+          console.log('🌐 Network error detected. Auto-retry will attempt in a moment...');
           setCaptions([{
             id: 'network-error',
             text: 'Network error. Please check your internet connection and try again.',
@@ -2072,6 +2082,13 @@ const VideoRoom = () => {
             isFinal: true,
             isError: true
           }]);
+          
+          // Log troubleshooting info
+          console.log('💡 Troubleshooting tips:');
+          console.log('  - Check if you have stable internet connection');
+          console.log('  - This feature requires HTTPS in production');
+          console.log('  - Chrome/Edge speech API may have service interruptions');
+          console.log('  - Try refreshing the page if error persists');
           
           // Retry with exponential backoff
           if (retryCount < maxRetries && showCaptions) {
