@@ -26,7 +26,8 @@ import {
   Pin,
   PinOff,
   Reply,
-  ShieldAlert
+  ShieldAlert,
+  Subtitles
 } from 'lucide-react';
 // import io from 'socket.io-client'; // DISABLED - using HTTP polling
 import Peer from 'peerjs';
@@ -95,6 +96,12 @@ const VideoRoom = () => {
 
   const [isRecording, setIsRecording] = useState(false);
   const [notes, setNotes] = useState('');
+  
+  // Live Caption states
+  const [showCaptions, setShowCaptions] = useState(false);
+  const [captions, setCaptions] = useState([]);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   
   // Pin state
   const [pinnedParticipant, setPinnedParticipant] = useState(null); // stores peerId or 'local'
@@ -1937,6 +1944,127 @@ const VideoRoom = () => {
     localStorage.setItem(`meeting-whiteboard-${roomId}`, data);
   };
 
+  // Live Caption Speech Recognition
+  useEffect(() => {
+    if (!showCaptions) return;
+
+    // Check if browser supports speech recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      console.warn('⚠️ Speech recognition not supported in this browser');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      console.log('🎤 Speech recognition started');
+    };
+
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' ';
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      if (finalTranscript) {
+        const newCaption = {
+          id: Date.now(),
+          text: finalTranscript.trim(),
+          timestamp: new Date(),
+          isFinal: true
+        };
+        
+        setCaptions(prev => {
+          const updated = [...prev, newCaption];
+          // Keep only last 10 captions
+          return updated.slice(-10);
+        });
+      } else if (interimTranscript) {
+        // Update interim caption
+        setCaptions(prev => {
+          const withoutInterim = prev.filter(c => c.isFinal);
+          return [...withoutInterim, {
+            id: 'interim',
+            text: interimTranscript.trim(),
+            timestamp: new Date(),
+            isFinal: false
+          }];
+        });
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('❌ Speech recognition error:', event.error);
+      if (event.error === 'no-speech') {
+        // Auto-restart on no-speech
+        setTimeout(() => {
+          if (showCaptions && recognitionRef.current) {
+            try {
+              recognition.start();
+            } catch (e) {
+              console.log('Recognition already started');
+            }
+          }
+        }, 1000);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      // Auto-restart if captions are still enabled
+      if (showCaptions) {
+        setTimeout(() => {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.log('Recognition already started or stopped');
+          }
+        }, 500);
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    // Start recognition
+    try {
+      recognition.start();
+    } catch (e) {
+      console.log('Recognition already started');
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          console.log('Recognition already stopped');
+        }
+        recognitionRef.current = null;
+      }
+    };
+  }, [showCaptions]);
+
+  const toggleCaptions = () => {
+    setShowCaptions(!showCaptions);
+    if (showCaptions) {
+      // Clear captions when turning off
+      setCaptions([]);
+    }
+  };
+
   const exportNotes = () => {
     const blob = new Blob([notes], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -3140,6 +3268,28 @@ const VideoRoom = () => {
                   </div>
                   <span className="text-sm font-semibold text-white">Whiteboard</span>
                 </button>
+
+                <button
+                  onClick={() => {
+                    console.log('📝 Live Caption clicked, current state:', showCaptions);
+                    toggleCaptions();
+                    setShowToolsMenu(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 p-3 rounded-xl transition-all duration-200 hover:bg-white/10 group ${
+                    showCaptions ? 'bg-green-500/10' : ''
+                  }`}
+                >
+                  <div className={`p-2 rounded-lg border transition-colors ${
+                    showCaptions 
+                      ? 'bg-gradient-to-br from-green-600/30 to-green-700/30 border-green-500/50' 
+                      : 'bg-gradient-to-br from-green-600/20 to-green-700/20 border-green-500/30 group-hover:border-green-500/50'
+                  }`}>
+                    <Subtitles className={`w-5 h-5 text-green-400 ${isListening ? 'animate-pulse' : ''}`} />
+                  </div>
+                  <span className="text-sm font-semibold text-white">
+                    {showCaptions ? 'Hide Captions' : 'Live Captions'}
+                  </span>
+                </button>
                 
                 <button
                   onClick={() => {
@@ -3233,6 +3383,53 @@ const VideoRoom = () => {
         initialData={whiteboardData}
         onSave={saveWhiteboardData}
       />
+
+      {/* Live Captions */}
+      {showCaptions && captions.length > 0 && (
+        <div className="fixed bottom-20 sm:bottom-24 left-1/2 transform -translate-x-1/2 z-40 w-11/12 sm:w-auto max-w-4xl">
+          <div className="bg-black/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-3 sm:p-4 md:p-6 animate-fade-in">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <Subtitles className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                <span className="text-white font-semibold text-sm sm:text-base">Live Captions</span>
+                {isListening && (
+                  <div className="flex items-center space-x-1">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-green-400 text-xs sm:text-sm">Listening...</span>
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={toggleCaptions}
+                className="p-1.5 sm:p-2 hover:bg-white/10 rounded-lg transition-all"
+                title="Close captions"
+              >
+                <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </button>
+            </div>
+            
+            <div className="space-y-2 sm:space-y-3 max-h-32 sm:max-h-40 md:max-h-48 overflow-y-auto custom-scrollbar">
+              {captions.map((caption) => (
+                <div 
+                  key={caption.id}
+                  className={`text-white text-sm sm:text-base md:text-lg leading-relaxed ${
+                    caption.isFinal ? 'opacity-100' : 'opacity-70 italic'
+                  }`}
+                >
+                  {caption.text}
+                </div>
+              ))}
+            </div>
+
+            {captions.length === 0 && (
+              <div className="text-gray-400 text-sm sm:text-base text-center py-4 sm:py-6">
+                <Subtitles className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 opacity-50" />
+                <p>Waiting for speech...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
