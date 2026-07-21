@@ -1,7 +1,5 @@
 # ProComm - Professional Video Conference Application
 
-⚠️ **IMPORTANT: This repository is PRIVATE** - Contains sensitive configuration files and API keys.
-
 A modern, feature-rich video conferencing application built with React, Node.js, Socket.IO, and WebRTC.
 
 ## 🌟 Features
@@ -226,40 +224,6 @@ PEER_PORT=3002
 
 ### ✅ Security Audit Completed (January 2, 2026)
 
-**No credentials were found exposed in:**
-- ✅ Current codebase
-- ✅ Git commit history
-- ✅ Configuration files
-
-**For complete security documentation, see [SECURITY.md](./SECURITY.md)**
-
-**Security measures implemented:**
-- **Environment Variables**: All sensitive data (Firebase config, Cloudinary keys) stored in `.env` files
-- **`.gitignore` Protection**: All `.env` files are ignored and never committed to Git
-- **Email-based Access Control**: Meeting access requires email validation
-- **Helmet.js**: Security headers for HTTP protection
-- **CORS Configuration**: Controlled cross-origin access
-- **Input Validation**: Sanitization of user inputs
-- **Private Repository**: This repository is set to PRIVATE to protect sensitive configurations
-
-### 🔐 Security Best Practices
-
-1. **Never commit `.env` files** - They contain sensitive API keys
-2. **Rotate credentials regularly** - Update Firebase and Cloudinary keys periodically
-3. **Use Firebase Security Rules** - Configure proper read/write rules in Firestore
-4. **Enable 2FA on Firebase** - Add extra security to your Firebase account
-5. **Monitor API Usage** - Check Firebase and Cloudinary dashboards for unusual activity
-6. **Keep dependencies updated** - Run `npm audit` regularly
-
-### 🚨 If You Suspect a Credential Leak
-
-1. **Immediately rotate all API keys**:
-   - Firebase: Generate new config in Firebase Console
-   - Cloudinary: Regenerate API credentials
-2. **Check Firebase Console** → Usage for unusual activity
-3. **Review Cloudinary Dashboard** for unauthorized uploads
-4. **Contact support if needed**
-
 ## 🎨 Design System
 
 ### Color Palette
@@ -302,18 +266,7 @@ For permission requests, please contact me: enquiretovarun@gmail.com
 
 See the [LICENSE](./LICENSE) file for details.
 
----
-
-## 🔒 Repository Status
-
-**⚠️ PRIVATE REPOSITORY** - This repository contains sensitive configuration files and should remain private.
-
-**Security Documents**:
-- [SECURITY.md](./SECURITY.md) - Complete security policy and guidelines
-- [SECURITY_AUDIT_REPORT.md](./SECURITY_AUDIT_REPORT.md) - Detailed security audit findings
-
-**Last Security Audit**: January 2, 2026 - ✅ No exposed credentials found 
-
+--- 
 
 ## 👨‍💻 Author
 
