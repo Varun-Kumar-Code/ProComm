@@ -220,10 +220,6 @@ PEER_PORT=3002
 2. Use the Theme toggle to switch between Light/Dark mode
 3. Setting is automatically saved to localStorage
 
-## 🔒 Security Features
-
-### ✅ Security Audit Completed (January 2, 2026)
-
 ## 🎨 Design System
 
 ### Color Palette
@@ -249,6 +245,8 @@ npm start
 - Set `NODE_ENV=production`
 - Configure proper CORS origins
 - Set up SSL certificates for production
+
+### ✅ Security Audit Completed (January 2, 2026)
 
 ## 🤝 Contributing
 
