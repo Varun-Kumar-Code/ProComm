@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProComm WebRTC Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .btn-primary { background: #4f46e5; }
+        .btn-danger { background: #ef4444; }
+        .btn-success { background: #10b981; }
+        .btn-warning { background: #f59e0b; }
+        .btn-secondary { background: #6b7280; }
+        
+        .video-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .video-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            background: #1f2937;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+        
+        .status {
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status h3 {
+            margin-bottom: 15px;
+            color: #60a5fa;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .tools-menu {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            border-radius: 10px;
+            padding: 10px;
+            min-width: 200px;
+            margin-bottom: 10px;
+        }
+        .dropdown.show {
+            display: block;
+        }
+        .dropdown .btn {
+            width: 100%;
+            margin: 5px 0;
+            text-align: left;
+        }
+        
+        .console-log {
+            background: #1f2937;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #374151;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px;
+        }
+        .log-error { color: #ef4444; }
+        .log-success { color: #10b981; }
+        .log-warning { color: #f59e0b; }
+        .log-info { color: #60a5fa; }
+
+        @media (max-width: 768px) {
+            .video-section {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                justify-content: center;
+            }
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 ProComm WebRTC Functionality Test</h1>
+            <p>Test camera, microphone, and tools functionality</p>
+        </div>
+
+        <!-- Media Access Test -->
+        <div class="controls">
+            <button class="btn btn-primary" onclick="testMediaAccess()">
+                📹 Test Camera & Microphone
+            </button>
+        </div>
+
+        <!-- Video Display -->
+        <div class="video-section">
+            <div class="video-container">
+                <h3>📹 Local Video</h3>
+                <video id="localVideo" autoplay muted playsinline></video>
+            </div>
+            <div class="video-container">
+                <h3>📊 Stream Info</h3>
+                <div id="streamInfo">
+                    <p>No stream active</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Buttons Test -->
+        <div class="controls">
+            <button class="btn btn-success" id="micBtn" onclick="toggleMic()">
+                🎤 Microphone ON
+            </button>
+            <button class="btn btn-success" id="cameraBtn" onclick="toggleCamera()">
+                📹 Camera ON
+            </button>
+            
+            <!-- More Tools Menu -->
+            <div class="tools-menu">
+                <button class="btn btn-secondary" onclick="toggleToolsMenu()">
+                    ⚙️ More Tools
+                </button>
+                <div class="dropdown" id="toolsDropdown">
+                    <button class="btn btn-warning" onclick="testWhiteboard()">
+                        🖊️ Whiteboard
+                    </button>
+                    <button class="btn btn-danger" id="recordBtn" onclick="testRecording()">
+                        🔴 Start Recording
+                    </button>
+                    <button class="btn btn-primary" onclick="testNotepad()">
+                        📝 Notepad
+                    </button>
+                    <button class="btn btn-secondary" onclick="testPolls()">
+                        📊 Polls
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Display -->
+        <div class="status">
+            <h3>📋 Current Status</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <strong>Microphone:</strong> <span id="micStatus">🎤 ON</span>
+                </div>
+                <div class="status-item">
+                    <strong>Camera:</strong> <span id="cameraStatus">📹 ON</span>
+                </div>
+                <div class="status-item">
+                    <strong>Recording:</strong> <span id="recordStatus">⚪ STOPPED</span>
+                </div>
+                <div class="status-item">
+                    <strong>Tools Menu:</strong> <span id="toolsStatus">📕 CLOSED</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Console Log -->
+        <div class="status">
+            <h3>📝 Console Logs</h3>
+            <div class="console-log" id="consoleLog">
+                <div class="log-entry log-info">Ready to test functionality...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let localStream = null;
+        let isMicOn = true;
+        let isCameraOn = true;
+        let isRecording = false;
+        let showToolsMenu = false;
+
+        // Logging function
+        function log(message, type = 'info') {
+            const consoleLog = document.getElementById('consoleLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleLog.appendChild(entry);
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+            
+            // Also log to browser console
+            console.log(`🧪 ${message}`);
+        }
+
+        // Test media access
+        async function testMediaAccess() {
+            try {
+                log('🚀 Testing media access...', 'info');
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                log('✅ Media access granted!', 'success');
+                localStream = stream;
+                
+                // Attach to video element
+                const videoElement = document.getElementById('localVideo');
+                videoElement.srcObject = stream;
+                
+                log('📹 Video stream attached to element', 'success');
+                
+                // Update stream info
+                updateStreamInfo(stream);
+                
+            } catch (error) {
+                log(`❌ Media access failed: ${error.message}`, 'error');
+                
+                let errorMessage = 'Failed to access camera/microphone.';
+                if (error.name === 'NotAllowedError') {
+                    errorMessage = 'Camera/microphone access denied. Please allow permissions.';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage = 'No camera/microphone found.';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage = 'Camera/microphone is being used by another application.';
+                }
+                
+                log(`💡 Suggestion: ${errorMessage}`, 'warning');
+            }
+        }
+
+        // Update stream info display
+        function updateStreamInfo(stream) {
+            const streamInfo = document.getElementById('streamInfo');
+            const videoTracks = stream.getVideoTracks();
+            const audioTracks = stream.getAudioTracks();
+            
+            streamInfo.innerHTML = `
+                <p><strong>Video Tracks:</strong> ${videoTracks.length}</p>
+                <p><strong>Audio Tracks:</strong> ${audioTracks.length}</p>
+                <p><strong>Stream Active:</strong> ${stream.active ? '✅' : '❌'}</p>
+                ${videoTracks.length > 0 ? `<p><strong>Video:</strong> ${videoTracks[0].label}</p>` : ''}
+                ${audioTracks.length > 0 ? `<p><strong>Audio:</strong> ${audioTracks[0].label}</p>` : ''}
+            `;
+        }
+
+        // Toggle microphone
+        function toggleMic() {
+            log(`🎤 Toggle microphone clicked, current: ${isMicOn}`, 'info');
+            
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    isMicOn = !isMicOn;
+                    audioTrack.enabled = isMicOn;
+                    
+                    // Update UI
+                    const micBtn = document.getElementById('micBtn');
+                    const micStatus = document.getElementById('micStatus');
+                    
+                    if (isMicOn) {
+                        micBtn.textContent = '🎤 Microphone ON';
+                        micBtn.className = 'btn btn-success';
+                        micStatus.textContent = '🎤 ON';
+                    } else {
+                        micBtn.textContent = '🔇 Microphone OFF';
+                        micBtn.className = 'btn btn-danger';
+                        micStatus.textContent = '🔇 OFF';
+                    }
+                    
+                    log(`✅ Microphone toggled to: ${isMicOn ? 'ON' : 'OFF'}`, 'success');
+                } else {
+                    log('⚠️ No audio track found', 'warning');
+                }
+            } else {
+                log('⚠️ No local stream available for mic toggle', 'warning');
+            }
+        }
+
+        // Toggle camera
+        function toggleCamera() {
+            log(`📹 Toggle camera clicked, current: ${isCameraOn}`, 'info');
+            
+            if (localStream) {
+                const videoTrack = localStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    isCameraOn = !isCameraOn;
+                    videoTrack.enabled = isCameraOn;
+                    
+                    // Update UI
+                    const cameraBtn = document.getElementById('cameraBtn');
+                    const cameraStatus = document.getElementById('cameraStatus');
+                    
+                    if (isCameraOn) {
+                        cameraBtn.textContent = '📹 Camera ON';
+                        cameraBtn.className = 'btn btn-success';
+                        cameraStatus.textContent = '📹 ON';
+                    } else {
+                        cameraBtn.textContent = '📷 Camera OFF';
+                        cameraBtn.className = 'btn btn-danger';
+                        cameraStatus.textContent = '📷 OFF';
+                    }
+                    
+                    log(`✅ Camera toggled to: ${isCameraOn ? 'ON' : 'OFF'}`, 'success');
+                } else {
+                    log('⚠️ No video track found', 'warning');
+                }
+            } else {
+                log('⚠️ No local stream available for camera toggle', 'warning');
+            }
+        }
+
+        // Toggle tools menu
+        function toggleToolsMenu() {
+            log(`⚙️ More Tools button clicked, current: ${showToolsMenu}`, 'info');
+            
+            showToolsMenu = !showToolsMenu;
+            const dropdown = document.getElementById('toolsDropdown');
+            const toolsStatus = document.getElementById('toolsStatus');
+            
+            if (showToolsMenu) {
+                dropdown.classList.add('show');
+                toolsStatus.textContent = '📖 OPEN';
+            } else {
+                dropdown.classList.remove('show');
+                toolsStatus.textContent = '📕 CLOSED';
+            }
+            
+            log(`✅ Tools menu toggled to: ${showToolsMenu ? 'OPEN' : 'CLOSED'}`, 'success');
+        }
+
+        // Test whiteboard
+        function testWhiteboard() {
+            log('🖊️ Whiteboard clicked', 'info');
+            log('✅ Whiteboard would open here (modal/component)', 'success');
+            toggleToolsMenu(); // Close menu
+        }
+
+        // Test recording
+        function testRecording() {
+            log(`🔴 Recording clicked, current: ${isRecording}`, 'info');
+            
+            isRecording = !isRecording;
+            const recordBtn = document.getElementById('recordBtn');
+            const recordStatus = document.getElementById('recordStatus');
+            
+            if (isRecording) {
+                recordBtn.textContent = '⏹️ Stop Recording';
+                recordBtn.className = 'btn btn-danger';
+                recordStatus.textContent = '🔴 RECORDING';
+            } else {
+                recordBtn.textContent = '🔴 Start Recording';
+                recordBtn.className = 'btn btn-danger';
+                recordStatus.textContent = '⚪ STOPPED';
+            }
+            
+            log(`✅ Recording toggled to: ${isRecording ? 'RECORDING' : 'STOPPED'}`, 'success');
+            toggleToolsMenu(); // Close menu
+        }
+
+        // Test notepad
+        function testNotepad() {
+            log('📝 Notepad clicked', 'info');
+            log('✅ Chat panel would open with notepad tab', 'success');
+            toggleToolsMenu(); // Close menu
+        }
+
+        // Test polls
+        function testPolls() {
+            log('📊 Polls clicked', 'info');
+            log('✅ Chat panel would open with polls tab', 'success');
+            toggleToolsMenu(); // Close menu
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 ProComm test page initialized', 'success');
+            log('💡 Click "Test Camera & Microphone" to begin', 'info');
+        });
+
+        // Close tools menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const toolsMenu = document.querySelector('.tools-menu');
+            if (!toolsMenu.contains(event.target) && showToolsMenu) {
+                toggleToolsMenu();
+            }
+        });
+    </script>
+</body>
+</html>

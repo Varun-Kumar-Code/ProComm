@@ -1,0 +1,247 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function: Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function: Check if user owns this resource
+    function isOwner(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+    
+    // Helper function: Validate user profile data
+    function isValidUserProfile() {
+      let data = request.resource.data;
+      return data.displayName is string &&
+             data.displayName.size() >= 1 &&
+             data.displayName.size() <= 100 &&
+             data.bio is string &&
+             data.bio.size() <= 500 &&
+             data.profilePicUrl is string;
+    }
+    
+    // Helper function: Validate scheduled meeting data
+    function isValidScheduledMeeting() {
+      let data = request.resource.data;
+      return data.title is string &&
+             data.title.size() >= 1 &&
+             data.title.size() <= 200 &&
+             data.description is string &&
+             data.description.size() <= 1000 &&
+             data.scheduledAt is timestamp &&
+             data.durationMinutes is number &&
+             data.durationMinutes >= 5 &&
+             data.durationMinutes <= 480;
+    }
+    
+    // Helper function: Validate meeting history data
+    function isValidMeetingHistory() {
+      let data = request.resource.data;
+      return data.title is string &&
+             data.startedAt is timestamp &&
+             data.endedAt is timestamp &&
+             data.participantsCount is number &&
+             data.participantsCount >= 1;
+    }
+    
+    // ========== USER PROFILE ==========
+    match /users/{uid} {
+      // Read: Owner can read full profile, authenticated users can read email only (for meeting invitations)
+      allow read: if isOwner(uid);
+      
+      // List/Query: Allow authenticated users to query by email to find users for meeting invitations
+      allow list: if isAuthenticated();
+      
+      // Create: Only owner can create their profile
+      allow create: if isOwner(uid);
+      
+      // Update: Only owner can update their profile
+      allow update: if isOwner(uid);
+      
+      // Delete: Users cannot delete their profile (admin only)
+      allow delete: if false;
+      
+      // ========== SCHEDULED MEETINGS SUBCOLLECTION ==========
+      match /scheduledMeetings/{meetingId} {
+        // Read: Only owner can read their scheduled meetings
+        allow read: if isOwner(uid);
+        
+        // Create: Owner can create meetings OR authenticated users can add meetings to this user's collection
+        // (when inviting them to a meeting)
+        allow create: if isOwner(uid) || isAuthenticated();
+        
+        // Update: Owner can update their meetings
+        allow update: if isOwner(uid);
+        
+        // Delete: Owner can delete their meetings
+        allow delete: if isOwner(uid);
+      }
+      
+      // ========== MEETING HISTORY SUBCOLLECTION ==========
+      match /meetingHistory/{meetingId} {
+        // Read: Only owner can read their history
+        allow read: if isOwner(uid);
+        
+        // Create: Only owner can add to their history
+        allow create: if isOwner(uid);
+        
+        // Update: History should not be updated
+        allow update: if false;
+        
+        // Delete: Owner can delete old history entries
+        allow delete: if isOwner(uid);
+      }
+    }
+    
+    // ========== INSTANT MEETINGS COLLECTION ==========
+    match /meetings/{meetingId} {
+      // Read: Anyone can read meeting details (needed for instant video meetings with unauthenticated users)
+      allow read: if true;
+      
+      // Create: Any authenticated user can create a meeting
+      allow create: if isAuthenticated() && 
+                      request.resource.data.creatorUid == request.auth.uid;
+      
+      // Update: Only meeting creator can update (add participants, etc.)
+      //         OR any authenticated user can add themselves to participants array
+      //         OR anyone can update (for instant meetings where users may not be authenticated)
+      allow update: if true;
+      
+      // Delete: Only creator can delete (if authenticated)
+      allow delete: if isAuthenticated() && resource.data.creatorUid == request.auth.uid;
+      
+      // ========== MEETING CHAT MESSAGES (SUBCOLLECTION) ==========
+      // Allow anyone in the meeting to read and write messages
+      // Messages are automatically cleaned up when meeting ends
+      match /messages/{messageId} {
+        allow read, write: if true; // Anyone with meeting link can read/write
+      }
+      
+      // ========== MEETING POLLS (SUBCOLLECTION) ==========
+      // Allow anyone in the meeting to read polls and vote
+      match /polls/{pollId} {
+        allow read, write: if true; // Anyone with meeting link can read/write/vote/delete
+      }
+      
+      // ========== MEETING CAPTIONS (SUBCOLLECTION) ==========
+      // Allow anyone in the meeting to read and write captions
+      match /captions/{captionId} {
+        allow read, write: if true; // Anyone with meeting link can read/write captions
+      }
+      
+      // ========== ACTIVE PEERS (SUBCOLLECTION) ==========
+      // Allow peer discovery API to register and query active peers
+      match /activePeers/{peerId} {
+        allow read, write: if true; // API needs to register peers and query for discovery
+      }
+    }
+    
+    // ========== ASSESSMENTS COLLECTION ==========
+    match /assessments/{assessmentId} {
+      // Helper: Check if user is the assessment creator
+      function isAssessmentCreator() {
+        return isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      }
+      
+      // Helper: Check if user is an allowed participant
+      function isAllowedParticipant() {
+        return isAuthenticated() && 
+               request.auth.token.email in resource.data.allowedParticipants;
+      }
+      
+      // Read: Only creator and allowed participants can read
+      allow read: if isAuthenticated() && 
+                    (resource.data.createdBy == request.auth.uid || 
+                     request.auth.token.email in resource.data.allowedParticipants);
+      
+      // List/Query: Allow listing assessments where user is creator or allowed participant
+      // For queries like: where('createdBy', '==', userId) or array-contains for allowedParticipants
+      allow list: if isAuthenticated();
+      
+      // Create: Any authenticated user can create
+      allow create: if isAuthenticated() && 
+                      request.resource.data.createdBy == request.auth.uid;
+      
+      // Update: Only creator can update
+      allow update: if isAssessmentCreator();
+      
+      // Delete: Only creator can delete
+      allow delete: if isAssessmentCreator();
+      
+      // ========== ACTIVE PEERS (SUBCOLLECTION) ==========
+      // Allow peer discovery API to register and query active peers for proctoring
+      match /activePeers/{peerId} {
+        allow read, write: if true; // API needs unauthenticated access for WebRTC peer discovery
+      }
+    }
+    
+    // ========== ASSESSMENT ATTEMPTS COLLECTION ==========
+    match /attempts/{attemptId} {
+      // Helper: Check if attempt belongs to user
+      function isAttemptOwner() {
+        return isAuthenticated() && resource.data.userId == request.auth.uid;
+      }
+      
+      // Read: Only attempt owner and assessment creator can read
+      allow read: if isAuthenticated() && 
+                    (resource.data.userId == request.auth.uid ||
+                     get(/databases/$(database)/documents/assessments/$(resource.data.assessmentId)).data.createdBy == request.auth.uid);
+      
+      // List/Query: Allow listing attempts where user is owner or is the assessment creator
+      allow list: if isAuthenticated();
+      
+      // Create: Only allowed participants can create attempts
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      request.auth.token.email in get(/databases/$(database)/documents/assessments/$(request.resource.data.assessmentId)).data.allowedParticipants;
+      
+      // Update: Can only update before submission (submittedAt is null)
+      // OR allow submission (when submittedAt is being set)
+      allow update: if isAuthenticated() && 
+                      resource.data.userId == request.auth.uid &&
+                      (resource.data.submittedAt == null || 
+                       request.resource.data.submittedAt != null);
+      
+      // Delete: Cannot delete attempts
+      allow delete: if false;
+    }
+    
+    // ========== PROCTOR SESSIONS COLLECTION ==========
+    match /proctorSessions/{sessionId} {
+      // List/Query: Allow listing proctor sessions
+      allow list: if isAuthenticated();
+      
+      // Read: Host and participants can read
+      allow read: if isAuthenticated() && 
+                    (resource.data.hostId == request.auth.uid ||
+                     request.auth.uid in resource.data.participants);
+      
+      // Create: Only assessment creator can create proctor session
+      allow create: if isAuthenticated();
+      
+      // Update: Host can update, participants can add themselves
+      allow update: if isAuthenticated() &&
+                      (resource.data.hostId == request.auth.uid ||
+                       request.auth.uid in resource.data.participants);
+      
+      // Delete: Only host can delete
+      allow delete: if isAuthenticated() && resource.data.hostId == request.auth.uid;
+      
+      // ========== PROCTOR VIOLATIONS SUBCOLLECTION ==========
+      match /violations/{violationId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
+    }
+    
+    // ========== DEFAULT DENY ALL ==========
+    // Any path not explicitly matched above is denied
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

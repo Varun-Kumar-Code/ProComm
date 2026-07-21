@@ -1,0 +1,30 @@
+{
+  "name": "procomm-server",
+  "version": "1.0.0",
+  "description": "ProComm Video Conference Server",
+  "main": "server.js",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "peer": "peer --port 3003 --key peerjs"
+  },
+  "keywords": ["video-conference", "webrtc", "socket.io"],
+  "author": "Varun",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.8.1",
+    "uuid": "^9.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "peer": "^1.0.0"
+  }
+}

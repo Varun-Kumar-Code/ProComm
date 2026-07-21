@@ -1,0 +1,9 @@
+{
+  "type": "module",
+  "dependencies": {
+    "uuid": "^9.0.1",
+    "socket.io": "^4.8.1",
+    "firebase": "^10.7.1",
+    "axios": "^1.6.0"
+  }
+}
