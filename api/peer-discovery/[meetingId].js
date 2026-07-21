@@ -6,13 +6,13 @@ import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, where
 // TEMPORARY: Hard-coded Firebase config for immediate fix
 // TODO: Move to Vercel environment variables
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAqRUqlOOjApceB7c5X3DSP3Eda3hPTtXk",
-  authDomain: "procomm-ff546.firebaseapp.com",
-  projectId: "procomm-ff546",
-  storageBucket: "procomm-ff546.firebasestorage.app",
-  messagingSenderId: "284815575800",
-  appId: "1:284815575800:web:1417912d7ea79d841c890d",
-  measurementId: "G-9XHJBVWVM1"
+  apiKey: "your_firebase_api_key",
+  authDomain: "your_project.firebaseapp.com",
+  projectId: "your_project_id",
+  storageBucket: "your_project.appspot.com",
+  messagingSenderId: "your_sender_id",
+  appId: "your_app_id",
+  measurementId: "your_measurement_id"
 };
 
 // Initialize Firebase
