@@ -21,7 +21,7 @@ Visit: [https://procomm-india.vercel.app](https://procomm-india.vercel.app/)
 
 ## Screenshot
 
-<img src="client/src/img/screenshot" ref="procomm-screenshort">
+<img src="./client/src/imgs/screenshot.gif" ref="procomm-screenshort">
 
 ## 🛠️ Tech Stack
 
