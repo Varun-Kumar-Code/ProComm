@@ -9,6 +9,8 @@ A modern, feature-rich video conferencing application built with React, Node.js,
 - **Screen Sharing** for presentations
 - **Reactions & Emojis** for interactive meetings
 - **Participant Management** with user controls
+- **Built-in Code Space** for real-time coding and technical interviews
+- **Advanced Assessment Mode** with secure assignments, live proctoring, question randomization, negative marking, and customizable evaluation settings
 - **More Tools** including Notepad and Whiteboard
 - **Mobile Responsive** design for all devices
 - **Professional UI** with modern design
@@ -119,6 +121,27 @@ procomm-app/
 - Professional color palette maintained
 - Smooth animations and transitions
 - Clean, modern interface
+
+### 6. Code Space
+- Built-in collaborative code editor inside the meeting room
+- Supports writing and editing code during live meetings
+- Ideal for coding interviews, technical discussions, and pair programming
+- Provides a distraction-free coding environment
+
+### 7. Assessment Mode
+Create and manage assessments with multiple question types:
+- Multiple Choice (Checkbox)
+- True or False
+- Paragraph/Descriptive
+
+Advanced assessment features:
+- Negative marking support
+- Configurable retake attempts
+- Live AI/WebRTC-based proctoring during assessments
+- Question and answer shuffling for each candidate
+- Assign assessments only to selected candidates
+- After publishing, assigned assessments automatically appear in the candidate's "Assigned to Me" section
+- Candidates can start and complete assessments directly from their dashboard
 
 ## 🚀 Getting Started
 
