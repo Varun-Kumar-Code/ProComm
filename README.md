@@ -1,4 +1,4 @@
-# ProComm - Professional Video Conference Application
+# ProComm - Video Conference Application
 
 A modern, feature-rich video conferencing application built with React, Node.js, Socket.IO, and WebRTC.
 
