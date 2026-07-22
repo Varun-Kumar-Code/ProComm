@@ -295,7 +295,7 @@ See the [LICENSE](./LICENSE) file for details.
 
 ---
 
-## 🎉 What's New in Version 2.0
+## 🎉 What's New
 
 - **Complete React Migration** - Converted from HTML/CSS/JS to modern React
 - **Enhanced UI/UX** - Professional, modern design with improved user experience  
