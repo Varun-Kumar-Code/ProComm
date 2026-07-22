@@ -19,6 +19,10 @@ A modern, feature-rich video conferencing application built with React, Node.js,
 
 Visit: [https://procomm-india.vercel.app](https://procomm-india.vercel.app/)
 
+## Screenshot
+
+<img src="client/src/img/screenshot" ref="procomm-screenshort">
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: React 18, TailwindCSS, Lucide React Icons
