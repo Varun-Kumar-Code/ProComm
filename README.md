@@ -289,7 +289,7 @@ This project is licensed as **All Rights Reserved** © 2026 Varun Kumar R.
 You may not use, copy, modify, or distribute this project without prior permission.  
 For permission requests, please contact me: enquiretovarun@gmail.com  
 
-See the [LICENSE](./LICENSE) file for details.
+See the [LICENSE](./License) file for details.
 
 --- 
 
